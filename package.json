@@ -1,0 +1,37 @@
+{
+  "name": "music-travel-project",
+  "version": "1.0.0",
+  "description": "Music & Travel Booking Platform - Dual-vertical booking platform for entertainment and tourism",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "dev:backend": "pnpm --filter backend run dev",
+    "dev:frontend": "pnpm --filter frontend run dev",
+    "build": "pnpm --parallel -r run build",
+    "build:backend": "pnpm --filter backend run build",
+    "build:frontend": "pnpm --filter frontend run build",
+    "lint": "pnpm --parallel -r run lint",
+    "format": "pnpm --parallel -r run format",
+    "test": "pnpm --parallel -r run test",
+    "validate:all": "pnpm lint && pnpm build && pnpm test",
+    "clean": "pnpm -r exec rm -rf node_modules dist .next .turbo",
+    "prisma:generate": "pnpm --filter backend run prisma:generate",
+    "prisma:migrate": "pnpm --filter backend run prisma:migrate",
+    "prisma:studio": "pnpm --filter backend run prisma:studio"
+  },
+  "keywords": [
+    "booking",
+    "music",
+    "travel",
+    "nestjs",
+    "nextjs",
+    "prisma"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.10.0",
+    "pnpm": ">=8.14.0"
+  },
+  "packageManager": "pnpm@8.14.0"
+}

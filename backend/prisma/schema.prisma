@@ -1,0 +1,742 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum UserRole {
+  USER
+  ADMIN
+  STAFF
+  PARTNER
+}
+
+enum WalletStatus {
+  ACTIVE
+  LOCKED
+}
+
+enum WalletTransactionType {
+  DEPOSIT
+  PAYMENT
+  REFUND
+  WITHDRAW
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum MediaTargetType {
+  SHOW
+  TOUR
+  STAGE
+  ARTIST
+}
+
+enum SeatType {
+  SEAT
+  STANDING
+}
+
+enum ShowStatus {
+  UPCOMING
+  ONGOING
+  ENDED
+  CANCELLED
+}
+
+enum TicketStatus {
+  AVAILABLE
+  LOCKED
+  SOLD
+}
+
+enum TourScheduleStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum VoucherDiscountType {
+  PERCENT
+  FIXED_AMOUNT
+}
+
+enum CartItemType {
+  SHOW_TICKET
+  TOUR
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum BookingItemType {
+  SHOW_TICKET
+  TOUR_SLOT
+}
+
+enum PaymentMethod {
+  MOMO
+  VNPAY
+  BANKING
+  WALLET
+  CASH
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum RefundMethod {
+  ORIGINAL_METHOD
+  WALLET
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum InvoiceStatus {
+  REQUESTED
+  ISSUED
+  CANCELLED
+}
+
+enum ReconciliationStatus {
+  MATCHED
+  DISCREPANCY
+  RESOLVED
+}
+
+enum BannerPosition {
+  HOME_MAIN_SLIDER
+  HOME_MID_SECTION
+  POPUP
+  SIDEBAR
+}
+
+enum ReviewTargetType {
+  SHOW
+  TOUR
+}
+
+enum WishlistTargetType {
+  SHOW
+  TOUR
+}
+
+enum NotificationType {
+  ORDER
+  PROMOTION
+  SYSTEM
+}
+
+// =============================================================================
+// MODULE 1: AUTHENTICATION & USERS
+// =============================================================================
+
+model User {
+  id           Int       @id @default(autoincrement())
+  phoneNumber  String    @unique @map("phone_number") @db.VarChar(15)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  fullName     String    @map("full_name") @db.VarChar(100)
+  email        String?   @db.VarChar(100)
+  avatarUrl    String?   @map("avatar_url") @db.VarChar(500)
+  role         UserRole  @default(USER)
+  settings     Json?
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  // Relations
+  wallet        UserWallet?
+  bookings      Booking[]
+  reviews       Review[]
+  notifications Notification[]
+  carts         Cart[]
+  wishlists     Wishlist[]
+
+  @@index([phoneNumber])
+  @@index([email])
+  @@map("users")
+}
+
+model UserWallet {
+  userId    Int          @id @map("user_id")
+  balance   Decimal      @default(0.00) @db.Decimal(15, 2)
+  currency  String       @default("VND") @db.VarChar(3)
+  status    WalletStatus @default(ACTIVE)
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  user         User                @relation(fields: [userId], references: [id])
+  transactions WalletTransaction[]
+
+  @@map("user_wallets")
+}
+
+model WalletTransaction {
+  id            BigInt                @id @default(autoincrement())
+  walletId      Int                   @map("wallet_id")
+  amount        Decimal               @db.Decimal(15, 2)
+  balanceBefore Decimal               @map("balance_before") @db.Decimal(15, 2)
+  balanceAfter  Decimal               @map("balance_after") @db.Decimal(15, 2)
+  type          WalletTransactionType
+  description   String?               @db.VarChar(255)
+  referenceId   String?               @map("reference_id") @db.VarChar(100)
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  // Relations
+  wallet UserWallet @relation(fields: [walletId], references: [userId])
+
+  @@map("wallet_transactions")
+}
+
+// =============================================================================
+// MODULE 2: MASTER DATA
+// =============================================================================
+
+model Location {
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(100)
+  slug          String?   @unique @db.VarChar(100)
+  thumbnailUrl  String?   @map("thumbnail_url") @db.VarChar(500)
+  latitude      Float?
+  longitude     Float?
+  googlePlaceId String?   @map("google_place_id") @db.VarChar(255)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+  createdBy     Int?      @map("created_by")
+  updatedBy     Int?      @map("updated_by")
+
+  // Relations
+  stages            Stage[]
+  toursAsDeparture  Tour[] @relation("DepartureLocation")
+  toursAsDestination Tour[] @relation("DestinationLocation")
+
+  @@map("locations")
+}
+
+model Media {
+  id           Int             @id @default(autoincrement())
+  url          String          @db.VarChar(500)
+  type         MediaType       @default(IMAGE)
+  targetType   MediaTargetType @map("target_type")
+  targetId     Int             @map("target_id")
+  isFeatured   Boolean         @default(false) @map("is_featured")
+  displayOrder Int             @default(0) @map("display_order")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  createdBy    Int?            @map("created_by")
+
+  @@index([targetType, targetId])
+  @@map("media")
+}
+
+// =============================================================================
+// MODULE 3: ENTERTAINMENT
+// =============================================================================
+
+model Artist {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  bio         String?   @db.Text
+  socialLinks Json?     @map("social_links")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   Int?      @map("created_by")
+  updatedBy   Int?      @map("updated_by")
+
+  // Relations
+  shows ShowArtist[]
+
+  @@map("artists")
+}
+
+model Stage {
+  id         Int       @id @default(autoincrement())
+  locationId Int       @map("location_id")
+  name       String    @db.VarChar(150)
+  address    String?   @db.VarChar(255)
+  latitude   Float?
+  longitude  Float?
+  mapLink    String?   @map("map_link") @db.VarChar(500)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdBy  Int?      @map("created_by")
+  updatedBy  Int?      @map("updated_by")
+
+  // Relations
+  location      Location       @relation(fields: [locationId], references: [id])
+  shows         Show[]
+  physicalSeats PhysicalSeat[]
+
+  @@map("stages")
+}
+
+model PhysicalSeat {
+  id         Int      @id @default(autoincrement())
+  stageId    Int      @map("stage_id")
+  zoneName   String?  @map("zone_name") @db.VarChar(50)
+  rowName    String?  @map("row_name") @db.VarChar(10)
+  seatNumber String?  @map("seat_number") @db.VarChar(10)
+  type       SeatType @default(SEAT)
+  xPosition  Int?     @map("x_position")
+  yPosition  Int?     @map("y_position")
+
+  // Relations
+  stage   Stage    @relation(fields: [stageId], references: [id])
+  tickets Ticket[]
+
+  @@map("physical_seats")
+}
+
+model Show {
+  id              Int        @id @default(autoincrement())
+  stageId         Int        @map("stage_id")
+  title           String     @db.VarChar(200)
+  slug            String?    @db.VarChar(200)
+  description     String?    @db.Text
+  performTime     DateTime   @map("perform_time")
+  checkInTime     DateTime?  @map("check_in_time")
+  status          ShowStatus @default(UPCOMING)
+  properties      Json?
+  metaTitle       String?    @map("meta_title") @db.VarChar(255)
+  metaDescription String?    @map("meta_description") @db.VarChar(500)
+  metaKeywords    String?    @map("meta_keywords") @db.VarChar(255)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  deletedAt       DateTime?  @map("deleted_at")
+  createdBy       Int?       @map("created_by")
+  updatedBy       Int?       @map("updated_by")
+
+  // Relations
+  stage         Stage         @relation(fields: [stageId], references: [id])
+  artists       ShowArtist[]
+  ticketClasses TicketClass[]
+  tickets       Ticket[]
+
+  @@map("shows")
+}
+
+model ShowArtist {
+  showId     Int     @map("show_id")
+  artistId   Int     @map("artist_id")
+  isHeadline Boolean @default(false) @map("is_headline")
+
+  // Relations
+  show   Show   @relation(fields: [showId], references: [id])
+  artist Artist @relation(fields: [artistId], references: [id])
+
+  @@id([showId, artistId])
+  @@map("show_artists")
+}
+
+model TicketClass {
+  id            Int       @id @default(autoincrement())
+  showId        Int       @map("show_id")
+  name          String?   @db.VarChar(50)
+  price         Decimal   @db.Decimal(15, 2)
+  colorCode     String?   @map("color_code") @db.VarChar(10)
+  totalQuantity Int       @default(0) @map("total_quantity")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // Relations
+  show    Show     @relation(fields: [showId], references: [id])
+  tickets Ticket[]
+
+  @@map("ticket_classes")
+}
+
+model Ticket {
+  id             Int          @id @default(autoincrement())
+  ticketCode     String?      @unique @map("ticket_code") @db.VarChar(50)
+  showId         Int          @map("show_id")
+  ticketClassId  Int          @map("ticket_class_id")
+  physicalSeatId Int?         @map("physical_seat_id")
+  status         TicketStatus @default(AVAILABLE)
+  lockedAt       DateTime?    @map("locked_at")
+  holderUserId   Int?         @map("holder_user_id")
+  bookingId      Int?         @map("booking_id")
+  isCheckedIn    Boolean      @default(false) @map("is_checked_in")
+  checkedInAt    DateTime?    @map("checked_in_at")
+  checkinMeta    Json?        @map("checkin_meta")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  show         Show          @relation(fields: [showId], references: [id])
+  ticketClass  TicketClass   @relation(fields: [ticketClassId], references: [id])
+  physicalSeat PhysicalSeat? @relation(fields: [physicalSeatId], references: [id])
+  booking      Booking?      @relation(fields: [bookingId], references: [id])
+  bookingItems BookingItem[]
+  cartItems    CartItem[]
+
+  @@index([showId, status, ticketClassId])
+  @@map("tickets")
+}
+
+// =============================================================================
+// MODULE 4: TOURISM
+// =============================================================================
+
+model Tour {
+  id               Int       @id @default(autoincrement())
+  title            String    @db.VarChar(200)
+  slug             String?   @db.VarChar(200)
+  departureLocId   Int?      @map("departure_loc_id")
+  destinationLocId Int?      @map("destination_loc_id")
+  duration         String?   @db.VarChar(50)
+  description      String?   @db.LongText
+  properties       Json?
+  metaTitle        String?   @map("meta_title") @db.VarChar(255)
+  metaDescription  String?   @map("meta_description") @db.VarChar(500)
+  metaKeywords     String?   @map("meta_keywords") @db.VarChar(255)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+  createdBy        Int?      @map("created_by")
+  updatedBy        Int?      @map("updated_by")
+
+  // Relations
+  departureLoc   Location?      @relation("DepartureLocation", fields: [departureLocId], references: [id])
+  destinationLoc Location?      @relation("DestinationLocation", fields: [destinationLocId], references: [id])
+  schedules      TourSchedule[]
+
+  @@map("tours")
+}
+
+model TourSchedule {
+  id          Int                @id @default(autoincrement())
+  tourId      Int                @map("tour_id")
+  startDate   DateTime           @map("start_date")
+  price       Decimal            @db.Decimal(15, 2)
+  capacity    Int
+  bookedCount Int                @default(0) @map("booked_count")
+  status      TourScheduleStatus @default(OPEN)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  deletedAt   DateTime?          @map("deleted_at")
+
+  // Relations
+  tour         Tour          @relation(fields: [tourId], references: [id])
+  bookingItems BookingItem[]
+  cartItems    CartItem[]
+
+  @@index([tourId, startDate, status])
+  @@map("tour_schedules")
+}
+
+// =============================================================================
+// MODULE 5: COMMERCE
+// =============================================================================
+
+model Voucher {
+  id               Int                 @id @default(autoincrement())
+  code             String              @unique @db.VarChar(50)
+  discountType     VoucherDiscountType @map("discount_type")
+  discountValue    Decimal             @map("discount_value") @db.Decimal(15, 2)
+  minOrderValue    Decimal?            @map("min_order_value") @db.Decimal(15, 2)
+  maxDiscountAmount Decimal?           @map("max_discount_amount") @db.Decimal(15, 2)
+  startDate        DateTime?           @map("start_date")
+  endDate          DateTime?           @map("end_date")
+  usageLimit       Int?                @map("usage_limit")
+  usedCount        Int                 @default(0) @map("used_count")
+  isActive         Boolean             @default(true) @map("is_active")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  createdBy        Int?                @map("created_by")
+
+  // Relations
+  bookings Booking[]
+
+  @@map("vouchers")
+}
+
+model Cart {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user  User?      @relation(fields: [userId], references: [id])
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id             Int          @id @default(autoincrement())
+  cartId         Int          @map("cart_id")
+  itemType       CartItemType @map("item_type")
+  ticketId       Int?         @map("ticket_id")
+  tourScheduleId Int?         @map("tour_schedule_id")
+  quantity       Int          @default(1)
+
+  // Relations
+  cart         Cart          @relation(fields: [cartId], references: [id])
+  ticket       Ticket?       @relation(fields: [ticketId], references: [id])
+  tourSchedule TourSchedule? @relation(fields: [tourScheduleId], references: [id])
+
+  @@map("cart_items")
+}
+
+model Booking {
+  id             Int           @id @default(autoincrement())
+  bookingCode    String        @unique @map("booking_code") @db.VarChar(20)
+  userId         Int           @map("user_id")
+  totalAmount    Decimal       @map("total_amount") @db.Decimal(15, 2)
+  voucherId      Int?          @map("voucher_id")
+  discountAmount Decimal       @default(0) @map("discount_amount") @db.Decimal(15, 2)
+  finalAmount    Decimal       @map("final_amount") @db.Decimal(15, 2)
+  status         BookingStatus @default(PENDING)
+  paymentStatus  PaymentStatus @default(UNPAID) @map("payment_status")
+  note           String?       @db.Text
+  metadata       Json?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  updatedBy      Int?          @map("updated_by")
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id])
+  voucher      Voucher?      @relation(fields: [voucherId], references: [id])
+  items        BookingItem[]
+  tickets      Ticket[]
+  transactions Transaction[]
+  refunds      Refund[]
+  invoice      Invoice?
+  reviews      Review[]
+
+  @@map("bookings")
+}
+
+model BookingItem {
+  id             Int             @id @default(autoincrement())
+  bookingId      Int             @map("booking_id")
+  itemType       BookingItemType @map("item_type")
+  ticketId       Int?            @unique @map("ticket_id")
+  tourScheduleId Int?            @map("tour_schedule_id")
+  quantity       Int             @default(1)
+  originalPrice  Decimal         @map("original_price") @db.Decimal(15, 2)
+  passengerInfo  Json?           @map("passenger_info")
+
+  // Relations
+  booking      Booking       @relation(fields: [bookingId], references: [id])
+  ticket       Ticket?       @relation(fields: [ticketId], references: [id])
+  tourSchedule TourSchedule? @relation(fields: [tourScheduleId], references: [id])
+
+  @@map("booking_items")
+}
+
+// =============================================================================
+// MODULE 6: FINANCE & PAYMENT
+// =============================================================================
+
+model Transaction {
+  id                 Int               @id @default(autoincrement())
+  bookingId          Int               @map("booking_id")
+  userId             Int               @map("user_id")
+  paymentMethod      PaymentMethod     @map("payment_method")
+  gatewayTransId     String?           @map("gateway_trans_id") @db.VarChar(100)
+  amount             Decimal           @db.Decimal(15, 2)
+  status             TransactionStatus @default(PENDING)
+  gatewayResponseLog Json?             @map("gateway_response_log")
+  extraData          Json?             @map("extra_data")
+  payTime            DateTime?         @map("pay_time")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  createdBy          Int?              @map("created_by")
+
+  // Relations
+  booking Booking  @relation(fields: [bookingId], references: [id])
+  refunds Refund[]
+
+  @@map("transactions")
+}
+
+model Refund {
+  id            Int          @id @default(autoincrement())
+  bookingId     Int          @map("booking_id")
+  transactionId Int?         @map("transaction_id")
+  amount        Decimal      @db.Decimal(15, 2)
+  reason        String?      @db.VarChar(255)
+  refundMethod  RefundMethod @map("refund_method")
+  status        RefundStatus @default(PENDING)
+  refundedAt    DateTime?    @map("refunded_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  createdBy     Int?         @map("created_by")
+
+  // Relations
+  booking     Booking      @relation(fields: [bookingId], references: [id])
+  transaction Transaction? @relation(fields: [transactionId], references: [id])
+
+  @@map("refunds")
+}
+
+model Invoice {
+  id             Int           @id @default(autoincrement())
+  bookingId      Int           @unique @map("booking_id")
+  taxCode        String        @map("tax_code") @db.VarChar(20)
+  companyName    String        @map("company_name") @db.VarChar(255)
+  companyAddress String        @map("company_address") @db.VarChar(255)
+  emailReceive   String?       @map("email_receive") @db.VarChar(100)
+  totalAmount    Decimal       @map("total_amount") @db.Decimal(15, 2)
+  status         InvoiceStatus @default(REQUESTED)
+  eInvoiceUrl    String?       @map("e_invoice_url") @db.VarChar(500)
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("invoices")
+}
+
+model PaymentReconciliation {
+  id         Int                  @id @default(autoincrement())
+  gateway    String?              @db.VarChar(50)
+  reportDate DateTime?            @map("report_date") @db.Date
+  fileUrl    String?              @map("file_url") @db.VarChar(500)
+  status     ReconciliationStatus @default(MATCHED)
+  createdAt  DateTime             @default(now()) @map("created_at")
+
+  @@map("payment_reconciliations")
+}
+
+// =============================================================================
+// MODULE 7: MARKETING & SYSTEM
+// =============================================================================
+
+model MarketingEvent {
+  id              Int       @id @default(autoincrement())
+  title           String    @db.VarChar(255)
+  slug            String?   @unique @db.VarChar(255)
+  thumbnailUrl    String?   @map("thumbnail_url") @db.VarChar(500)
+  summary         String?   @db.VarChar(500)
+  content         String?   @db.LongText
+  startTime       DateTime? @map("start_time")
+  endTime         DateTime? @map("end_time")
+  isActive        Boolean   @default(true) @map("is_active")
+  metaTitle       String?   @map("meta_title") @db.VarChar(255)
+  metaDescription String?   @map("meta_description") @db.VarChar(500)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdBy       Int?      @map("created_by")
+  updatedBy       Int?      @map("updated_by")
+
+  @@map("marketing_events")
+}
+
+model Banner {
+  id             Int            @id @default(autoincrement())
+  title          String?        @db.VarChar(100)
+  imageUrl       String         @map("image_url") @db.VarChar(500)
+  mobileImageUrl String?        @map("mobile_image_url") @db.VarChar(500)
+  actionLink     String?        @map("action_link") @db.VarChar(500)
+  position       BannerPosition @default(HOME_MAIN_SLIDER)
+  displayOrder   Int            @default(0) @map("display_order")
+  isActive       Boolean        @default(true) @map("is_active")
+  startTime      DateTime?      @map("start_time")
+  endTime        DateTime?      @map("end_time")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  createdBy      Int?           @map("created_by")
+  updatedBy      Int?           @map("updated_by")
+
+  @@map("banners")
+}
+
+model Review {
+  id         Int              @id @default(autoincrement())
+  userId     Int              @map("user_id")
+  targetType ReviewTargetType @map("target_type")
+  targetId   Int              @map("target_id")
+  bookingId  Int              @map("booking_id")
+  rating     Int
+  comment    String?          @db.Text
+  images     Json?
+  isApproved Boolean          @default(true) @map("is_approved")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("reviews")
+}
+
+model Wishlist {
+  userId     Int                @map("user_id")
+  targetType WishlistTargetType @map("target_type")
+  targetId   Int                @map("target_id")
+  createdAt  DateTime           @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([userId, targetType, targetId])
+  @@map("wishlists")
+}
+
+model Notification {
+  id          BigInt           @id @default(autoincrement())
+  userId      Int              @map("user_id")
+  title       String?          @db.VarChar(200)
+  message     String?          @db.Text
+  type        NotificationType @default(SYSTEM)
+  referenceId Int?             @map("reference_id")
+  isRead      Boolean          @default(false) @map("is_read")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id          BigInt   @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  action      String?  @db.VarChar(50)
+  targetTable String?  @map("target_table") @db.VarChar(50)
+  targetId    Int?     @map("target_id")
+  oldValue    Json?    @map("old_value")
+  newValue    Json?    @map("new_value")
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([targetTable, targetId])
+  @@map("audit_logs")
+}
