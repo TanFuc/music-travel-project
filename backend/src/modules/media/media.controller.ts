@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MediaService } from './media.service';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
@@ -13,10 +13,7 @@ export class MediaController {
 
   @Get()
   @ApiOperation({ summary: 'Get media by target' })
-  async findByTarget(
-    @Query('targetType') targetType: string,
-    @Query('targetId') targetId: string,
-  ) {
+  async findByTarget(@Query('targetType') targetType: string, @Query('targetId') targetId: string) {
     return this.mediaService.findByTarget(targetType, parseInt(targetId));
   }
 

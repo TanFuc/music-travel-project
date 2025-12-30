@@ -7,7 +7,12 @@ import { TourFilterDto } from './dto/tour-filter.dto';
 import { getPaginationParams, paginate } from '@/common/utils/pagination.util';
 import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.constant';
 import { CacheService } from '@/cache/cache.service';
-import { CacheKeys, CachePatterns, CACHE_TTL, generateFilterHash } from '@/cache/cache-keys.constant';
+import {
+  CacheKeys,
+  CachePatterns,
+  CACHE_TTL,
+  generateFilterHash,
+} from '@/cache/cache-keys.constant';
 
 @Injectable()
 export class ToursService {
@@ -252,7 +257,8 @@ export class ToursService {
     if (bookedSchedules) {
       throw new BadRequestException({
         code: ERROR_CODES.TOUR_001,
-        message: 'Không thể xóa tour đã có người đặt. Vui lòng hủy lịch khởi hành thay vì xóa tour.',
+        message:
+          'Không thể xóa tour đã có người đặt. Vui lòng hủy lịch khởi hành thay vì xóa tour.',
       });
     }
 
@@ -337,10 +343,7 @@ export class ToursService {
    * Invalidate all caches related to a specific tour
    */
   async invalidateTourCache(tourId: number, slug?: string) {
-    const keysToDelete = [
-      CacheKeys.tour(tourId),
-      CacheKeys.tourSchedules(tourId),
-    ];
+    const keysToDelete = [CacheKeys.tour(tourId), CacheKeys.tourSchedules(tourId)];
 
     if (slug) {
       keysToDelete.push(CacheKeys.tourBySlug(slug));

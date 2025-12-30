@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
@@ -72,10 +83,7 @@ export class ToursController {
   @ApiOperation({ summary: 'Soft delete tour (Admin only)' })
   @ApiResponse({ status: 200, description: 'Tour deleted successfully' })
   @ApiResponse({ status: 404, description: 'Tour not found' })
-  async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  async remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: JwtPayload) {
     return this.toursService.softDelete(id, user.sub);
   }
 

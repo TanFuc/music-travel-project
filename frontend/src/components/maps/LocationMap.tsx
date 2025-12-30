@@ -303,12 +303,14 @@ export function StaticMap({
   return (
     <div className={cn('relative rounded-xl overflow-hidden', className)}>
       <a href={directionsUrl} target="_blank" rel="noopener noreferrer">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={staticMapUrl}
           alt={title || 'Location map'}
           width={width}
           height={height}
           className="w-full h-auto object-cover"
+          loading="lazy"
         />
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
           {title && (

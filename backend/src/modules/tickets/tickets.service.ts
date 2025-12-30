@@ -50,7 +50,8 @@ export class TicketsService {
     private readonly cache: CacheService,
     private readonly configService: ConfigService,
   ) {
-    this.qrSecret = this.configService.get<string>('QR_SECRET') || 'default-qr-secret-change-in-production';
+    this.qrSecret =
+      this.configService.get<string>('QR_SECRET') || 'default-qr-secret-change-in-production';
   }
 
   /**
@@ -405,7 +406,9 @@ export class TicketsService {
    * Invalidate ticket-related caches for a show
    */
   private async invalidateShowTicketCache(showId: number) {
-    await this.cache.delPattern(`${CacheKeys.ticketsByShow(showId).replace(':' + showId, '')}*${showId}*`);
+    await this.cache.delPattern(
+      `${CacheKeys.ticketsByShow(showId).replace(':' + showId, '')}*${showId}*`,
+    );
     await this.cache.del(CacheKeys.showSeatMap(showId));
     await this.cache.del(CacheKeys.showTicketClasses(showId));
     // Also invalidate show lists as ticket availability affects them
@@ -487,7 +490,9 @@ export class TicketsService {
   async getTicketQRBatch(
     bookingId: number,
     userId: number,
-  ): Promise<Array<{ ticketId: number; ticketCode: string; qrDataUrl: string; seatInfo: string | null }>> {
+  ): Promise<
+    Array<{ ticketId: number; ticketCode: string; qrDataUrl: string; seatInfo: string | null }>
+  > {
     // Verify booking ownership
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
@@ -604,7 +609,10 @@ export class TicketsService {
   /**
    * Generate QR code for a sold ticket
    */
-  async generateQRCode(ticketId: number, userId: number): Promise<{ qrDataUrl: string; expiresAt: Date }> {
+  async generateQRCode(
+    ticketId: number,
+    userId: number,
+  ): Promise<{ qrDataUrl: string; expiresAt: Date }> {
     // Find ticket with booking and show info
     const ticket = await this.prisma.ticket.findUnique({
       where: { id: ticketId },
@@ -676,7 +684,11 @@ export class TicketsService {
   /**
    * Check-in a ticket using QR code
    */
-  async checkIn(checkInDto: CheckInDto, staffUserId?: number, ipAddress?: string): Promise<CheckInResult> {
+  async checkIn(
+    checkInDto: CheckInDto,
+    staffUserId?: number,
+    ipAddress?: string,
+  ): Promise<CheckInResult> {
     const { qr, deviceId } = checkInDto;
 
     // Decode and verify QR
@@ -760,7 +772,11 @@ export class TicketsService {
     }
 
     // Store nonce for replay prevention (15 min TTL)
-    await this.cache.set(nonceKey, { ticketId: ticket.id, usedAt: now.toISOString() }, CACHE_TTL.QR_NONCE);
+    await this.cache.set(
+      nonceKey,
+      { ticketId: ticket.id, usedAt: now.toISOString() },
+      CACHE_TTL.QR_NONCE,
+    );
 
     // Update ticket as checked in
     const checkinMeta = {
@@ -787,7 +803,9 @@ export class TicketsService {
       seatInfo = `${seat.zoneName} - Hàng ${seat.rowName} - Ghế ${seat.seatNumber}`;
     }
 
-    this.logger.log(`Ticket ${ticket.id} (${ticket.ticketCode || 'no-code'}) checked in by staff ${staffUserId || 'unknown'}`);
+    this.logger.log(
+      `Ticket ${ticket.id} (${ticket.ticketCode || 'no-code'}) checked in by staff ${staffUserId || 'unknown'}`,
+    );
 
     return {
       success: true,

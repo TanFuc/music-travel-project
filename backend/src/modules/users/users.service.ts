@@ -4,7 +4,7 @@ import { User, UserRole } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.constant';
 import { CacheService } from '@/cache/cache.service';
-import { CacheKeys, CachePatterns, CACHE_TTL } from '@/cache/cache-keys.constant';
+import { CacheKeys, CACHE_TTL } from '@/cache/cache-keys.constant';
 
 interface CreateUserData {
   phoneNumber: string;

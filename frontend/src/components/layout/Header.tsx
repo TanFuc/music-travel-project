@@ -60,17 +60,17 @@ export function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative w-10 h-10 overflow-hidden rounded-lg transition-transform group-hover:scale-105">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white shadow-md border-2 border-brand-500/30 transition-all duration-300 group-hover:scale-105 group-hover:border-brand-500/50 group-hover:shadow-lg">
               <Image
-                src="/logo.jpg"
-                alt="Logo"
+                src="/logo.png"
+                alt="Mãi Cho Hành Tinh Xanh"
                 fill
                 className="object-cover"
                 priority
               />
             </div>
-            <span className="hidden sm:block font-display font-bold text-lg text-white">
-              Music Travel
+            <span className="hidden sm:block font-display font-bold text-lg text-gray-900">
+              Mãi Cho Hành Tinh Xanh
             </span>
           </Link>
 
@@ -83,8 +83,8 @@ export function Header() {
                 className={cn(
                   'px-4 py-2 rounded-lg text-sm font-medium transition-all',
                   pathname === link.href || pathname?.startsWith(link.href)
-                    ? 'text-white bg-white/10'
-                    : 'text-white/70 hover:text-white hover:bg-white/5'
+                    ? 'text-brand-600 bg-brand-50'
+                    : 'text-gray-600 hover:text-brand-600 hover:bg-brand-50'
                 )}
               >
                 {link.label}
@@ -97,7 +97,7 @@ export function Header() {
                 onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
                 className={cn(
                   'flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                  'text-white/70 hover:text-white hover:bg-white/5'
+                  'text-gray-600 hover:text-brand-600 hover:bg-brand-50'
                 )}
               >
                 <MapPin className="w-4 h-4" />
@@ -117,7 +117,7 @@ export function Header() {
                       <Link
                         key={location.id}
                         href={`/shows?location=${location.slug}`}
-                        className="flex items-center justify-between px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/5"
+                        className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50"
                         onClick={() => setIsLocationDropdownOpen(false)}
                       >
                         <span>{location.name}</span>
@@ -129,7 +129,7 @@ export function Header() {
                       </Link>
                     ))
                   ) : (
-                    <div className="px-4 py-2 text-sm text-white/50">
+                    <div className="px-4 py-2 text-sm text-gray-500">
                       Đang tải...
                     </div>
                   )}
@@ -144,7 +144,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-white/70 hover:text-white hover:bg-white/5"
+              className="text-gray-600 hover:text-brand-600 hover:bg-brand-50"
             >
               <Search className="h-5 w-5" />
             </Button>
@@ -154,7 +154,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white/70 hover:text-white hover:bg-white/5"
+                className="text-gray-600 hover:text-brand-600 hover:bg-brand-50"
               >
                 <ShoppingCart className="h-5 w-5" />
               </Button>
@@ -172,7 +172,7 @@ export function Header() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-2 text-white/70 hover:text-white hover:bg-white/5"
+                    className="gap-2 text-gray-600 hover:text-brand-600 hover:bg-brand-50"
                   >
                     <User className="h-4 w-4" />
                     {user?.fullName}
@@ -182,7 +182,7 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   onClick={logout}
-                  className="text-white/70 hover:text-white hover:bg-white/5"
+                  className="text-gray-600 hover:text-brand-600 hover:bg-brand-50"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -193,7 +193,7 @@ export function Header() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-white/70 hover:text-white hover:bg-white/5"
+                    className="text-gray-600 hover:text-brand-600 hover:bg-brand-50"
                   >
                     Đăng nhập
                   </Button>
@@ -210,7 +210,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden text-white/70 hover:text-white hover:bg-white/5"
+              className="md:hidden text-gray-600 hover:text-brand-600 hover:bg-brand-50"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -220,7 +220,7 @@ export function Header() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/10 py-4 mt-4">
+          <div className="md:hidden border-t border-gray-200 py-4 mt-4">
             <nav className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
@@ -229,8 +229,8 @@ export function Header() {
                   className={cn(
                     'px-4 py-3 text-sm font-medium rounded-lg transition-colors',
                     pathname === link.href
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
+                      ? 'bg-brand-50 text-brand-600'
+                      : 'text-gray-600 hover:text-brand-600 hover:bg-brand-50'
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -239,8 +239,8 @@ export function Header() {
               ))}
 
               {/* Mobile Location List */}
-              <div className="mt-2 pt-2 border-t border-white/10">
-                <p className="px-4 py-2 text-xs font-semibold text-white/50 uppercase">
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
                   Chi Nhánh
                 </p>
                 {locations.map((location) => (
@@ -248,11 +248,11 @@ export function Header() {
                     key={location.id}
                     href={`/shows?location=${location.slug}`}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-lg"
+                    className="flex items-center justify-between px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 rounded-lg"
                   >
                     <span>{location.name}</span>
                     {location.showCount > 0 && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-600">
                         {location.showCount}
                       </span>
                     )}
@@ -261,9 +261,9 @@ export function Header() {
               </div>
 
               {!isAuthenticated && (
-                <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-2">
+                <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col gap-2">
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start text-white/70">
+                    <Button variant="ghost" className="w-full justify-start text-gray-600">
                       Đăng nhập
                     </Button>
                   </Link>

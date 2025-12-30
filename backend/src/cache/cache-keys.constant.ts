@@ -60,9 +60,11 @@ export const CacheKeys = {
   // === AUTH ===
   refreshToken: (userId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.AUTH}:refresh:${userId}`,
   userSession: (userId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.AUTH}:session:${userId}`,
-  loginAttempts: (identifier: string) => `${CACHE_PREFIX}:${CACHE_DOMAINS.AUTH}:attempts:${identifier}`,
+  loginAttempts: (identifier: string) =>
+    `${CACHE_PREFIX}:${CACHE_DOMAINS.AUTH}:attempts:${identifier}`,
   otp: (phoneNumber: string) => `${CACHE_PREFIX}:${CACHE_DOMAINS.AUTH}:otp:${phoneNumber}`,
-  tokenBlacklist: (token: string) => `${CACHE_PREFIX}:${CACHE_DOMAINS.AUTH}:blacklist:${token.slice(-16)}`,
+  tokenBlacklist: (token: string) =>
+    `${CACHE_PREFIX}:${CACHE_DOMAINS.AUTH}:blacklist:${token.slice(-16)}`,
 
   // === USER ===
   user: (userId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.USER}:${userId}`,
@@ -114,14 +116,16 @@ export const CacheKeys = {
     `${CACHE_PREFIX}:${CACHE_DOMAINS.WALLET}:transactions:${userId}:${page}`,
 
   // === NOTIFICATION ===
-  userNotifications: (userId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.NOTIFICATION}:user:${userId}`,
+  userNotifications: (userId: number) =>
+    `${CACHE_PREFIX}:${CACHE_DOMAINS.NOTIFICATION}:user:${userId}`,
   unreadCount: (userId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.NOTIFICATION}:unread:${userId}`,
 
   // === LOCATION/STAGE/ARTIST (Master Data) ===
   locations: () => `${CACHE_PREFIX}:${CACHE_DOMAINS.LOCATION}:all`,
   location: (slug: string) => `${CACHE_PREFIX}:${CACHE_DOMAINS.LOCATION}:${slug}`,
   stages: () => `${CACHE_PREFIX}:${CACHE_DOMAINS.STAGE}:all`,
-  stagesByLocation: (locationId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.STAGE}:location:${locationId}`,
+  stagesByLocation: (locationId: number) =>
+    `${CACHE_PREFIX}:${CACHE_DOMAINS.STAGE}:location:${locationId}`,
   stage: (stageId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.STAGE}:${stageId}`,
   artists: () => `${CACHE_PREFIX}:${CACHE_DOMAINS.ARTIST}:all`,
   artist: (artistId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.ARTIST}:${artistId}`,

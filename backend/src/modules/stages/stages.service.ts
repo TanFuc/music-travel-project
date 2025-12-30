@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CacheService } from '@/cache/cache.service';
 import { CacheKeys, CACHE_TTL } from '@/cache/cache-keys.constant';
-import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.constant';
+import { ERROR_CODES } from '@/common/constants/error-codes.constant';
 
 @Injectable()
 export class StagesService {
@@ -60,7 +60,7 @@ export class StagesService {
     return result;
   }
 
-  async findBySlug(slug: string) {
+  async findBySlug(_slug: string) {
     // First find by name since we don't have slug in Stage model
     const stage = await this.prisma.stage.findFirst({
       where: { deletedAt: null },

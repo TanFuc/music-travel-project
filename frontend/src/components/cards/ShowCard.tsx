@@ -1,7 +1,7 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const statusLabels: Record<string, string> = {
   CANCELLED: 'Đã hủy',
 };
 
-export function ShowCard({ show }: ShowCardProps) {
+export const ShowCard = memo(function ShowCard({ show }: ShowCardProps) {
   const isAvailable = show.status === 'UPCOMING' || show.status === 'ONGOING';
 
   return (
@@ -108,4 +108,6 @@ export function ShowCard({ show }: ShowCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
+
+ShowCard.displayName = 'ShowCard';

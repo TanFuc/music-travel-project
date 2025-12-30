@@ -52,7 +52,9 @@ export class MoMoGateway {
     this.partnerCode = this.configService.get<string>('MOMO_PARTNER_CODE') || '';
     this.accessKey = this.configService.get<string>('MOMO_ACCESS_KEY') || '';
     this.secretKey = this.configService.get<string>('MOMO_SECRET_KEY') || '';
-    this.endpoint = this.configService.get<string>('MOMO_ENDPOINT') || 'https://test-payment.momo.vn/v2/gateway/api/create';
+    this.endpoint =
+      this.configService.get<string>('MOMO_ENDPOINT') ||
+      'https://test-payment.momo.vn/v2/gateway/api/create';
   }
 
   /**
@@ -148,10 +150,7 @@ export class MoMoGateway {
       .update(rawSignature)
       .digest('hex');
 
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature),
-    );
+    const isValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
 
     if (!isValid) {
       this.logger.warn(`Invalid MoMo webhook signature for order ${data.orderId}`);

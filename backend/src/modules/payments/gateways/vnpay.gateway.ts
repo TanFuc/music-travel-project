@@ -39,7 +39,9 @@ export class VNPayGateway {
   constructor(private readonly configService: ConfigService) {
     this.tmnCode = this.configService.get<string>('VNPAY_TMN_CODE') || '';
     this.hashSecret = this.configService.get<string>('VNPAY_HASH_SECRET') || '';
-    this.vnpUrl = this.configService.get<string>('VNPAY_URL') || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
+    this.vnpUrl =
+      this.configService.get<string>('VNPAY_URL') ||
+      'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
   }
 
   /**
@@ -79,10 +81,7 @@ export class VNPayGateway {
     });
 
     // Create HMAC-SHA512 signature
-    const secureHash = crypto
-      .createHmac('sha512', this.hashSecret)
-      .update(signData)
-      .digest('hex');
+    const secureHash = crypto.createHmac('sha512', this.hashSecret).update(signData).digest('hex');
 
     // Add secure hash to params
     sortedParams.vnp_SecureHash = secureHash;

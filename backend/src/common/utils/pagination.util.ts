@@ -20,11 +20,7 @@ export function getPaginationParams(params: PaginationParams): { skip: number; t
   };
 }
 
-export function createPaginationMeta(
-  page: number,
-  limit: number,
-  total: number,
-): PaginationMeta {
+export function createPaginationMeta(page: number, limit: number, total: number): PaginationMeta {
   return {
     page,
     limit,

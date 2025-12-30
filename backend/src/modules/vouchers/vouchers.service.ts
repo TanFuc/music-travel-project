@@ -50,7 +50,9 @@ export class VouchersService {
           discountType: dbVoucher.discountType,
           discountValue: Number(dbVoucher.discountValue),
           minOrderValue: dbVoucher.minOrderValue ? Number(dbVoucher.minOrderValue) : null,
-          maxDiscountAmount: dbVoucher.maxDiscountAmount ? Number(dbVoucher.maxDiscountAmount) : null,
+          maxDiscountAmount: dbVoucher.maxDiscountAmount
+            ? Number(dbVoucher.maxDiscountAmount)
+            : null,
           startDate: dbVoucher.startDate,
           endDate: dbVoucher.endDate,
           usageLimit: dbVoucher.usageLimit,
@@ -164,9 +166,6 @@ export class VouchersService {
    * Invalidate voucher cache when voucher is used or updated
    */
   async invalidateVoucherCache(code: string) {
-    await this.cache.delMany([
-      CacheKeys.voucherByCode(code),
-      CacheKeys.voucherList(),
-    ]);
+    await this.cache.delMany([CacheKeys.voucherByCode(code), CacheKeys.voucherList()]);
   }
 }

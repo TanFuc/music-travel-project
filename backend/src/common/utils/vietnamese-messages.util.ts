@@ -43,8 +43,7 @@ export const VIETNAMESE_MESSAGES = {
   isObject: (field: string) => `${field} phải là một đối tượng.`,
 
   // Custom
-  passwordTooWeak: () =>
-    'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số.',
+  passwordTooWeak: () => 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số.',
   passwordMismatch: () => 'Mật khẩu xác nhận không khớp.',
   phoneNumberFormat: () => 'Số điện thoại phải bắt đầu bằng 0 và có 10-11 chữ số.',
 };

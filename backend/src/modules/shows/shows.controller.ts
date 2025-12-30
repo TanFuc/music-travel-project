@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ShowsService } from './shows.service';
 import { CreateShowDto } from './dto/create-show.dto';
@@ -81,10 +92,7 @@ export class ShowsController {
   @ApiOperation({ summary: 'Soft delete show (Admin only)' })
   @ApiResponse({ status: 200, description: 'Show deleted successfully' })
   @ApiResponse({ status: 404, description: 'Show not found' })
-  async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  async remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: JwtPayload) {
     return this.showsService.softDelete(id, user.sub);
   }
 }

@@ -10,7 +10,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { ImageProcessingService } from './image-processing.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -214,7 +221,10 @@ export class ImageProcessingController {
     @Query('size') size?: string,
   ) {
     const sizeValue = size ? parseInt(size, 10) : 150;
-    const processedBuffer = await this.imageProcessingService.generateThumbnail(file.buffer, sizeValue);
+    const processedBuffer = await this.imageProcessingService.generateThumbnail(
+      file.buffer,
+      sizeValue,
+    );
 
     return {
       success: true,

@@ -1,7 +1,6 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { MapsService } from './maps.service';
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { Public } from '@/common/decorators/public.decorator';
 
 @ApiTags('maps')
@@ -24,10 +23,7 @@ export class MapsController {
   @ApiQuery({ name: 'lat', description: 'Latitude' })
   @ApiQuery({ name: 'lng', description: 'Longitude' })
   @ApiResponse({ status: 200, description: 'Reverse geocoding successful' })
-  async reverseGeocode(
-    @Query('lat') lat: string,
-    @Query('lng') lng: string,
-  ) {
+  async reverseGeocode(@Query('lat') lat: string, @Query('lng') lng: string) {
     return this.mapsService.reverseGeocode(parseFloat(lat), parseFloat(lng));
   }
 
@@ -69,7 +65,12 @@ export class MapsController {
   @ApiQuery({ name: 'originLng', description: 'Origin longitude' })
   @ApiQuery({ name: 'destLat', description: 'Destination latitude' })
   @ApiQuery({ name: 'destLng', description: 'Destination longitude' })
-  @ApiQuery({ name: 'mode', description: 'Travel mode', required: false, enum: ['driving', 'walking', 'transit'] })
+  @ApiQuery({
+    name: 'mode',
+    description: 'Travel mode',
+    required: false,
+    enum: ['driving', 'walking', 'transit'],
+  })
   @ApiResponse({ status: 200, description: 'Directions retrieved' })
   async getDirections(
     @Query('originLat') originLat: string,

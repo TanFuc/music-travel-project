@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Outfit, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { Header } from '@/components/layout/Header';
+import { WebVitals } from '@/components/common/WebVitals';
 
 const inter = Inter({
   subsets: ['latin', 'vietnamese'],
@@ -22,11 +23,53 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Music Travel - Đặt Vé Show Nhạc & Tour Du Lịch',
-    template: '%s | Music Travel',
+    default: 'Mãi Cho Hành Tinh Xanh - Music Travel',
+    template: '%s | Mãi Cho Hành Tinh Xanh',
   },
-  description: 'Sân khấu âm nhạc nơi giai điệu sống được cất lên. Đặt vé show nhạc và tour du lịch hàng đầu Việt Nam.',
-  keywords: ['booking', 'music', 'travel', 'concert', 'tour', 'vietnam', 'show nhạc', 'đà lạt', 'mây lang thang'],
+  description: 'Sân khấu âm nhạc vì hành tinh xanh. Đặt vé show nhạc và tour du lịch hàng đầu Việt Nam.',
+  keywords: ['music', 'travel', 'concert', 'tour', 'vietnam', 'hành tinh xanh', 'eco', 'green planet', 'show nhạc'],
+
+  // Favicon configuration - generated from logo via favicon.io
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/site.webmanifest',
+
+  // Open Graph for social sharing
+  openGraph: {
+    title: 'Mãi Cho Hành Tinh Xanh - Music Travel',
+    description: 'Sân khấu âm nhạc vì hành tinh xanh. Đặt vé show nhạc và tour du lịch hàng đầu Việt Nam.',
+    url: 'https://musictravel.vn',
+    siteName: 'Mãi Cho Hành Tinh Xanh',
+    locale: 'vi_VN',
+    type: 'website',
+  },
+
+  // Twitter card
+  twitter: {
+    card: 'summary',
+    title: 'Mãi Cho Hành Tinh Xanh - Music Travel',
+    description: 'Sân khấu âm nhạc vì hành tinh xanh.',
+  },
+
+  // Other optimizations
+  other: {
+    'dns-prefetch': '//fonts.googleapis.com',
+  },
+};
+
+// Viewport configuration for mobile optimization
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#2E7D32', // Green to match eco logo
 };
 
 export default function RootLayout({
@@ -36,8 +79,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} font-sans antialiased bg-dark text-white`}>
+      <head>
+        {/* Preconnect to external origins for faster loading */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="//maps.googleapis.com" />
+      </head>
+      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} font-sans antialiased bg-white text-gray-900`}>
         <Providers>
+          <WebVitals />
           <Header />
           <main>{children}</main>
           <Toaster position="top-right" richColors />

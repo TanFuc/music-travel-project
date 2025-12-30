@@ -7,7 +7,12 @@ import { ShowFilterDto } from './dto/show-filter.dto';
 import { getPaginationParams, paginate } from '@/common/utils/pagination.util';
 import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.constant';
 import { CacheService } from '@/cache/cache.service';
-import { CacheKeys, CachePatterns, CACHE_TTL, generateFilterHash } from '@/cache/cache-keys.constant';
+import {
+  CacheKeys,
+  CachePatterns,
+  CACHE_TTL,
+  generateFilterHash,
+} from '@/cache/cache-keys.constant';
 
 @Injectable()
 export class ShowsService {

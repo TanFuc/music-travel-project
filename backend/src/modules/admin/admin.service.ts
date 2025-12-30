@@ -45,7 +45,10 @@ export class AdminService {
       }),
       this.prisma.transaction.groupBy({
         by: ['createdAt'],
-        where: { status: 'SUCCESS', createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+        where: {
+          status: 'SUCCESS',
+          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        },
         _sum: { amount: true },
       }),
     ]);
@@ -63,7 +66,12 @@ export class AdminService {
       orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { id: true, fullName: true, phoneNumber: true } },
-        items: { include: { ticket: { include: { show: true } }, tourSchedule: { include: { tour: true } } } },
+        items: {
+          include: {
+            ticket: { include: { show: true } },
+            tourSchedule: { include: { tour: true } },
+          },
+        },
       },
     });
   }

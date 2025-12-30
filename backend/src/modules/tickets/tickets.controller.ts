@@ -1,6 +1,15 @@
-import { Controller, Post, Delete, Get, Body, Param, UseGuards, ParseIntPipe, Req, Ip } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Delete,
+  Get,
+  Body,
+  Param,
+  UseGuards,
+  ParseIntPipe,
+  Ip,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { Request } from 'express';
 import { TicketsService, CheckInResult } from './tickets.service';
 import { LockTicketsDto } from './dto/lock-tickets.dto';
 import { CheckInDto } from './dto/check-in.dto';
@@ -46,9 +55,7 @@ export class TicketsController {
   @Get('booking/:bookingId')
   @ApiOperation({ summary: 'Get all tickets for a booking' })
   @ApiResponse({ status: 200, description: 'Tickets retrieved successfully' })
-  async getTicketsByBooking(
-    @Param('bookingId', ParseIntPipe) bookingId: number,
-  ) {
+  async getTicketsByBooking(@Param('bookingId', ParseIntPipe) bookingId: number) {
     return this.ticketsService.getTicketsByBooking(bookingId);
   }
 
@@ -95,7 +102,10 @@ export class TicketsController {
   @Roles('ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Check-in ticket via QR code (Admin/Staff only)' })
   @ApiResponse({ status: 200, description: 'Check-in successful' })
-  @ApiResponse({ status: 400, description: 'Invalid QR, already checked in, or check-in window not open' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid QR, already checked in, or check-in window not open',
+  })
   @ApiResponse({ status: 404, description: 'Ticket not found' })
   async checkIn(
     @CurrentUser() user: JwtPayload,

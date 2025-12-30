@@ -105,14 +105,22 @@ export function SeatMap({
     return Array.from(classMap.values());
   }, [seats]);
 
+  // Calculate price for ticket selection
+  const calculatePrice = useCallback(
+    (ticketIds: number[]) => {
+      if (!seats?.tickets) return 0;
+      return ticketIds.reduce((sum, ticketId) => {
+        const ticket = seats.tickets.find((t: SeatMapTicket) => t.id === ticketId);
+        return sum + (ticket?.ticketClass?.price || 0);
+      }, 0);
+    },
+    [seats],
+  );
+
   // Calculate total price
   const totalPrice = useMemo(() => {
-    if (!seats?.tickets) return 0;
-    return selectedSeats.reduce((sum, ticketId) => {
-      const ticket = seats.tickets.find((t: SeatMapTicket) => t.id === ticketId);
-      return sum + (ticket?.ticketClass?.price || 0);
-    }, 0);
-  }, [seats, selectedSeats]);
+    return calculatePrice(selectedSeats);
+  }, [calculatePrice, selectedSeats]);
 
   // Handle seat click
   const handleSeatClick = useCallback(
@@ -133,16 +141,8 @@ export function SeatMap({
         return newSelection;
       });
     },
-    [lockCountdown, maxSelectable, onSeatsSelected],
+    [lockCountdown, maxSelectable, onSeatsSelected, calculatePrice],
   );
-
-  const calculatePrice = (ticketIds: number[]) => {
-    if (!seats?.tickets) return 0;
-    return ticketIds.reduce((sum, ticketId) => {
-      const ticket = seats.tickets.find((t: SeatMapTicket) => t.id === ticketId);
-      return sum + (ticket?.ticketClass?.price || 0);
-    }, 0);
-  };
 
   // Get seat color based on status and selection
   const getSeatColor = (ticket: SeatMapTicket) => {

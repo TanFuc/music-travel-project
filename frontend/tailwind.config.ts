@@ -10,26 +10,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary - Deep Purple/Violet (stage lighting theme)
+        // PRIMARY - GREEN theme matching "Mãi Cho Hành Tinh Xanh" logo
         brand: {
-          50: '#FAF5FF',
-          100: '#F3E8FF',
-          200: '#E9D5FF',
-          300: '#D8B4FE',
-          400: '#C084FC',
-          500: '#A855F7', // Primary
-          600: '#9333EA', // Hover
-          700: '#7E22CE',
-          800: '#6B21A8',
-          900: '#581C87',
+          50: '#E8F5E9',   // Lightest green
+          100: '#C8E6C9',
+          200: '#A5D6A7',
+          300: '#81C784',
+          400: '#66BB6A',  // Light green
+          500: '#4CAF50',  // Primary green
+          600: '#43A047',  // Hover
+          700: '#388E3C',
+          800: '#2E7D32',  // Dark green (main logo color)
+          900: '#1B5E20',  // Darkest
         },
-        // Accent - Electric Pink/Neon
+        // Accent - Lime green
         accent: {
           DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))',
-          400: '#F472B6',
-          500: '#EC4899',
-          600: '#DB2777',
+          400: '#9CCC65',
+          500: '#8BC34A',  // Lime green
+          600: '#7CB342',
         },
         // Gold - VIP/Premium
         gold: {
@@ -123,13 +123,13 @@ const config: Config = {
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
         'hero-gradient': 'linear-gradient(to bottom, transparent 0%, rgba(15, 15, 26, 0.8) 50%, #0F0F1A 100%)',
         'card-gradient': 'linear-gradient(180deg, transparent 0%, rgba(15, 15, 26, 0.9) 100%)',
-        'neon-glow': 'linear-gradient(90deg, #A855F7, #EC4899, #A855F7)',
+        'neon-glow': 'linear-gradient(90deg, #4CAF50, #8BC34A, #4CAF50)',
       },
       boxShadow: {
-        'neon': '0 0 20px rgba(168, 85, 247, 0.5), 0 0 40px rgba(168, 85, 247, 0.3)',
-        'neon-pink': '0 0 20px rgba(236, 72, 153, 0.5), 0 0 40px rgba(236, 72, 153, 0.3)',
-        'glow': '0 0 15px rgba(168, 85, 247, 0.4)',
-        'glow-lg': '0 0 30px rgba(168, 85, 247, 0.5)',
+        'neon': '0 0 20px rgba(76, 175, 80, 0.5), 0 0 40px rgba(76, 175, 80, 0.3)',
+        'neon-lime': '0 0 20px rgba(139, 195, 74, 0.5), 0 0 40px rgba(139, 195, 74, 0.3)',
+        'glow': '0 0 15px rgba(76, 175, 80, 0.4)',
+        'glow-lg': '0 0 30px rgba(76, 175, 80, 0.5)',
       },
       keyframes: {
         'accordion-down': {
@@ -148,8 +148,8 @@ const config: Config = {
           '50%': { transform: 'translateY(-10px)' },
         },
         'pulse-glow': {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(168, 85, 247, 0.5)' },
-          '50%': { boxShadow: '0 0 40px rgba(168, 85, 247, 0.8)' },
+          '0%, 100%': { boxShadow: '0 0 20px rgba(76, 175, 80, 0.5)' },
+          '50%': { boxShadow: '0 0 40px rgba(76, 175, 80, 0.8)' },
         },
         'gradient-x': {
           '0%, 100%': { backgroundPosition: '0% 50%' },

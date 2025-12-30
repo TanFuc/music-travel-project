@@ -38,7 +38,11 @@ export class PaymentsService {
     this.appUrl = this.configService.get<string>('APP_URL') || 'http://localhost:3000';
   }
 
-  async checkout(userId: number, checkoutDto: CheckoutDto, ipAddress?: string): Promise<CheckoutResult> {
+  async checkout(
+    userId: number,
+    checkoutDto: CheckoutDto,
+    ipAddress?: string,
+  ): Promise<CheckoutResult> {
     const booking = await this.prisma.booking.findFirst({
       where: {
         bookingCode: checkoutDto.bookingCode,
@@ -147,7 +151,9 @@ export class PaymentsService {
         },
       });
 
-      this.logger.log(`Created payment for booking ${booking.bookingCode} via ${checkoutDto.paymentMethod}`);
+      this.logger.log(
+        `Created payment for booking ${booking.bookingCode} via ${checkoutDto.paymentMethod}`,
+      );
 
       return {
         transactionId: transaction.id,
@@ -239,7 +245,11 @@ export class PaymentsService {
     };
   }
 
-  async handleWebhook(gateway: string, payload: Record<string, unknown>, headers?: Record<string, string>) {
+  async handleWebhook(
+    gateway: string,
+    payload: Record<string, unknown>,
+    _headers?: Record<string, string>,
+  ) {
     this.logger.log(`Received webhook from ${gateway}`);
 
     switch (gateway.toLowerCase()) {
@@ -271,7 +281,11 @@ export class PaymentsService {
     }
 
     // Store idempotency key
-    await this.cache.set(idempotencyKey, { processedAt: new Date().toISOString() }, CACHE_TTL.WEBHOOK_IDEMPOTENCY);
+    await this.cache.set(
+      idempotencyKey,
+      { processedAt: new Date().toISOString() },
+      CACHE_TTL.WEBHOOK_IDEMPOTENCY,
+    );
 
     // Find transaction by orderId
     const transaction = await this.prisma.transaction.findFirst({
@@ -319,7 +333,11 @@ export class PaymentsService {
     }
 
     // Store idempotency key
-    await this.cache.set(idempotencyKey, { processedAt: new Date().toISOString() }, CACHE_TTL.WEBHOOK_IDEMPOTENCY);
+    await this.cache.set(
+      idempotencyKey,
+      { processedAt: new Date().toISOString() },
+      CACHE_TTL.WEBHOOK_IDEMPOTENCY,
+    );
 
     // Find transaction by orderId
     const transaction = await this.prisma.transaction.findFirst({

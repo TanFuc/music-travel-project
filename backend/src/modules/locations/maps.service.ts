@@ -1,14 +1,14 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-interface GeocodeResult {
+export interface GeocodeResult {
   lat: number;
   lng: number;
   formattedAddress: string;
   placeId: string;
 }
 
-interface PlaceDetails {
+export interface PlaceDetails {
   placeId: string;
   name: string;
   formattedAddress: string;
@@ -21,7 +21,7 @@ interface PlaceDetails {
   photos?: string[];
 }
 
-interface DirectionsResult {
+export interface DirectionsResult {
   distance: string;
   duration: string;
   polyline: string;
@@ -116,7 +116,8 @@ export class MapsService {
     }
 
     try {
-      const fields = 'place_id,name,formatted_address,geometry,formatted_phone_number,website,rating,opening_hours,photos';
+      const fields =
+        'place_id,name,formatted_address,geometry,formatted_phone_number,website,rating,opening_hours,photos';
       const url = `${this.baseUrl}/place/details/json?place_id=${placeId}&fields=${fields}&key=${this.apiKey}&language=vi`;
       const response = await fetch(url);
       const data = await response.json();
@@ -136,10 +137,12 @@ export class MapsService {
         website: result.website,
         rating: result.rating,
         openingHours: result.opening_hours?.weekday_text,
-        photos: result.photos?.slice(0, 5).map(
-          (p: { photo_reference: string }) =>
-            `${this.baseUrl}/place/photo?maxwidth=400&photo_reference=${p.photo_reference}&key=${this.apiKey}`,
-        ),
+        photos: result.photos
+          ?.slice(0, 5)
+          .map(
+            (p: { photo_reference: string }) =>
+              `${this.baseUrl}/place/photo?maxwidth=400&photo_reference=${p.photo_reference}&key=${this.apiKey}`,
+          ),
       };
     } catch (error) {
       this.logger.error(`Get place details failed: ${error}`);
@@ -156,7 +159,16 @@ export class MapsService {
     lng: number,
     radius = 1000,
     type?: string,
-  ): Promise<Array<{ placeId: string; name: string; address: string; lat: number; lng: number; rating?: number }>> {
+  ): Promise<
+    Array<{
+      placeId: string;
+      name: string;
+      address: string;
+      lat: number;
+      lng: number;
+      rating?: number;
+    }>
+  > {
     if (!this.apiKey) {
       throw new BadRequestException('Google Maps API chưa được cấu hình.');
     }
@@ -277,9 +289,7 @@ export class MapsService {
    * Generate directions link for Google Maps app
    */
   getDirectionsLink(destLat: number, destLng: number, destName?: string): string {
-    const destination = destName
-      ? encodeURIComponent(destName)
-      : `${destLat},${destLng}`;
+    const destination = destName ? encodeURIComponent(destName) : `${destLat},${destLng}`;
     return `https://www.google.com/maps/dir/?api=1&destination=${destination}&destination_place_id=`;
   }
 
@@ -292,7 +302,10 @@ export class MapsService {
     const dLng = this.toRad(lng2 - lng1);
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      Math.cos(this.toRad(lat1)) *
+        Math.cos(this.toRad(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // Distance in km
   }

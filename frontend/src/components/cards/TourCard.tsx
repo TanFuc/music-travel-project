@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { Calendar, MapPin, Clock, Users, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +13,7 @@ interface TourCardProps {
   tour: Tour;
 }
 
-export function TourCard({ tour }: TourCardProps) {
+export const TourCard = memo(function TourCard({ tour }: TourCardProps) {
   const nextSchedule = tour.schedules?.find((s) => s.status === 'OPEN');
   const hasAvailableSlots = nextSchedule && nextSchedule.bookedCount < nextSchedule.capacity;
 
@@ -108,4 +109,6 @@ export function TourCard({ tour }: TourCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
+
+TourCard.displayName = 'TourCard';

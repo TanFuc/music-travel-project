@@ -1,4 +1,15 @@
-import { Controller, Post, Get, Body, Param, Query, UseGuards, Ip, Headers, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Ip,
+  Headers,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CheckoutDto } from './dto/checkout.dto';
@@ -52,10 +63,7 @@ export class PaymentsController {
   @Get('webhook/:gateway')
   @ApiOperation({ summary: 'Payment gateway return URL (for VNPay)' })
   @ApiResponse({ status: 200, description: 'Payment return processed' })
-  async webhookGet(
-    @Param('gateway') gateway: string,
-    @Query() params: Record<string, string>,
-  ) {
+  async webhookGet(@Param('gateway') gateway: string, @Query() params: Record<string, string>) {
     return this.paymentsService.handleWebhook(gateway, params as Record<string, unknown>);
   }
 }
