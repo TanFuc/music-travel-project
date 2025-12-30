@@ -1,12 +1,14 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ShowsService } from './shows.service';
 import { CreateShowDto } from './dto/create-show.dto';
+import { UpdateShowDto } from './dto/update-show.dto';
 import { ShowFilterDto } from './dto/show-filter.dto';
 import { Public } from '@/common/decorators/public.decorator';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 
 @ApiTags('shows')
 @Controller('shows')
@@ -55,5 +57,34 @@ export class ShowsController {
   @ApiResponse({ status: 201, description: 'Show created successfully' })
   async create(@Body() createShowDto: CreateShowDto) {
     return this.showsService.create(createShowDto);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'STAFF')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update show (Admin/Staff only)' })
+  @ApiResponse({ status: 200, description: 'Show updated successfully' })
+  @ApiResponse({ status: 404, description: 'Show not found' })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateShowDto: UpdateShowDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.showsService.update(id, updateShowDto, user.sub);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Soft delete show (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Show deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Show not found' })
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.showsService.softDelete(id, user.sub);
   }
 }

@@ -12,6 +12,9 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+// Alias for formatCurrency
+export const formatPrice = formatCurrency;
+
 export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOptions): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return new Intl.DateTimeFormat('vi-VN', {

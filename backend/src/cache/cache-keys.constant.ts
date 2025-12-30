@@ -51,6 +51,8 @@ export const CACHE_TTL = {
   OTP: 300, // 5 minutes for OTP
   RATE_LIMIT: 60, // 1 minute for rate limiting
   TOKEN_BLACKLIST: 86400, // 24 hours for blacklisted tokens
+  QR_NONCE: 900, // 15 minutes for QR replay prevention
+  WEBHOOK_IDEMPOTENCY: 86400, // 24 hours for webhook idempotency
 } as const;
 
 // Cache key generators
@@ -87,6 +89,12 @@ export const CacheKeys = {
   ticketsByShow: (showId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.TICKET}:show:${showId}`,
   availableTickets: (showId: number, classId: number) =>
     `${CACHE_PREFIX}:${CACHE_DOMAINS.TICKET}:available:${showId}:${classId}`,
+  qrNonce: (ticketId: number, iat: number) =>
+    `${CACHE_PREFIX}:${CACHE_DOMAINS.TICKET}:qr:nonce:${ticketId}:${iat}`,
+
+  // === WEBHOOK ===
+  webhookIdempotency: (gateway: string, transId: string) =>
+    `${CACHE_PREFIX}:webhook:${gateway}:${transId}`,
 
   // === BOOKING ===
   booking: (bookingId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.BOOKING}:${bookingId}`,

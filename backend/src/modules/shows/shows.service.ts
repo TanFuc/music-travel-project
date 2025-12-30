@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ShowStatus } from '@prisma/client';
 import { CreateShowDto } from './dto/create-show.dto';
+import { UpdateShowDto } from './dto/update-show.dto';
 import { ShowFilterDto } from './dto/show-filter.dto';
 import { getPaginationParams, paginate } from '@/common/utils/pagination.util';
 import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.constant';
@@ -342,6 +343,105 @@ export class ShowsService {
     await this.cache.delPattern(CachePatterns.showLists());
 
     return show;
+  }
+
+  async update(id: number, updateShowDto: UpdateShowDto, updatedBy: number) {
+    const existingShow = await this.findById(id);
+
+    // Prevent updating ended or cancelled shows
+    if (existingShow.status === ShowStatus.ENDED || existingShow.status === ShowStatus.CANCELLED) {
+      throw new BadRequestException({
+        code: ERROR_CODES.SHOW_002,
+        message: getErrorMessage(ERROR_CODES.SHOW_002),
+      });
+    }
+
+    // Build update data
+    const updateData: Record<string, unknown> = {
+      updatedBy,
+    };
+
+    if (updateShowDto.title !== undefined) {
+      updateData.title = updateShowDto.title;
+      // Regenerate slug if title changes
+      updateData.slug = this.generateSlug(updateShowDto.title);
+    }
+    if (updateShowDto.description !== undefined) {
+      updateData.description = updateShowDto.description;
+    }
+    if (updateShowDto.stageId !== undefined) {
+      updateData.stageId = updateShowDto.stageId;
+    }
+    if (updateShowDto.performTime !== undefined) {
+      updateData.performTime = new Date(updateShowDto.performTime);
+    }
+    if (updateShowDto.checkInTime !== undefined) {
+      updateData.checkInTime = new Date(updateShowDto.checkInTime);
+    }
+    if (updateShowDto.status !== undefined) {
+      updateData.status = updateShowDto.status;
+    }
+    if (updateShowDto.properties !== undefined) {
+      updateData.properties = updateShowDto.properties;
+    }
+    if (updateShowDto.metaTitle !== undefined) {
+      updateData.metaTitle = updateShowDto.metaTitle;
+    }
+    if (updateShowDto.metaDescription !== undefined) {
+      updateData.metaDescription = updateShowDto.metaDescription;
+    }
+    if (updateShowDto.metaKeywords !== undefined) {
+      updateData.metaKeywords = updateShowDto.metaKeywords;
+    }
+
+    const updatedShow = await this.prisma.show.update({
+      where: { id },
+      data: updateData,
+      include: {
+        stage: {
+          include: {
+            location: true,
+          },
+        },
+      },
+    });
+
+    // Invalidate caches
+    await this.invalidateShowCache(id, existingShow.slug || undefined);
+
+    return updatedShow;
+  }
+
+  async softDelete(id: number, deletedBy: number) {
+    const existingShow = await this.findById(id);
+
+    // Check if there are sold tickets
+    const soldTicketsCount = await this.prisma.ticket.count({
+      where: {
+        showId: id,
+        status: 'SOLD',
+      },
+    });
+
+    if (soldTicketsCount > 0) {
+      throw new BadRequestException({
+        code: ERROR_CODES.SHOW_002,
+        message: 'Không thể xóa show đã có vé bán. Vui lòng hủy show thay vì xóa.',
+      });
+    }
+
+    await this.prisma.show.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        updatedBy: deletedBy,
+      },
+    });
+
+    // Invalidate caches
+    await this.invalidateShowCache(id, existingShow.slug || undefined);
+
+    return { message: 'Đã xóa sự kiện thành công.' };
   }
 
   /**

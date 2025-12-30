@@ -1,13 +1,18 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { TicketStatus } from '@prisma/client';
 import { LockTicketsDto } from './dto/lock-tickets.dto';
+import { CheckInDto } from './dto/check-in.dto';
 import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.constant';
 import { CacheService } from '@/cache/cache.service';
 import { CacheKeys, CachePatterns, CACHE_TTL } from '@/cache/cache-keys.constant';
 import { v4 as uuidv4 } from 'uuid';
+import * as QRCode from 'qrcode';
+import * as crypto from 'crypto';
 
 const LOCK_TTL_MINUTES = 10; // Ticket lock expires after 10 minutes
+const QR_PREFIX = 'MTICKET:';
 
 interface TicketLockData {
   userId: number;
@@ -18,14 +23,35 @@ interface TicketLockData {
   expiresAt: string;
 }
 
+interface QRPayload {
+  tc: string; // ticketCode
+  bk: string; // bookingCode
+  sh: number; // showId
+  iat: number; // issued at (timestamp)
+}
+
+export interface CheckInResult {
+  success: boolean;
+  ticketId: number;
+  ticketCode: string;
+  showTitle: string;
+  seatInfo: string | null;
+  checkedInAt: Date;
+  message: string;
+}
+
 @Injectable()
 export class TicketsService {
   private readonly logger = new Logger(TicketsService.name);
+  private readonly qrSecret: string;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.qrSecret = this.configService.get<string>('QR_SECRET') || 'default-qr-secret-change-in-production';
+  }
 
   /**
    * Lock tickets for a user with Redis-backed lock management
@@ -389,5 +415,491 @@ export class TicketsService {
   private isLockExpired(lockedAt: Date): boolean {
     const expirationTime = new Date(lockedAt.getTime() + LOCK_TTL_MINUTES * 60 * 1000);
     return new Date() > expirationTime;
+  }
+
+  // ==================== TICKET QUERIES ====================
+
+  /**
+   * Get all tickets for a booking
+   */
+  async getTicketsByBooking(bookingId: number) {
+    const tickets = await this.prisma.ticket.findMany({
+      where: { bookingId },
+      include: {
+        show: {
+          select: {
+            id: true,
+            title: true,
+            performTime: true,
+            checkInTime: true,
+            status: true,
+            stage: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
+        ticketClass: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            colorCode: true,
+          },
+        },
+        physicalSeat: {
+          select: {
+            id: true,
+            zoneName: true,
+            rowName: true,
+            seatNumber: true,
+            type: true,
+          },
+        },
+      },
+    });
+
+    return tickets.map((ticket) => ({
+      id: ticket.id,
+      ticketCode: ticket.ticketCode,
+      status: ticket.status,
+      isCheckedIn: ticket.isCheckedIn,
+      checkedInAt: ticket.checkedInAt,
+      show: ticket.show,
+      ticketClass: ticket.ticketClass,
+      seat: ticket.physicalSeat
+        ? {
+            zone: ticket.physicalSeat.zoneName,
+            row: ticket.physicalSeat.rowName,
+            number: ticket.physicalSeat.seatNumber,
+            type: ticket.physicalSeat.type,
+          }
+        : null,
+    }));
+  }
+
+  /**
+   * Generate QR codes for all tickets in a booking
+   */
+  async getTicketQRBatch(
+    bookingId: number,
+    userId: number,
+  ): Promise<Array<{ ticketId: number; ticketCode: string; qrDataUrl: string; seatInfo: string | null }>> {
+    // Verify booking ownership
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!booking) {
+      throw new NotFoundException({
+        code: ERROR_CODES.BOOKING_001,
+        message: getErrorMessage(ERROR_CODES.BOOKING_001),
+      });
+    }
+
+    if (booking.userId !== userId) {
+      throw new BadRequestException({
+        code: ERROR_CODES.AUTH_003,
+        message: getErrorMessage(ERROR_CODES.AUTH_003),
+      });
+    }
+
+    // Get all sold tickets for this booking
+    const tickets = await this.prisma.ticket.findMany({
+      where: {
+        bookingId,
+        status: TicketStatus.SOLD,
+      },
+      include: {
+        physicalSeat: true,
+      },
+    });
+
+    if (tickets.length === 0) {
+      throw new BadRequestException({
+        code: ERROR_CODES.TICKET_001,
+        message: 'Không có vé nào để tạo QR code.',
+      });
+    }
+
+    // Generate QR for each ticket
+    const qrResults = await Promise.all(
+      tickets.map(async (ticket) => {
+        if (!ticket.ticketCode) {
+          return null;
+        }
+
+        const payload: QRPayload = {
+          tc: ticket.ticketCode,
+          bk: booking.bookingCode,
+          sh: ticket.showId,
+          iat: Math.floor(Date.now() / 1000),
+        };
+
+        const qrString = this.createSignedQRString(payload);
+        const qrDataUrl = await QRCode.toDataURL(qrString, {
+          errorCorrectionLevel: 'M',
+          type: 'image/png',
+          width: 300,
+          margin: 2,
+        });
+
+        let seatInfo: string | null = null;
+        if (ticket.physicalSeat) {
+          const seat = ticket.physicalSeat;
+          seatInfo = `${seat.zoneName} - Hàng ${seat.rowName} - Ghế ${seat.seatNumber}`;
+        }
+
+        return {
+          ticketId: ticket.id,
+          ticketCode: ticket.ticketCode,
+          qrDataUrl,
+          seatInfo,
+        };
+      }),
+    );
+
+    // Filter out null results (tickets without codes)
+    return qrResults.filter((r): r is NonNullable<typeof r> => r !== null);
+  }
+
+  /**
+   * Validate ticket ownership by a user
+   */
+  async validateTicketOwnership(ticketId: number, userId: number): Promise<boolean> {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: {
+        booking: {
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (!ticket) {
+      throw new NotFoundException({
+        code: ERROR_CODES.CHECKIN_006,
+        message: getErrorMessage(ERROR_CODES.CHECKIN_006),
+      });
+    }
+
+    // Check if user owns the ticket via booking
+    if (ticket.booking && ticket.booking.userId === userId) {
+      return true;
+    }
+
+    // Check if user is the holder (for locked tickets)
+    if (ticket.holderUserId === userId) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // ==================== QR CODE & CHECK-IN ====================
+
+  /**
+   * Generate QR code for a sold ticket
+   */
+  async generateQRCode(ticketId: number, userId: number): Promise<{ qrDataUrl: string; expiresAt: Date }> {
+    // Find ticket with booking and show info
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: {
+        booking: true,
+        show: true,
+      },
+    });
+
+    if (!ticket) {
+      throw new NotFoundException({
+        code: ERROR_CODES.CHECKIN_006,
+        message: getErrorMessage(ERROR_CODES.CHECKIN_006),
+      });
+    }
+
+    // Verify ticket is SOLD
+    if (ticket.status !== TicketStatus.SOLD) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_006,
+        message: 'Vé chưa được thanh toán.',
+      });
+    }
+
+    // Verify ownership via booking
+    if (!ticket.booking || ticket.booking.userId !== userId) {
+      throw new BadRequestException({
+        code: ERROR_CODES.AUTH_003,
+        message: getErrorMessage(ERROR_CODES.AUTH_003),
+      });
+    }
+
+    // Verify ticket has a code
+    if (!ticket.ticketCode) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_006,
+        message: 'Vé chưa có mã. Vui lòng liên hệ hỗ trợ.',
+      });
+    }
+
+    // Construct QR payload
+    const iat = Math.floor(Date.now() / 1000);
+    const payload: QRPayload = {
+      tc: ticket.ticketCode,
+      bk: ticket.booking.bookingCode,
+      sh: ticket.showId,
+      iat,
+    };
+
+    // Create signed QR string
+    const qrString = this.createSignedQRString(payload);
+
+    // Generate QR code as data URL
+    const qrDataUrl = await QRCode.toDataURL(qrString, {
+      errorCorrectionLevel: 'M',
+      type: 'image/png',
+      width: 300,
+      margin: 2,
+    });
+
+    // QR expires in 15 minutes (but can be regenerated)
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    this.logger.log(`Generated QR for ticket ${ticketId}, user ${userId}`);
+
+    return { qrDataUrl, expiresAt };
+  }
+
+  /**
+   * Check-in a ticket using QR code
+   */
+  async checkIn(checkInDto: CheckInDto, staffUserId?: number, ipAddress?: string): Promise<CheckInResult> {
+    const { qr, deviceId } = checkInDto;
+
+    // Decode and verify QR
+    const payload = this.verifyAndDecodeQR(qr);
+
+    // Check replay prevention
+    const nonceKey = CacheKeys.qrNonce(0, payload.iat); // We use iat as identifier
+    const existingNonce = await this.cache.get(nonceKey);
+    if (existingNonce) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_005,
+        message: getErrorMessage(ERROR_CODES.CHECKIN_005),
+      });
+    }
+
+    // Find ticket by code
+    const ticket = await this.prisma.ticket.findFirst({
+      where: { ticketCode: payload.tc },
+      include: {
+        show: true,
+        booking: true,
+        physicalSeat: true,
+        ticketClass: true,
+      },
+    });
+
+    if (!ticket) {
+      throw new NotFoundException({
+        code: ERROR_CODES.CHECKIN_006,
+        message: getErrorMessage(ERROR_CODES.CHECKIN_006),
+      });
+    }
+
+    // Verify ticket is SOLD
+    if (ticket.status !== TicketStatus.SOLD) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_006,
+        message: 'Vé chưa được thanh toán.',
+      });
+    }
+
+    // Verify booking code matches
+    if (!ticket.booking || ticket.booking.bookingCode !== payload.bk) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_001,
+        message: getErrorMessage(ERROR_CODES.CHECKIN_001),
+      });
+    }
+
+    // Check if already checked in
+    if (ticket.isCheckedIn) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_003,
+        message: `${getErrorMessage(ERROR_CODES.CHECKIN_003)} Thời gian: ${ticket.checkedInAt?.toLocaleString('vi-VN')}`,
+      });
+    }
+
+    // Verify show matches
+    if (ticket.showId !== payload.sh) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_001,
+        message: 'Mã QR không khớp với sự kiện.',
+      });
+    }
+
+    // Check show status
+    if (ticket.show.status === 'CANCELLED') {
+      throw new BadRequestException({
+        code: ERROR_CODES.SHOW_002,
+        message: 'Sự kiện đã bị hủy.',
+      });
+    }
+
+    // Validate check-in window
+    const now = new Date();
+    if (ticket.show.checkInTime && now < ticket.show.checkInTime) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_004,
+        message: `${getErrorMessage(ERROR_CODES.CHECKIN_004)} Check-in mở lúc: ${ticket.show.checkInTime.toLocaleString('vi-VN')}`,
+      });
+    }
+
+    // Store nonce for replay prevention (15 min TTL)
+    await this.cache.set(nonceKey, { ticketId: ticket.id, usedAt: now.toISOString() }, CACHE_TTL.QR_NONCE);
+
+    // Update ticket as checked in
+    const checkinMeta = {
+      deviceId: deviceId || null,
+      staffUserId: staffUserId || null,
+      ipAddress: ipAddress || null,
+      qrIat: payload.iat,
+      checkedInAt: now.toISOString(),
+    };
+
+    await this.prisma.ticket.update({
+      where: { id: ticket.id },
+      data: {
+        isCheckedIn: true,
+        checkedInAt: now,
+        checkinMeta,
+      },
+    });
+
+    // Build seat info string
+    let seatInfo: string | null = null;
+    if (ticket.physicalSeat) {
+      const seat = ticket.physicalSeat;
+      seatInfo = `${seat.zoneName} - Hàng ${seat.rowName} - Ghế ${seat.seatNumber}`;
+    }
+
+    this.logger.log(`Ticket ${ticket.id} (${ticket.ticketCode || 'no-code'}) checked in by staff ${staffUserId || 'unknown'}`);
+
+    return {
+      success: true,
+      ticketId: ticket.id,
+      ticketCode: ticket.ticketCode || payload.tc, // Use payload.tc as fallback since we verified it
+      showTitle: ticket.show.title,
+      seatInfo,
+      checkedInAt: now,
+      message: 'Check-in thành công!',
+    };
+  }
+
+  /**
+   * Get check-in statistics for a show
+   */
+  async getCheckInStats(showId: number) {
+    const [total, checkedIn, sold] = await Promise.all([
+      this.prisma.ticket.count({ where: { showId } }),
+      this.prisma.ticket.count({ where: { showId, isCheckedIn: true } }),
+      this.prisma.ticket.count({ where: { showId, status: TicketStatus.SOLD } }),
+    ]);
+
+    return {
+      showId,
+      totalTickets: total,
+      soldTickets: sold,
+      checkedIn,
+      notCheckedIn: sold - checkedIn,
+      checkInRate: sold > 0 ? Math.round((checkedIn / sold) * 100) : 0,
+    };
+  }
+
+  // ==================== PRIVATE QR HELPERS ====================
+
+  /**
+   * Create HMAC-signed QR string
+   */
+  private createSignedQRString(payload: QRPayload): string {
+    const payloadStr = Buffer.from(JSON.stringify(payload)).toString('base64');
+    const signature = this.createHmacSignature(payloadStr);
+    return `${QR_PREFIX}${payloadStr}.${signature}`;
+  }
+
+  /**
+   * Verify and decode QR string
+   */
+  private verifyAndDecodeQR(qrString: string): QRPayload {
+    // Check prefix
+    if (!qrString.startsWith(QR_PREFIX)) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_001,
+        message: getErrorMessage(ERROR_CODES.CHECKIN_001),
+      });
+    }
+
+    // Remove prefix and split payload.signature
+    const data = qrString.slice(QR_PREFIX.length);
+    const parts = data.split('.');
+    if (parts.length !== 2) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_001,
+        message: getErrorMessage(ERROR_CODES.CHECKIN_001),
+      });
+    }
+
+    const [payloadB64, signature] = parts;
+
+    // Verify signature
+    const expectedSignature = this.createHmacSignature(payloadB64);
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_002,
+        message: getErrorMessage(ERROR_CODES.CHECKIN_002),
+      });
+    }
+
+    // Decode payload
+    try {
+      const payloadStr = Buffer.from(payloadB64, 'base64').toString('utf-8');
+      const payload = JSON.parse(payloadStr) as QRPayload;
+
+      // Validate required fields
+      if (!payload.tc || !payload.bk || !payload.sh || !payload.iat) {
+        throw new Error('Missing required fields');
+      }
+
+      // Check if QR is not too old (24 hours max)
+      const maxAge = 24 * 60 * 60; // 24 hours in seconds
+      const now = Math.floor(Date.now() / 1000);
+      if (now - payload.iat > maxAge) {
+        throw new BadRequestException({
+          code: ERROR_CODES.CHECKIN_005,
+          message: 'Mã QR đã hết hạn. Vui lòng tạo mã mới.',
+        });
+      }
+
+      return payload;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_001,
+        message: getErrorMessage(ERROR_CODES.CHECKIN_001),
+      });
+    }
+  }
+
+  /**
+   * Create HMAC-SHA256 signature
+   */
+  private createHmacSignature(data: string): string {
+    return crypto.createHmac('sha256', this.qrSecret).update(data).digest('hex');
   }
 }

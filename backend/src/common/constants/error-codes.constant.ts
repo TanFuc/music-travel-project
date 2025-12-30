@@ -17,6 +17,14 @@ export const ERROR_CODES = {
   TICKET_002: 'TICKET_002',
   TICKET_003: 'TICKET_003',
 
+  // Check-in
+  CHECKIN_001: 'CHECKIN_001',
+  CHECKIN_002: 'CHECKIN_002',
+  CHECKIN_003: 'CHECKIN_003',
+  CHECKIN_004: 'CHECKIN_004',
+  CHECKIN_005: 'CHECKIN_005',
+  CHECKIN_006: 'CHECKIN_006',
+
   // Tour
   TOUR_001: 'TOUR_001',
   TOUR_002: 'TOUR_002',
@@ -62,6 +70,14 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   TICKET_001: 'Vé đã được bán hoặc đang giữ.',
   TICKET_002: 'Thời gian giữ vé đã hết. Vui lòng chọn lại.',
   TICKET_003: 'Không đủ vé cho yêu cầu của bạn.',
+
+  // Check-in
+  CHECKIN_001: 'Mã QR không hợp lệ.',
+  CHECKIN_002: 'Chữ ký QR không hợp lệ.',
+  CHECKIN_003: 'Vé đã được check-in trước đó.',
+  CHECKIN_004: 'Chưa đến thời gian check-in.',
+  CHECKIN_005: 'Mã QR đã hết hạn hoặc đã được sử dụng.',
+  CHECKIN_006: 'Vé không tồn tại hoặc chưa được thanh toán.',
 
   // Tour
   TOUR_001: 'Không tìm thấy tour.',

@@ -1,9 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin, Clock, Users, Ticket, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Clock, Users, Ticket, ExternalLink, Navigation } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,8 @@ import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useCartStore } from '@/stores/cart.store';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { SeatMap } from '@/components/shows/SeatMap';
+import { LocationMap, StaticMap } from '@/components/maps';
 
 interface TicketClass {
   id: number;
@@ -46,9 +48,13 @@ interface ShowDetail {
     name: string;
     address: string | null;
     mapLink: string | null;
+    latitude?: number;
+    longitude?: number;
     location: {
       id: number;
       name: string;
+      latitude?: number;
+      longitude?: number;
     };
   };
   artists: Artist[];
@@ -71,15 +77,30 @@ const statusLabels: Record<string, string> = {
 
 export default function ShowDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const slug = params.slug as string;
   const addTicket = useCartStore((state) => state.addTicket);
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
+  const [showSeatMap, setShowSeatMap] = useState(false);
+  const [lockedSeats, setLockedSeats] = useState<{ lockId: string; expiresAt: Date } | null>(null);
 
   const { data: show, isLoading, error } = useQuery({
     queryKey: ['show', slug],
     queryFn: () => get<ShowDetail>(`/shows/${slug}`),
     enabled: !!slug,
   });
+
+  const handleSeatsSelected = (ticketIds: number[], totalPrice: number) => {
+    // Seats selected but not yet locked
+    console.log(`Selected ${ticketIds.length} seats, total: ${totalPrice}`);
+  };
+
+  const handleLockSuccess = (lockId: string, expiresAt: Date) => {
+    setLockedSeats({ lockId, expiresAt });
+    toast.success('Da giu cho thanh cong! Vui long thanh toan trong 10 phut.');
+    // Optionally redirect to checkout
+    // router.push(`/checkout?lockId=${lockId}`);
+  };
 
   const handleAddToCart = (ticketClass: TicketClass) => {
     if (!show) return;
@@ -225,34 +246,105 @@ export default function ShowDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                Địa điểm tổ chức
+                Dia diem to chuc
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               <div>
                 <h4 className="font-semibold">{show.stage.name}</h4>
                 <p className="text-neutral-600">{show.stage.address}</p>
                 <p className="text-sm text-neutral-500">{show.stage.location.name}</p>
               </div>
-              {show.stage.mapLink && (
+
+              {/* Google Maps Integration */}
+              {(show.stage.latitude && show.stage.longitude) ? (
+                <LocationMap
+                  latitude={show.stage.latitude}
+                  longitude={show.stage.longitude}
+                  title={show.stage.name}
+                  address={show.stage.address || undefined}
+                  height="300px"
+                  className="mt-4"
+                />
+              ) : show.stage.mapLink ? (
                 <a
                   href={show.stage.mapLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-brand-500 hover:text-brand-600"
                 >
-                  Xem bản đồ
+                  <Navigation className="mr-1 h-4 w-4" />
+                  Xem ban do
                   <ExternalLink className="ml-1 h-4 w-4" />
                 </a>
+              ) : null}
+
+              {/* Directions Link */}
+              {show.stage.latitude && show.stage.longitude && (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${show.stage.latitude},${show.stage.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-brand-500 hover:text-brand-600 mt-2"
+                >
+                  <Navigation className="h-4 w-4" />
+                  Chi duong den dia diem
+                  <ExternalLink className="h-4 w-4" />
+                </a>
               )}
+
               {show.checkInTime && (
-                <div className="flex items-center gap-2 text-sm text-neutral-600">
+                <div className="flex items-center gap-2 text-sm text-neutral-600 mt-3">
                   <Clock className="h-4 w-4" />
-                  <span>Mở cửa check-in: {formatDateTime(show.checkInTime)}</span>
+                  <span>Mo cua check-in: {formatDateTime(show.checkInTime)}</span>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Seat Map Section */}
+          {isBookable && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Ticket className="h-5 w-5" />
+                    So do cho ngoi
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSeatMap(!showSeatMap)}
+                  >
+                    {showSeatMap ? 'An so do' : 'Xem so do'}
+                  </Button>
+                </div>
+              </CardHeader>
+              {showSeatMap && (
+                <CardContent>
+                  <SeatMap
+                    showId={show.id}
+                    onSeatsSelected={handleSeatsSelected}
+                    onLockSuccess={handleLockSuccess}
+                    maxSelectable={10}
+                    className="rounded-xl border"
+                  />
+                  {lockedSeats && (
+                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <p className="text-green-700 dark:text-green-300 font-medium">
+                        Da giu cho thanh cong! Vui long hoan tat thanh toan.
+                      </p>
+                      <Link href={`/checkout?lockId=${lockedSeats.lockId}`}>
+                        <Button className="mt-2">
+                          Tien hanh thanh toan
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              )}
+            </Card>
+          )}
         </div>
 
         {/* Ticket Selection Sidebar */}

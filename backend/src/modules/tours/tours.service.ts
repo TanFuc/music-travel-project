@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateTourDto } from './dto/create-tour.dto';
+import { UpdateTourDto } from './dto/update-tour.dto';
+import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { TourFilterDto } from './dto/tour-filter.dto';
 import { getPaginationParams, paginate } from '@/common/utils/pagination.util';
 import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.constant';
@@ -179,6 +181,127 @@ export class ToursService {
 
     // Invalidate tour list caches
     await this.cache.delPattern(CachePatterns.tourLists());
+
+    return tour;
+  }
+
+  async update(id: number, updateTourDto: UpdateTourDto, updatedBy: number) {
+    const existingTour = await this.findById(id);
+
+    // Build update data
+    const updateData: Record<string, unknown> = {
+      updatedBy,
+    };
+
+    if (updateTourDto.title !== undefined) {
+      updateData.title = updateTourDto.title;
+      updateData.slug = this.generateSlug(updateTourDto.title);
+    }
+    if (updateTourDto.description !== undefined) {
+      updateData.description = updateTourDto.description;
+    }
+    if (updateTourDto.duration !== undefined) {
+      updateData.duration = updateTourDto.duration;
+    }
+    if (updateTourDto.departureLocId !== undefined) {
+      updateData.departureLocId = updateTourDto.departureLocId;
+    }
+    if (updateTourDto.destinationLocId !== undefined) {
+      updateData.destinationLocId = updateTourDto.destinationLocId;
+    }
+    if (updateTourDto.properties !== undefined) {
+      updateData.properties = updateTourDto.properties;
+    }
+    if (updateTourDto.metaTitle !== undefined) {
+      updateData.metaTitle = updateTourDto.metaTitle;
+    }
+    if (updateTourDto.metaDescription !== undefined) {
+      updateData.metaDescription = updateTourDto.metaDescription;
+    }
+    if (updateTourDto.metaKeywords !== undefined) {
+      updateData.metaKeywords = updateTourDto.metaKeywords;
+    }
+
+    const updatedTour = await this.prisma.tour.update({
+      where: { id },
+      data: updateData,
+      include: {
+        departureLoc: true,
+        destinationLoc: true,
+      },
+    });
+
+    // Invalidate caches
+    await this.invalidateTourCache(id, existingTour.slug || undefined);
+
+    return updatedTour;
+  }
+
+  async softDelete(id: number, deletedBy: number) {
+    const existingTour = await this.findById(id);
+
+    // Check if there are booked schedules
+    const bookedSchedules = await this.prisma.tourSchedule.findFirst({
+      where: {
+        tourId: id,
+        bookedCount: { gt: 0 },
+        deletedAt: null,
+      },
+    });
+
+    if (bookedSchedules) {
+      throw new BadRequestException({
+        code: ERROR_CODES.TOUR_001,
+        message: 'Không thể xóa tour đã có người đặt. Vui lòng hủy lịch khởi hành thay vì xóa tour.',
+      });
+    }
+
+    await this.prisma.tour.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        updatedBy: deletedBy,
+      },
+    });
+
+    // Invalidate caches
+    await this.invalidateTourCache(id, existingTour.slug || undefined);
+
+    return { message: 'Đã xóa tour thành công.' };
+  }
+
+  async createSchedule(tourId: number, createScheduleDto: CreateScheduleDto) {
+    // Verify tour exists
+    await this.findById(tourId);
+
+    const schedule = await this.prisma.tourSchedule.create({
+      data: {
+        tourId,
+        startDate: new Date(createScheduleDto.startDate),
+        price: createScheduleDto.price,
+        capacity: createScheduleDto.capacity,
+        bookedCount: 0,
+        status: 'OPEN',
+      },
+    });
+
+    // Invalidate tour schedule cache
+    await this.cache.del(CacheKeys.tourSchedules(tourId));
+
+    return schedule;
+  }
+
+  private async findById(id: number) {
+    const tour = await this.prisma.tour.findFirst({
+      where: { id, deletedAt: null },
+    });
+
+    if (!tour) {
+      throw new NotFoundException({
+        code: ERROR_CODES.TOUR_001,
+        message: getErrorMessage(ERROR_CODES.TOUR_001),
+      });
+    }
 
     return tour;
   }
