@@ -37,12 +37,12 @@ const config: Config = {
           500: '#F59E0B',
           600: '#D97706',
         },
-        // Dark Background Colors
+        // Bright Background Colors (replacing dark theme)
         dark: {
-          DEFAULT: '#0F0F1A',
-          deeper: '#08080F',
-          card: 'rgba(255, 255, 255, 0.05)',
-          glass: 'rgba(255, 255, 255, 0.08)',
+          DEFAULT: '#F0FFF4', // Light green background
+          deeper: '#E8F5E9', // Lighter green
+          card: 'rgba(76, 175, 80, 0.05)',
+          glass: 'rgba(76, 175, 80, 0.08)',
         },
         // Neutral Colors
         neutral: {
@@ -121,8 +121,8 @@ const config: Config = {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'hero-gradient': 'linear-gradient(to bottom, transparent 0%, rgba(15, 15, 26, 0.8) 50%, #0F0F1A 100%)',
-        'card-gradient': 'linear-gradient(180deg, transparent 0%, rgba(15, 15, 26, 0.9) 100%)',
+        'hero-gradient': 'linear-gradient(to bottom, transparent 0%, rgba(76, 175, 80, 0.3) 50%, rgba(232, 245, 233, 0.95) 100%)',
+        'card-gradient': 'linear-gradient(180deg, transparent 0%, rgba(76, 175, 80, 0.4) 100%)',
         'neon-glow': 'linear-gradient(90deg, #4CAF50, #8BC34A, #4CAF50)',
       },
       boxShadow: {

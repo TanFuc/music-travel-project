@@ -26,26 +26,26 @@
     --radius: 0.5rem;
   }
 
-  /* Dark mode - only applies when .dark class is present */
+  /* Bright alternate theme - applied when .dark class is present (now bright instead of dark) */
   .dark {
-    --background: 240 20% 6%; /* #0F0F1A */
-    --foreground: 0 0% 98%;
-    --card: 240 20% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 20% 8%;
-    --popover-foreground: 0 0% 98%;
+    --background: 120 60% 98%; /* Light green tint */
+    --foreground: 122 39% 25%;
+    --card: 120 60% 97%;
+    --card-foreground: 122 39% 20%;
+    --popover: 120 60% 97%;
+    --popover-foreground: 122 39% 20%;
     --primary: 122 39% 49%; /* #4CAF50 Green */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 10% 15%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 10% 15%;
-    --muted-foreground: 0 0% 63.9%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 120 30% 94%;
+    --secondary-foreground: 122 39% 25%;
+    --muted: 120 30% 94%;
+    --muted-foreground: 122 20% 40%;
     --accent: 88 50% 53%; /* #8BC34A Lime */
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --accent-foreground: 0 0% 15%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 10% 20%;
-    --input: 240 10% 20%;
+    --border: 120 30% 85%;
+    --input: 120 30% 90%;
     --ring: 122 39% 49%;
   }
 }

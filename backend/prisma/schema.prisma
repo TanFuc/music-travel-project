@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -420,7 +420,7 @@ model Tour {
   departureLocId   Int?      @map("departure_loc_id")
   destinationLocId Int?      @map("destination_loc_id")
   duration         String?   @db.VarChar(50)
-  description      String?   @db.LongText
+  description      String?   @db.Text
   properties       Json?
   metaTitle        String?   @map("meta_title") @db.VarChar(255)
   metaDescription  String?   @map("meta_description") @db.VarChar(500)
@@ -644,7 +644,7 @@ model MarketingEvent {
   slug            String?   @unique @db.VarChar(255)
   thumbnailUrl    String?   @map("thumbnail_url") @db.VarChar(500)
   summary         String?   @db.VarChar(500)
-  content         String?   @db.LongText
+  content         String?   @db.Text
   startTime       DateTime? @map("start_time")
   endTime         DateTime? @map("end_time")
   isActive        Boolean   @default(true) @map("is_active")

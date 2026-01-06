@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, MapPin, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Banner {
@@ -18,29 +18,36 @@ interface HeroBannerProps {
   banners?: Banner[];
 }
 
-// Mock data for development
-const mockBanners: Banner[] = [
-  {
-    id: 1,
-    title: 'Đêm Nhạc Trịnh - Thung Lũng Mây',
-    imageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1920&h=1080&fit=crop',
-    actionLink: '/shows/dem-nhac-trinh',
-  },
-  {
-    id: 2,
-    title: 'Acoustic Night - Mây In The Nest',
-    imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1920&h=1080&fit=crop',
-    actionLink: '/shows/acoustic-night',
-  },
-  {
-    id: 3,
-    title: 'Tour Đà Lạt 3N2Đ - Combo Show',
-    imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop',
-    actionLink: '/tours/da-lat-combo',
-  },
-];
+export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
+  const [banners, setBanners] = useState<Banner[]>(propBanners || []);
+  const [isLoading, setIsLoading] = useState(!propBanners);
 
-export function HeroBanner({ banners = mockBanners }: HeroBannerProps) {
+  useEffect(() => {
+    if (propBanners) {
+      setBanners(propBanners);
+      return;
+    }
+
+    const fetchBanners = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/banners?position=HOME_MAIN_SLIDER&isActive=true`
+        );
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setBanners(data);
+        } else if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+          setBanners(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch banners:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBanners();
+  }, [propBanners]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -78,7 +85,23 @@ export function HeroBanner({ banners = mockBanners }: HeroBannerProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [goToPrevious, goToNext]);
 
-  if (banners.length === 0) return null;
+  if (isLoading) {
+    return (
+      <section className="relative h-screen w-full overflow-hidden bg-gray-100 flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500" />
+      </section>
+    );
+  }
+
+  if (banners.length === 0) {
+    return (
+      <section className="relative h-screen w-full overflow-hidden bg-gray-100 flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <p className="text-lg">Chưa có banner nào</p>
+        </div>
+      </section>
+    );
+  }
 
   const currentBanner = banners[currentIndex];
 
@@ -110,8 +133,8 @@ export function HeroBanner({ banners = mockBanners }: HeroBannerProps) {
         </div>
       ))}
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-hero-gradient" />
+      {/* Gradient Overlay - Bright green theme */}
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-500/20 via-brand-600/40 to-brand-700/60" />
 
       {/* Particles Background */}
       <div className="particles-bg" />
@@ -121,9 +144,9 @@ export function HeroBanner({ banners = mockBanners }: HeroBannerProps) {
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto space-y-6">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
-              <span className="text-brand-400">✨</span>
-              <span className="text-sm font-medium text-white">Show Đặc Biệt</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-brand-200 shadow-lg">
+              <span className="text-brand-500">✨</span>
+              <span className="text-sm font-medium text-brand-700">Show Đặc Biệt</span>
             </div>
 
             {/* Title */}
@@ -132,14 +155,14 @@ export function HeroBanner({ banners = mockBanners }: HeroBannerProps) {
             </h1>
 
             {/* Details */}
-            <div className="flex flex-wrap items-center justify-center gap-4 text-white/80">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-brand-400" />
-                <span>Thung Lũng Mây - Đà Lạt</span>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm">
+                <MapPin className="w-5 h-5 text-brand-600" />
+                <span className="text-brand-800 font-medium">Thung Lũng Mây - Đà Lạt</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-brand-400" />
-                <span>29/12/2024 | 20:00</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm">
+                <Calendar className="w-5 h-5 text-brand-600" />
+                <span className="text-brand-800 font-medium">29/12/2024 | 20:00</span>
               </div>
             </div>
 
@@ -160,7 +183,7 @@ export function HeroBanner({ banners = mockBanners }: HeroBannerProps) {
       {/* Navigation Arrows */}
       <button
         onClick={goToPrevious}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full glass-card text-white hover:bg-white/20 transition-all"
+        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/80 backdrop-blur-sm shadow-lg text-brand-600 hover:bg-brand-500 hover:text-white transition-all"
         aria-label="Previous slide"
       >
         <ChevronLeft className="w-6 h-6" />
@@ -168,7 +191,7 @@ export function HeroBanner({ banners = mockBanners }: HeroBannerProps) {
 
       <button
         onClick={goToNext}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full glass-card text-white hover:bg-white/20 transition-all"
+        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/80 backdrop-blur-sm shadow-lg text-brand-600 hover:bg-brand-500 hover:text-white transition-all"
         aria-label="Next slide"
       >
         <ChevronRight className="w-6 h-6" />
@@ -181,10 +204,10 @@ export function HeroBanner({ banners = mockBanners }: HeroBannerProps) {
             key={index}
             onClick={() => goToSlide(index)}
             className={cn(
-              'w-3 h-3 rounded-full transition-all',
+              'w-3 h-3 rounded-full transition-all shadow-sm',
               index === currentIndex
-                ? 'bg-brand-500 w-8'
-                : 'bg-white/30 hover:bg-white/50'
+                ? 'bg-brand-500 w-8 shadow-glow'
+                : 'bg-white/70 hover:bg-brand-200'
             )}
             aria-label={`Go to slide ${index + 1}`}
           />
@@ -193,8 +216,8 @@ export function HeroBanner({ banners = mockBanners }: HeroBannerProps) {
 
       {/* Scroll Indicator */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 rounded-full border-2 border-white/30 flex justify-center pt-2">
-          <div className="w-1 h-2 rounded-full bg-white/50" />
+        <div className="w-6 h-10 rounded-full border-2 border-brand-300 flex justify-center pt-2 bg-white/50">
+          <div className="w-1 h-2 rounded-full bg-brand-500" />
         </div>
       </div>
     </section>

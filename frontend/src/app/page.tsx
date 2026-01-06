@@ -16,7 +16,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark">
+    <div className="min-h-screen bg-gradient-to-b from-white via-brand-50/30 to-brand-100/50">
       {/* Hero Banner Carousel */}
       <HeroBanner />
 

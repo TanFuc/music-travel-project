@@ -36,7 +36,7 @@ export const TourCard = memo(function TourCard({ tour }: TourCardProps) {
           </div>
         )}
         {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div className="absolute inset-0 bg-brand-800/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <Link href={`/tours/${tour.slug}`}>
             <Button variant="secondary" size="sm">
               Xem chi tiết

@@ -67,12 +67,12 @@ export function ShowCard({
           className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-dark via-transparent to-transparent" />
+        {/* Gradient Overlay - Bright green theme */}
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-700/70 via-transparent to-transparent" />
 
         {/* Wishlist Button */}
         <button
-          className="absolute top-3 right-3 p-2 rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:text-accent-500 hover:bg-black/50 transition-all"
+          className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm text-brand-500 hover:text-accent-600 hover:bg-white shadow-md transition-all"
           aria-label="Thêm vào yêu thích"
         >
           <Heart className="w-5 h-5" />
@@ -106,28 +106,28 @@ export function ShowCard({
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 bg-white">
         {/* Title */}
-        <h3 className="font-display font-bold text-lg text-white line-clamp-2 group-hover:text-brand-400 transition-colors">
+        <h3 className="font-display font-bold text-lg text-gray-900 line-clamp-2 group-hover:text-brand-600 transition-colors">
           {title}
         </h3>
 
         {/* Location */}
-        <div className="flex items-center gap-2 text-white/60 text-sm">
-          <MapPin className="w-4 h-4 text-brand-400" />
+        <div className="flex items-center gap-2 text-gray-500 text-sm">
+          <MapPin className="w-4 h-4 text-brand-500" />
           <span className="line-clamp-1">
             {stage.name} - {stage.location.name}
           </span>
         </div>
 
         {/* Date & Time */}
-        <div className="flex items-center gap-4 text-white/60 text-sm">
+        <div className="flex items-center gap-4 text-gray-500 text-sm">
           <div className="flex items-center gap-1.5">
-            <Calendar className="w-4 h-4 text-brand-400" />
+            <Calendar className="w-4 h-4 text-brand-500" />
             <span>{dateInfo.date}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-brand-400" />
+            <Clock className="w-4 h-4 text-brand-500" />
             <span>{dateInfo.time}</span>
           </div>
         </div>
@@ -137,13 +137,13 @@ export function ShowCard({
           <div>
             {minPrice ? (
               <>
-                <span className="text-white/50 text-sm">Từ</span>
-                <span className="ml-1 font-accent font-bold text-xl text-brand-400">
+                <span className="text-gray-400 text-sm">Từ</span>
+                <span className="ml-1 font-accent font-bold text-xl text-brand-600">
                   {formatPrice(minPrice)}đ
                 </span>
               </>
             ) : (
-              <span className="text-white/50 text-sm">Liên hệ</span>
+              <span className="text-gray-400 text-sm">Liên hệ</span>
             )}
           </div>
 
