@@ -25,12 +25,17 @@ const navLinks = [
 
 export function Header() {
   const pathname = usePathname();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, logout, hasHydrated } = useAuthStore();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -158,15 +163,19 @@ export function Header() {
               >
                 <ShoppingCart className="h-5 w-5" />
               </Button>
-              {itemCount > 0 && (
+              {isMounted && itemCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-accent-500 border-0">
                   {itemCount}
                 </Badge>
               )}
             </Link>
 
-            {/* Auth */}
-            {isAuthenticated ? (
+            {/* Auth - Show skeleton while hydrating */}
+            {!hasHydrated ? (
+              <div className="hidden md:flex items-center gap-2">
+                <div className="h-9 w-24 bg-neutral-200 animate-pulse rounded-lg"></div>
+              </div>
+            ) : isAuthenticated ? (
               <div className="hidden md:flex items-center gap-2">
                 <Link href="/profile">
                   <Button
@@ -260,7 +269,12 @@ export function Header() {
                 ))}
               </div>
 
-              {!isAuthenticated && (
+              {/* Mobile Auth - Show skeleton while hydrating */}
+              {!hasHydrated ? (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="h-10 bg-neutral-200 animate-pulse rounded-lg"></div>
+                </div>
+              ) : !isAuthenticated && (
                 <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col gap-2">
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start text-gray-600">

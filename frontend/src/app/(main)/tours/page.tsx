@@ -65,7 +65,7 @@ export default function ToursPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data?.items.map((tour) => (
+          {data?.items?.map((tour) => (
             <Card key={tour.id} className="card-hover overflow-hidden">
               <div className="h-48 bg-gradient-to-br from-brand-300 to-brand-500 flex items-center justify-center">
                 <span className="text-white text-xl font-display font-bold text-center px-4">
@@ -117,7 +117,7 @@ export default function ToursPage() {
         </div>
       )}
 
-      {data?.items.length === 0 && (
+      {data?.items?.length === 0 && (
         <div className="text-center py-12 text-neutral-500">
           Chưa có tour nào. Vui lòng quay lại sau.
         </div>

@@ -3,6 +3,7 @@ import { Inter, Outfit, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/sonner';
+import { Toaster as HotToaster } from 'react-hot-toast';
 import { Header } from '@/components/layout/Header';
 import { WebVitals } from '@/components/common/WebVitals';
 
@@ -91,6 +92,7 @@ export default function RootLayout({
           <Header />
           <main>{children}</main>
           <Toaster position="top-right" richColors />
+          <HotToaster position="top-right" />
         </Providers>
       </body>
     </html>

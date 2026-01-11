@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -59,15 +60,43 @@ const bookingStatusColors: Record<string, 'default' | 'secondary' | 'destructive
 };
 
 export default function AdminDashboardPage() {
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['admin-stats'],
-    queryFn: () => get<DashboardStats>('/admin/stats'),
+    queryFn: () => get<DashboardStats>('/admin/dashboard'),
+    retry: 2,
+    retryDelay: 1000,
   });
 
-  const { data: recentBookings, isLoading: bookingsLoading } = useQuery({
+  const { data: recentBookings, isLoading: bookingsLoading, error: bookingsError } = useQuery({
     queryKey: ['admin-recent-bookings'],
-    queryFn: () => get<{ items: RecentBooking[] }>('/admin/bookings?limit=5&sort=-createdAt'),
+    queryFn: () => get<{ items: RecentBooking[] }>('/admin/recent-bookings'),
+    retry: 2,
+    retryDelay: 1000,
   });
+
+  // Show error state if stats failed to load
+  if (statsError) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <div className="text-error-500 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Không thể tải dữ liệu</h3>
+            <p className="text-neutral-600 mb-4">
+              {(statsError as Error).message || 'Đã xảy ra lỗi khi tải thống kê dashboard'}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Tải lại trang
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

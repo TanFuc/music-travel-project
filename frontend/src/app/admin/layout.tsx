@@ -90,10 +90,15 @@ export default function AdminLayout({
 }>) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, logout, hasHydrated } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
+    // Wait for hydration before checking auth
+    if (!hasHydrated) {
+      return;
+    }
+
     if (!isAuthenticated) {
       router.push('/login');
       return;
@@ -102,13 +107,26 @@ export default function AdminLayout({
     if (user?.role !== 'ADMIN' && user?.role !== 'STAFF') {
       router.push('/');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, hasHydrated]);
 
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
 
+  // Show loading while hydrating
+  if (!hasHydrated) {
+    return (
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
+          <p className="text-neutral-600">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated or not admin/staff
   if (!isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'STAFF')) {
     return null;
   }

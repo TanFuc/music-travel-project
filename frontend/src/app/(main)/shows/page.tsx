@@ -91,7 +91,7 @@ export default function ShowsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data?.items.map((show) => (
+          {data?.items?.map((show) => (
             <Card key={show.id} className="card-hover overflow-hidden">
               <div className="h-48 bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
                 <span className="text-white text-xl font-display font-bold text-center px-4">
@@ -144,7 +144,7 @@ export default function ShowsPage() {
         </div>
       )}
 
-      {data?.items.length === 0 && (
+      {data?.items?.length === 0 && (
         <div className="text-center py-12 text-neutral-500">
           Chưa có sự kiện nào. Vui lòng quay lại sau.
         </div>

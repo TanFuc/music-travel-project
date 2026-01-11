@@ -18,6 +18,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { BannersModule } from './modules/banners/banners.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { StagesModule } from './modules/stages/stages.module';
+import { SeatMapsModule } from './modules/seat-maps/seat-maps.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
@@ -61,6 +62,7 @@ import redisConfig from './config/redis.config';
     BannersModule,
     LocationsModule,
     StagesModule,
+    SeatMapsModule,
   ],
 })
 export class AppModule {}

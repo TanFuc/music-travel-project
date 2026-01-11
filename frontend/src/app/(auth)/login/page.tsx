@@ -54,7 +54,13 @@ export default function LoginPage() {
       const response = await post<LoginResponse>('/auth/login', data);
       login(response.user, response.accessToken, response.refreshToken);
       toast.success('Đăng nhập thành công!');
-      router.push('/shows');
+
+      // Redirect based on role
+      if (response.user.role === 'ADMIN' || response.user.role === 'STAFF') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/shows');
+      }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
