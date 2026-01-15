@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Clock, MapPin, Calendar } from 'lucide-react';
+import { Clock, MapPin, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShowCardSkeleton } from '@/components/common/LoadingSkeleton';
@@ -35,12 +36,20 @@ interface ToursResponse {
 }
 
 export default function ToursPage() {
+  const [page, setPage] = useState(1);
+  const limit = 12;
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['tours'],
-    queryFn: () => get<ToursResponse>('/tours'),
+    queryKey: ['tours', page],
+    queryFn: async () => {
+      const response = await get<ToursResponse>(`/tours?page=${page}&limit=${limit}`);
+      return response;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   if (error) {
+    // console.error('Tours API Error:', error);
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center text-error-500">

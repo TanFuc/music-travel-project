@@ -2,13 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { SeatMapEditor } from '@/components/admin/SeatMapEditor';
+import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get, put, post } from '@/lib/api';
 import { ArrowLeft, Save, Layout } from 'lucide-react';
+
+// Lazy load the heavy SeatMapEditor component (uses Konva canvas)
+const SeatMapEditor = dynamic(
+  () => import('@/components/admin/SeatMapEditor').then(mod => ({ default: mod.SeatMapEditor })),
+  {
+    loading: () => (
+      <Card>
+        <CardContent className="p-8">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-[400px] w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    ),
+    ssr: false, // Konva requires client-side rendering
+  }
+);
 
 interface Stage {
   id: number;
@@ -185,10 +204,10 @@ export default function StageSeatMapPage() {
                   Vui lòng chọn một template hoặc preset để bắt đầu
                 </p>
                 <div className="flex gap-4 justify-center">
-                  <Button onClick={() => document.querySelector('[value="templates"]')?.click()}>
+                  <Button onClick={() => (document.querySelector('[value="templates"]') as HTMLElement)?.click()}>
                     Chọn Template
                   </Button>
-                  <Button variant="outline" onClick={() => document.querySelector('[value="presets"]')?.click()}>
+                  <Button variant="outline" onClick={() => (document.querySelector('[value="presets"]') as HTMLElement)?.click()}>
                     Chọn Preset
                   </Button>
                 </div>

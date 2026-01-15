@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,12 +62,20 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function ShowsPage() {
+  const [page, setPage] = useState(1);
+  const limit = 12;
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['shows'],
-    queryFn: () => get<ShowsResponse>('/shows'),
+    queryKey: ['shows', page],
+    queryFn: async () => {
+      const response = await get<ShowsResponse>(`/shows?page=${page}&limit=${limit}`);
+      return response;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   if (error) {
+    // console.error('Shows API Error:', error);
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center text-error-500">
@@ -82,6 +91,7 @@ export default function ShowsPage() {
         <h1 className="text-3xl font-display font-bold mb-2">Sự Kiện Âm Nhạc</h1>
         <p className="text-neutral-600">Khám phá các show nhạc và concert hấp dẫn</p>
       </div>
+
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -147,6 +157,31 @@ export default function ShowsPage() {
       {data?.items?.length === 0 && (
         <div className="text-center py-12 text-neutral-500">
           Chưa có sự kiện nào. Vui lòng quay lại sau.
+        </div>
+      )}
+
+      {/* Pagination */}
+      {data && data.meta && data.meta.totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1 || isLoading}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Trước
+          </Button>
+          <span className="px-4 py-2 text-sm text-neutral-600">
+            Trang {page} / {data.meta.totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+            disabled={page === data.meta.totalPages || isLoading}
+          >
+            Sau
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       )}
     </div>

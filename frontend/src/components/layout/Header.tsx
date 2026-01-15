@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/auth.store';
 import { useCartStore } from '@/stores/cart.store';
 import { cn } from '@/lib/utils';
+import { get } from '@/lib/api';
 
 interface Location {
   id: number;
@@ -30,8 +32,17 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+
+  // Use React Query for locations
+  const { data: locations = [] } = useQuery({
+    queryKey: ['locations'],
+    queryFn: async () => {
+      const response = await get<Location[]>('/locations');
+      return Array.isArray(response) ? response : [];
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+  });
 
   useEffect(() => {
     setIsMounted(true);
@@ -44,14 +55,6 @@ export function Header() {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    // Fetch locations for dropdown
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/locations`)
-      .then((res) => res.json())
-      .then((data) => setLocations(Array.isArray(data) ? data : []))
-      .catch(() => setLocations([]));
   }, []);
 
   return (

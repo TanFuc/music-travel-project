@@ -138,7 +138,7 @@ async function main() {
       data: {
         name: 'Đà Lạt',
         slug: 'da-lat',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1587595431973-160d0d94add1?w=800&h=500&fit=crop',
         latitude: 11.9404,
         longitude: 108.4583,
         createdBy: adminUser.id,
@@ -148,7 +148,7 @@ async function main() {
       data: {
         name: 'Hà Nội',
         slug: 'ha-noi',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1509030450996-dd1a26dda07a?w=800&h=500&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1604074131665-7a4b13870ab4?w=800&h=500&fit=crop',
         latitude: 21.0285,
         longitude: 105.8542,
         createdBy: adminUser.id,
@@ -158,7 +158,7 @@ async function main() {
       data: {
         name: 'Sài Gòn',
         slug: 'sai-gon',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=800&h=500&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&h=500&fit=crop',
         latitude: 10.8231,
         longitude: 106.6297,
         createdBy: adminUser.id,
@@ -168,7 +168,7 @@ async function main() {
       data: {
         name: 'Đà Nẵng',
         slug: 'da-nang',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&h=500&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1578271887552-5ac3a72752bc?w=800&h=500&fit=crop',
         latitude: 16.0544,
         longitude: 108.2022,
         createdBy: adminUser.id,
@@ -178,7 +178,7 @@ async function main() {
       data: {
         name: 'Nha Trang',
         slug: 'nha-trang',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&h=500&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=500&fit=crop',
         latitude: 12.2388,
         longitude: 109.1967,
         createdBy: adminUser.id,
@@ -188,7 +188,7 @@ async function main() {
       data: {
         name: 'Phú Quốc',
         slug: 'phu-quoc',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=500&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=800&h=500&fit=crop',
         latitude: 10.2899,
         longitude: 103.9840,
         createdBy: adminUser.id,
@@ -198,7 +198,7 @@ async function main() {
       data: {
         name: 'Ninh Bình',
         slug: 'ninh-binh',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800&h=500&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1583417267826-aebc4d1542e1?w=800&h=500&fit=crop',
         latitude: 20.2539,
         longitude: 105.9750,
         createdBy: adminUser.id,
@@ -710,7 +710,7 @@ async function main() {
         properties: {
           includes: ['Xe đưa đón', 'Khách sạn 3*', 'Vé show', 'Bữa sáng', 'HDV'],
           excludes: ['Chi phí cá nhân', 'Bữa trưa, tối'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop'
+          thumbnailUrl: 'https://images.unsplash.com/photo-1587595431973-160d0d94add1?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
       },
@@ -743,7 +743,7 @@ async function main() {
         properties: {
           includes: ['Xe đưa đón', 'Khách sạn 3*', 'Vé show', 'Bữa sáng', 'HDV', 'Vé tham quan'],
           excludes: ['Chi phí cá nhân'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800&h=500&fit=crop'
+          thumbnailUrl: 'https://images.unsplash.com/photo-1583417267826-aebc4d1542e1?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
       },
@@ -775,7 +775,7 @@ async function main() {
         properties: {
           includes: ['Vé máy bay', 'Resort 4*', 'Vé show', 'Tour 4 đảo', 'Vé VinWonders'],
           excludes: ['Chi phí cá nhân', 'Bữa ăn ngoài tour'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=500&fit=crop'
+          thumbnailUrl: 'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
       },
@@ -794,7 +794,7 @@ async function main() {
         properties: {
           includes: ['Vé máy bay', 'Khách sạn 4*', 'Vé show', 'Xe đưa đón'],
           excludes: ['Chi phí cá nhân'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&h=500&fit=crop'
+          thumbnailUrl: 'https://images.unsplash.com/photo-1578271887552-5ac3a72752bc?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
       },
@@ -813,7 +813,7 @@ async function main() {
         properties: {
           includes: ['Xe giường nằm', 'Resort 4*', 'Vé show', 'Tour 3 đảo'],
           excludes: ['Chi phí cá nhân', 'Bữa ăn'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&h=500&fit=crop'
+          thumbnailUrl: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
       },
@@ -855,8 +855,8 @@ async function main() {
     prisma.banner.create({
       data: {
         title: 'Đêm Nhạc Trịnh - Thung Lũng Mây',
-        imageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1920&h=1080&fit=crop',
-        mobileImageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=768&h=1024&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1920&h=1080&fit=crop',
+        mobileImageUrl: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=768&h=1024&fit=crop',
         actionLink: '/shows/dem-nhac-trinh-thung-lung-may',
         position: BannerPosition.HOME_MAIN_SLIDER,
         displayOrder: 1,
@@ -867,8 +867,8 @@ async function main() {
     prisma.banner.create({
       data: {
         title: 'Acoustic Night - Mây In The Nest',
-        imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1920&h=1080&fit=crop',
-        mobileImageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=768&h=1024&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=1920&h=1080&fit=crop',
+        mobileImageUrl: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=768&h=1024&fit=crop',
         actionLink: '/shows/acoustic-night-may-in-the-nest',
         position: BannerPosition.HOME_MAIN_SLIDER,
         displayOrder: 2,
@@ -879,8 +879,8 @@ async function main() {
     prisma.banner.create({
       data: {
         title: 'Tour Đà Lạt 3N2Đ - Combo Show',
-        imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop',
-        mobileImageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=768&h=1024&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1920&h=1080&fit=crop',
+        mobileImageUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=768&h=1024&fit=crop',
         actionLink: '/tours/tour-da-lat-3n2d-combo-may-lang-thang',
         position: BannerPosition.HOME_MAIN_SLIDER,
         displayOrder: 3,
@@ -891,8 +891,8 @@ async function main() {
     prisma.banner.create({
       data: {
         title: 'Jazz Under The Stars',
-        imageUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&h=1080&fit=crop',
-        mobileImageUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=768&h=1024&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=1920&h=1080&fit=crop',
+        mobileImageUrl: 'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=768&h=1024&fit=crop',
         actionLink: '/shows/jazz-under-the-stars',
         position: BannerPosition.HOME_MAIN_SLIDER,
         displayOrder: 4,
@@ -903,7 +903,7 @@ async function main() {
     prisma.banner.create({
       data: {
         title: 'Giảm 20% cho đơn hàng đầu tiên',
-        imageUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&h=400&fit=crop',
+        imageUrl: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&h=400&fit=crop',
         actionLink: '/vouchers',
         position: BannerPosition.HOME_MID_SECTION,
         displayOrder: 1,
@@ -994,11 +994,33 @@ async function main() {
   console.log('📸 Creating media entries...');
 
   // Media for shows
-  for (const show of shows) {
+  for (let i = 0; i < shows.length; i++) {
+    const show = shows[i];
+    const showImages = [
+      'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&h=600&fit=crop',
+    ];
+    const secondaryImages = [
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1478147427282-58a87a120781?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1558618518-f1eca7c7f857?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=600&fit=crop',
+    ];
+
     await prisma.media.createMany({
       data: [
         {
-          url: `https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&h=600&fit=crop`,
+          url: showImages[i % showImages.length],
           type: MediaType.IMAGE,
           targetType: MediaTargetType.SHOW,
           targetId: show.id,
@@ -1007,7 +1029,7 @@ async function main() {
           createdBy: adminUser.id,
         },
         {
-          url: `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&fit=crop`,
+          url: secondaryImages[i % secondaryImages.length],
           type: MediaType.IMAGE,
           targetType: MediaTargetType.SHOW,
           targetId: show.id,
@@ -1020,10 +1042,19 @@ async function main() {
   }
 
   // Media for stages
-  for (const stage of stages) {
+  const stageImages = [
+    'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1598387181032-a3103a2db5b3?w=800&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1501612780327-45045538702b?w=800&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1486693326701-bd1ba982e959?w=800&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1598387181296-5c81f7cd78e5?w=800&h=500&fit=crop',
+  ];
+  for (let i = 0; i < stages.length; i++) {
+    const stage = stages[i];
     await prisma.media.create({
       data: {
-        url: `https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=500&fit=crop`,
+        url: stageImages[i % stageImages.length],
         type: MediaType.IMAGE,
         targetType: MediaTargetType.STAGE,
         targetId: stage.id,
@@ -1035,10 +1066,23 @@ async function main() {
   }
 
   // Media for artists
-  for (const artist of artists) {
+  const artistImages = [
+    'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1485199433301-1046cb4e13e3?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1490376840453-5f616fbebe9b?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1524650359799-842906ca1c06?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1472653816316-3ad6f10a6592?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop',
+  ];
+  for (let i = 0; i < artists.length; i++) {
+    const artist = artists[i];
     await prisma.media.create({
       data: {
-        url: `https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop`,
+        url: artistImages[i % artistImages.length],
         type: MediaType.IMAGE,
         targetType: MediaTargetType.ARTIST,
         targetId: artist.id,

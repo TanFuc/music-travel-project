@@ -103,18 +103,18 @@ export default function AdminDashboardPage() {
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Nguoi dung"
+          title="Người dùng"
           value={stats?.users.total || 0}
-          subtitle={`+${stats?.users.newThisMonth || 0} thang nay`}
+          subtitle={`+${stats?.users.newThisMonth || 0} tháng này`}
           icon={Users}
           iconColor="text-blue-600"
           bgColor="bg-blue-100"
           loading={statsLoading}
         />
         <StatCard
-          title="Su kien"
+          title="Sự kiện"
           value={stats?.shows.total || 0}
-          subtitle={`${stats?.shows.upcoming || 0} sap dien ra`}
+          subtitle={`${stats?.shows.upcoming || 0} sắp diễn ra`}
           icon={Music}
           iconColor="text-purple-600"
           bgColor="bg-purple-100"
@@ -123,16 +123,16 @@ export default function AdminDashboardPage() {
         <StatCard
           title="Tour"
           value={stats?.tours.total || 0}
-          subtitle={`${stats?.tours.activeSchedules || 0} lich hoat dong`}
+          subtitle={`${stats?.tours.activeSchedules || 0} lịch hoạt động`}
           icon={MapPin}
           iconColor="text-green-600"
           bgColor="bg-green-100"
           loading={statsLoading}
         />
         <StatCard
-          title="Don hang"
+          title="Đơn hàng"
           value={stats?.bookings.total || 0}
-          subtitle={`${stats?.bookings.pendingCount || 0} cho xu ly`}
+          subtitle={`${stats?.bookings.pendingCount || 0} chờ xử lý`}
           icon={ShoppingBag}
           iconColor="text-orange-600"
           bgColor="bg-orange-100"
@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <CreditCard className="h-5 w-5" />
-              Doanh thu thang nay
+              Doanh thu tháng này
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -159,7 +159,7 @@ export default function AdminDashboardPage() {
                 </p>
                 <div className="flex items-center gap-1 mt-2 text-white/80">
                   <TrendingUp className="h-4 w-4" />
-                  <span className="text-sm">So voi thang truoc</span>
+                  <span className="text-sm">So với tháng trước</span>
                 </div>
               </>
             )}
@@ -170,7 +170,7 @@ export default function AdminDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Ticket className="h-5 w-5" />
-              Tong doanh thu
+              Tổng doanh thu
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -182,7 +182,7 @@ export default function AdminDashboardPage() {
                   {formatCurrency(stats?.bookings.totalRevenue || 0)}
                 </p>
                 <p className="text-sm text-neutral-500 mt-2">
-                  Tu {stats?.bookings.total || 0} don hang
+                  Từ {stats?.bookings.total || 0} đơn hàng
                 </p>
               </>
             )}
@@ -195,9 +195,9 @@ export default function AdminDashboardPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Don hang gan day
+            Đơn hàng gần đây
           </CardTitle>
-          <CardDescription>5 don hang moi nhat</CardDescription>
+          <CardDescription>5 đơn hàng mới nhất</CardDescription>
         </CardHeader>
         <CardContent>
           {bookingsLoading ? (
@@ -207,7 +207,7 @@ export default function AdminDashboardPage() {
               ))}
             </div>
           ) : !recentBookings?.items || recentBookings.items.length === 0 ? (
-            <div className="text-center py-8 text-neutral-500">Chua co don hang nao.</div>
+            <div className="text-center py-8 text-neutral-500">Chưa có đơn hàng nào.</div>
           ) : (
             <div className="space-y-4">
               {recentBookings.items.map((booking) => (
@@ -234,7 +234,7 @@ export default function AdminDashboardPage() {
                       {formatCurrency(booking.finalAmount)}
                     </p>
                     <p className="text-xs text-neutral-500">
-                      {booking.paymentStatus === 'PAID' ? 'Da thanh toan' : 'Chua thanh toan'}
+                      {booking.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
                     </p>
                   </div>
                 </div>

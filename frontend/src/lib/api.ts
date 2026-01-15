@@ -3,21 +3,39 @@ import { useAuthStore } from '@/stores/auth.store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
+// Request deduplication - prevent duplicate requests
+const pendingRequests = new Map<string, Promise<any>>();
+
+function getRequestKey(config: any): string {
+  return `${config.method}-${config.url}-${JSON.stringify(config.params || {})}-${JSON.stringify(config.data || {})}`;
+}
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: 10000,
 });
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token and deduplicate requests
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Deduplication: check if identical request is already pending
+    const requestKey = getRequestKey(config);
+    const pendingRequest = pendingRequests.get(requestKey);
+
+    if (pendingRequest) {
+      // Return the existing pending request
+      console.log('🔄 Deduplicating request:', config.url);
+      return Promise.reject({ __CANCEL__: true, pendingRequest });
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -25,12 +43,29 @@ api.interceptors.request.use(
 
 // Response interceptor - handle errors and token refresh
 api.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+  (response) => {
+    // Remove from pending requests on success
+    const requestKey = getRequestKey(response.config);
+    pendingRequests.delete(requestKey);
+    return response;
+  },
+  async (error: any) => {
+    // Handle deduplication cancellation
+    if (error.__CANCEL__) {
+      return error.pendingRequest;
+    }
+
+    const axiosError = error as AxiosError;
+    const originalRequest = axiosError.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    // Remove from pending requests on error
+    if (originalRequest) {
+      const requestKey = getRequestKey(originalRequest);
+      pendingRequests.delete(requestKey);
+    }
 
     // Handle 401 - try to refresh token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (axiosError.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -55,7 +90,7 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error);
+    return Promise.reject(axiosError);
   }
 );
 
@@ -80,26 +115,67 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 
 // Generic API functions
 export async function get<T>(url: string): Promise<T> {
-  const response = await api.get<ApiResponse<T>>(url);
-  return response.data.data as T;
+  const requestKey = `GET-${url}--`;
+
+  // Check if request is already pending
+  if (pendingRequests.has(requestKey)) {
+    return pendingRequests.get(requestKey);
+  }
+
+  // Create new request and track it
+  const requestPromise = (async () => {
+    try {
+      const response = await api.get<T | ApiResponse<T>>(url);
+      // Check if response is wrapped in ApiResponse format
+      if (response.data && typeof response.data === 'object' && 'data' in response.data && 'success' in response.data) {
+        const apiResponse = response.data as ApiResponse<T> & { meta?: { page: number; limit: number; total: number; totalPages: number } };
+        // Check if this is a paginated response (has meta at root level)
+        if ('meta' in apiResponse && apiResponse.meta) {
+          // Return as paginated format: { items: data, meta: meta }
+          return { items: apiResponse.data, meta: apiResponse.meta } as T;
+        }
+        return apiResponse.data as T;
+      }
+      // Otherwise return data directly
+      return response.data as T;
+    } finally {
+      pendingRequests.delete(requestKey);
+    }
+  })();
+
+  pendingRequests.set(requestKey, requestPromise);
+  return requestPromise;
 }
 
 export async function post<T, D = unknown>(url: string, data?: D): Promise<T> {
-  const response = await api.post<ApiResponse<T>>(url, data);
-  return response.data.data as T;
+  const response = await api.post<T | ApiResponse<T>>(url, data);
+  // Check if response is wrapped in ApiResponse format
+  if (response.data && typeof response.data === 'object' && 'data' in response.data && 'success' in response.data) {
+    return (response.data as ApiResponse<T>).data as T;
+  }
+  return response.data as T;
 }
 
 export async function put<T, D = unknown>(url: string, data?: D): Promise<T> {
-  const response = await api.put<ApiResponse<T>>(url, data);
-  return response.data.data as T;
+  const response = await api.put<T | ApiResponse<T>>(url, data);
+  if (response.data && typeof response.data === 'object' && 'data' in response.data && 'success' in response.data) {
+    return (response.data as ApiResponse<T>).data as T;
+  }
+  return response.data as T;
 }
 
 export async function patch<T, D = unknown>(url: string, data?: D): Promise<T> {
-  const response = await api.patch<ApiResponse<T>>(url, data);
-  return response.data.data as T;
+  const response = await api.patch<T | ApiResponse<T>>(url, data);
+  if (response.data && typeof response.data === 'object' && 'data' in response.data && 'success' in response.data) {
+    return (response.data as ApiResponse<T>).data as T;
+  }
+  return response.data as T;
 }
 
 export async function del<T>(url: string): Promise<T> {
-  const response = await api.delete<ApiResponse<T>>(url);
-  return response.data.data as T;
+  const response = await api.delete<T | ApiResponse<T>>(url);
+  if (response.data && typeof response.data === 'object' && 'data' in response.data && 'success' in response.data) {
+    return (response.data as ApiResponse<T>).data as T;
+  }
+  return response.data as T;
 }

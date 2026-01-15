@@ -34,26 +34,26 @@ interface VoucherValidation {
 const paymentMethods = [
   {
     id: 'WALLET',
-    name: 'Vi cua toi',
-    description: 'Thanh toan bang so du vi',
+    name: 'Ví của tôi',
+    description: 'Thanh toán bằng số dư ví',
     icon: Wallet,
   },
   {
     id: 'MOMO',
     name: 'MoMo',
-    description: 'Vi dien tu MoMo',
+    description: 'Ví điện tử MoMo',
     icon: CreditCard,
   },
   {
     id: 'VNPAY',
     name: 'VNPAY',
-    description: 'Cong thanh toan VNPAY',
+    description: 'Cổng thanh toán VNPAY',
     icon: CreditCard,
   },
   {
     id: 'BANKING',
-    name: 'Chuyen khoan',
-    description: 'Chuyen khoan ngan hang',
+    name: 'Chuyển khoản',
+    description: 'Chuyển khoản ngân hàng',
     icon: Building2,
   },
 ];
@@ -177,10 +177,10 @@ export default function CheckoutPage() {
       {/* Back Button */}
       <Link href="/cart" className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Quay lai gio hang
+        Quay lại giỏ hàng
       </Link>
 
-      <h1 className="text-3xl font-display font-bold mb-8">Thanh Toan</h1>
+      <h1 className="text-3xl font-display font-bold mb-8">Thanh Toán</h1>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -191,7 +191,7 @@ export default function CheckoutPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5" />
-                  Phuong thuc thanh toan
+                  Phương thức thanh toán
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -222,7 +222,7 @@ export default function CheckoutPage() {
                       <p className="text-sm text-neutral-500">{method.description}</p>
                     </div>
                     {selectedMethod === method.id && (
-                      <Badge variant="success">Da chon</Badge>
+                      <Badge variant="success">Đã chọn</Badge>
                     )}
                   </label>
                 ))}
@@ -237,13 +237,13 @@ export default function CheckoutPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Tag className="h-5 w-5" />
-                  Ma giam gia
+                  Mã giảm giá
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Nhap ma giam gia"
+                    placeholder="Nhập mã giảm giá"
                     value={voucherInput}
                     onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
                     className="flex-1"
@@ -254,13 +254,13 @@ export default function CheckoutPage() {
                     onClick={handleValidateVoucher}
                     disabled={isValidatingVoucher}
                   >
-                    {isValidatingVoucher ? 'Dang kiem tra...' : 'Ap dung'}
+                    {isValidatingVoucher ? 'Đang kiểm tra...' : 'Áp dụng'}
                   </Button>
                 </div>
                 {voucherCode && discount > 0 && (
                   <div className="mt-3 p-3 bg-success-50 rounded-lg flex items-center justify-between">
                     <span className="text-success-600 text-sm">
-                      Ma {voucherCode}: Giam {formatCurrency(discount)}
+                      Mã {voucherCode}: Giảm {formatCurrency(discount)}
                     </span>
                     <Button
                       type="button"
@@ -273,7 +273,7 @@ export default function CheckoutPage() {
                       }}
                       className="text-neutral-500 h-auto py-1"
                     >
-                      Xoa
+                      Xóa
                     </Button>
                   </div>
                 )}
@@ -283,12 +283,12 @@ export default function CheckoutPage() {
             {/* Note */}
             <Card>
               <CardHeader>
-                <CardTitle>Ghi chu</CardTitle>
+                <CardTitle>Ghi chú</CardTitle>
               </CardHeader>
               <CardContent>
                 <textarea
                   {...register('note')}
-                  placeholder="Ghi chu cho don hang (tuy chon)"
+                  placeholder="Ghi chú cho đơn hàng (tùy chọn)"
                   className="w-full p-3 border rounded-lg resize-none h-24 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </CardContent>
@@ -299,7 +299,7 @@ export default function CheckoutPage() {
           <div>
             <Card className="sticky top-24">
               <CardHeader>
-                <CardTitle>Chi tiet don hang</CardTitle>
+                <CardTitle>Chi tiết đơn hàng</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Items */}
@@ -323,7 +323,7 @@ export default function CheckoutPage() {
                     >
                       <div>
                         <p className="font-medium">{tour.tourTitle}</p>
-                        <p className="text-neutral-500">{tour.quantity} nguoi</p>
+                        <p className="text-neutral-500">{tour.quantity} người</p>
                       </div>
                       <span>{formatCurrency(tour.price * tour.quantity)}</span>
                     </div>
@@ -333,18 +333,18 @@ export default function CheckoutPage() {
                 {/* Summary */}
                 <div className="space-y-2 pt-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-600">Tam tinh</span>
+                    <span className="text-neutral-600">Tạm tính</span>
                     <span>{formatCurrency(getSubtotal())}</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-sm text-success-600">
-                      <span>Giam gia</span>
+                      <span>Giảm giá</span>
                       <span>-{formatCurrency(discount)}</span>
                     </div>
                   )}
                   <div className="border-t pt-2">
                     <div className="flex justify-between font-bold text-lg">
-                      <span>Tong cong</span>
+                      <span>Tổng cộng</span>
                       <span className="text-brand-600">{formatCurrency(getTotal())}</span>
                     </div>
                   </div>
@@ -357,13 +357,13 @@ export default function CheckoutPage() {
                   size="lg"
                   disabled={isProcessing}
                 >
-                  {isProcessing ? 'Dang xu ly...' : 'Xac nhan thanh toan'}
+                  {isProcessing ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
                 </Button>
 
                 {/* Security Note */}
                 <div className="flex items-center gap-2 text-xs text-neutral-500 justify-center">
                   <ShieldCheck className="h-4 w-4" />
-                  <span>Thanh toan an toan va bao mat</span>
+                  <span>Thanh toán an toàn và bảo mật</span>
                 </div>
               </CardContent>
             </Card>

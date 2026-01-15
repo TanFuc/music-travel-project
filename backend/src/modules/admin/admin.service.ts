@@ -140,13 +140,14 @@ export class AdminService {
     const skip = (page - 1) * limit;
     const where = search
       ? {
+        deletedAt: null,
         OR: [
           { fullName: { contains: search, mode: 'insensitive' as const } },
           { phoneNumber: { contains: search } },
           { email: { contains: search, mode: 'insensitive' as const } },
         ],
       }
-      : {};
+      : { deletedAt: null };
 
     const [items, total] = await Promise.all([
       this.prisma.user.findMany({

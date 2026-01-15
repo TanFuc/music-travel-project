@@ -27,17 +27,17 @@ import { useState } from 'react';
 
 const sidebarItems = [
   {
-    title: 'Tong quan',
+    title: 'Tổng quan',
     href: '/admin/dashboard',
     icon: LayoutDashboard,
   },
   {
-    title: 'Nguoi dung',
+    title: 'Người dùng',
     href: '/admin/users',
     icon: Users,
   },
   {
-    title: 'Su kien',
+    title: 'Sự kiện',
     href: '/admin/shows',
     icon: Music,
   },
@@ -47,17 +47,17 @@ const sidebarItems = [
     icon: MapPin,
   },
   {
-    title: 'Ve',
+    title: 'Vé',
     href: '/admin/tickets',
     icon: Ticket,
   },
   {
-    title: 'Don hang',
+    title: 'Đơn hàng',
     href: '/admin/bookings',
     icon: ShoppingBag,
   },
   {
-    title: 'Thanh toan',
+    title: 'Thanh toán',
     href: '/admin/payments',
     icon: CreditCard,
   },
@@ -72,12 +72,12 @@ const sidebarItems = [
     icon: Image,
   },
   {
-    title: 'Thong bao',
+    title: 'Thông báo',
     href: '/admin/notifications',
     icon: Bell,
   },
   {
-    title: 'Cai dat',
+    title: 'Cài đặt',
     href: '/admin/settings',
     icon: Settings,
   },
@@ -212,7 +212,7 @@ export default function AdminLayout({
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4" />
-              {sidebarOpen && <span className="ml-2">Dang xuat</span>}
+              {sidebarOpen && <span className="ml-2">Đăng xuất</span>}
             </Button>
           </div>
         </div>

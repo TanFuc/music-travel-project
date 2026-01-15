@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { MapPin, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { get } from '@/lib/api';
 
 interface Location {
   id: number;
@@ -22,39 +24,20 @@ export function LocationFilter({
   selectedLocation,
   onLocationChange,
 }: LocationFilterProps) {
-  const [locations, setLocations] = useState<Location[]>(propLocations || []);
-  const [isLoading, setIsLoading] = useState(!propLocations);
   const [isSticky, setIsSticky] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (propLocations) {
-      setLocations(propLocations);
-      return;
-    }
-
-    const fetchLocations = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/locations`
-        );
-        const data = await res.json();
-
-        if (data.data && Array.isArray(data.data)) {
-          setLocations(data.data);
-        } else if (Array.isArray(data)) {
-          setLocations(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch locations:', error);
-        setLocations([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLocations();
-  }, [propLocations]);
+  // Use React Query instead of manual fetch
+  const { data: locations = [], isLoading } = useQuery({
+    queryKey: ['locations'],
+    queryFn: async () => {
+      const response = await get<Location[]>('/locations');
+      return Array.isArray(response) ? response : [];
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    enabled: !propLocations, // Only fetch if no props provided
+    initialData: propLocations || [],
+  });
 
   useEffect(() => {
     const handleScroll = () => {

@@ -97,7 +97,7 @@ export default function ShowDetailPage() {
 
   const handleLockSuccess = (lockId: string, expiresAt: Date) => {
     setLockedSeats({ lockId, expiresAt });
-    toast.success('Da giu cho thanh cong! Vui long thanh toan trong 10 phut.');
+    toast.success('Đã giữ chỗ thành công! Vui lòng thanh toán trong 10 phút.');
     // Optionally redirect to checkout
     // router.push(`/checkout?lockId=${lockId}`);
   };
@@ -246,7 +246,7 @@ export default function ShowDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                Dia diem to chuc
+                Địa điểm tổ chức
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -274,7 +274,7 @@ export default function ShowDetailPage() {
                   className="inline-flex items-center text-brand-500 hover:text-brand-600"
                 >
                   <Navigation className="mr-1 h-4 w-4" />
-                  Xem ban do
+                  Xem bản đồ
                   <ExternalLink className="ml-1 h-4 w-4" />
                 </a>
               ) : null}
@@ -288,7 +288,7 @@ export default function ShowDetailPage() {
                   className="inline-flex items-center gap-2 text-brand-500 hover:text-brand-600 mt-2"
                 >
                   <Navigation className="h-4 w-4" />
-                  Chi duong den dia diem
+                  Chỉ đường đến địa điểm
                   <ExternalLink className="h-4 w-4" />
                 </a>
               )}
@@ -296,7 +296,7 @@ export default function ShowDetailPage() {
               {show.checkInTime && (
                 <div className="flex items-center gap-2 text-sm text-neutral-600 mt-3">
                   <Clock className="h-4 w-4" />
-                  <span>Mo cua check-in: {formatDateTime(show.checkInTime)}</span>
+                  <span>Mở cửa check-in: {formatDateTime(show.checkInTime)}</span>
                 </div>
               )}
             </CardContent>
@@ -309,14 +309,14 @@ export default function ShowDetailPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Ticket className="h-5 w-5" />
-                    So do cho ngoi
+                    Sơ đồ chỗ ngồi
                   </CardTitle>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowSeatMap(!showSeatMap)}
                   >
-                    {showSeatMap ? 'An so do' : 'Xem so do'}
+                    {showSeatMap ? 'Ẩn sơ đồ' : 'Xem sơ đồ'}
                   </Button>
                 </div>
               </CardHeader>
@@ -332,11 +332,11 @@ export default function ShowDetailPage() {
                   {lockedSeats && (
                     <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                       <p className="text-green-700 dark:text-green-300 font-medium">
-                        Da giu cho thanh cong! Vui long hoan tat thanh toan.
+                        Đã giữ chỗ thành công! Vui lòng hoàn tất thanh toán.
                       </p>
                       <Link href={`/checkout?lockId=${lockedSeats.lockId}`}>
                         <Button className="mt-2">
-                          Tien hanh thanh toan
+                          Tiến hành thanh toán
                         </Button>
                       </Link>
                     </div>

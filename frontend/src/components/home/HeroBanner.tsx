@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { get } from '@/lib/api';
 
 interface Banner {
   id: number;
@@ -19,37 +21,20 @@ interface HeroBannerProps {
 }
 
 export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
-  const [banners, setBanners] = useState<Banner[]>(propBanners || []);
-  const [isLoading, setIsLoading] = useState(!propBanners);
-
-  useEffect(() => {
-    if (propBanners) {
-      setBanners(propBanners);
-      return;
-    }
-
-    const fetchBanners = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/banners?position=HOME_MAIN_SLIDER&isActive=true`
-        );
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setBanners(data);
-        } else if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-          setBanners(data.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch banners:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBanners();
-  }, [propBanners]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Use React Query instead of manual fetch
+  const { data: banners = [], isLoading } = useQuery({
+    queryKey: ['banners', 'HOME_MAIN_SLIDER'],
+    queryFn: async () => {
+      const response = await get<Banner[]>('/banners?position=HOME_MAIN_SLIDER&isActive=true');
+      return Array.isArray(response) ? response : [];
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    enabled: !propBanners,
+    initialData: propBanners || [],
+  });
 
   const goToSlide = useCallback((index: number) => {
     if (isTransitioning) return;
@@ -125,10 +110,9 @@ export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
               index === currentIndex && 'ken-burns'
             )}
             priority={index === 0}
+            loading={index === 0 ? 'eager' : 'lazy'}
             sizes="100vw"
-            quality={85}
-            placeholder="blur"
-            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAQMEAQUBAAAAAAAAAAAAAQIDBAAFBhEhEiIxQVFh/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAYEQEBAQEBAAAAAAAAAAAAAAABAgARIf/aAAwDAQACEQMRAD8Azo7hcXN9SqRJlPyHE+FPuLcUB8BJJIG/Q4pSqBsYNe//2Q=="
+            quality={75}
           />
         </div>
       ))}

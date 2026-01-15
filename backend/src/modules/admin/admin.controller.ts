@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, UseGuards, Query, Param, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, UseGuards, Query, Param, Body, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
@@ -47,8 +47,8 @@ export class AdminController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   async getUsers(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
     @Query('search') search?: string,
   ) {
     return this.adminService.getUsers(page, limit, search);
@@ -106,8 +106,8 @@ export class AdminController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getShows(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
   ) {
     return this.adminService.getShows(page, limit);
   }
@@ -168,8 +168,8 @@ export class AdminController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getTours(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
   ) {
     return this.adminService.getTours(page, limit);
   }
@@ -297,8 +297,8 @@ export class AdminController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'] })
   async getBookings(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
     @Query('status') status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
   ) {
     return this.adminService.getBookings(page, limit, status);
@@ -313,8 +313,8 @@ export class AdminController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'showId', required: false, type: Number })
   async getTickets(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
     @Query('showId', new ParseIntPipe({ optional: true })) showId?: number,
   ) {
     return this.adminService.getTickets(page, limit, showId);
@@ -328,8 +328,8 @@ export class AdminController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getPayments(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
   ) {
     return this.adminService.getPayments(page, limit);
   }
@@ -342,8 +342,8 @@ export class AdminController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getVouchers(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
   ) {
     return this.adminService.getVouchers(page, limit);
   }
@@ -357,8 +357,8 @@ export class AdminController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'targetType', required: false, enum: ['SHOW', 'TOUR', 'STAGE', 'ARTIST'] })
   async getMedia(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
     @Query('targetType') targetType?: 'SHOW' | 'TOUR' | 'STAGE' | 'ARTIST',
   ) {
     return this.adminService.getMedia(page, limit, targetType);
@@ -372,8 +372,8 @@ export class AdminController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getNotifications(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
   ) {
     return this.adminService.getNotifications(page, limit);
   }

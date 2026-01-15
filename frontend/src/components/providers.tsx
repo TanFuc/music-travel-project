@@ -8,16 +8,16 @@ function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        // 5 minutes - data considered fresh, no refetch
-        staleTime: 5 * 60 * 1000,
-        // 10 minutes - keep unused data in cache
-        gcTime: 10 * 60 * 1000,
-        // Only retry once on failure
-        retry: 1,
+        // 10 minutes - data considered fresh, no refetch
+        staleTime: 10 * 60 * 1000,
+        // 30 minutes - keep unused data in cache
+        gcTime: 30 * 60 * 1000,
+        // Disable retry to prevent duplicate requests
+        retry: false,
         // Don't refetch on window focus (reduces API calls)
         refetchOnWindowFocus: false,
-        // Don't refetch on reconnect unless stale
-        refetchOnReconnect: 'always',
+        // Only refetch on reconnect if data is stale
+        refetchOnReconnect: false,
         // Use cached data while refetching
         placeholderData: (previousData: unknown) => previousData,
       },

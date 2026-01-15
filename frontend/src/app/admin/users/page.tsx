@@ -52,10 +52,12 @@ export default function AdminUsersPage() {
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['admin-users', page, search],
-        queryFn: () => {
+        queryFn: async () => {
             const params = new URLSearchParams({ page: page.toString(), limit: '20' });
             if (search) params.append('search', search);
-            return get<UsersResponse>(`/admin/users?${params.toString()}`);
+            const result = await get<UsersResponse>(`/admin/users?${params.toString()}`);
+            console.log('Admin Users API Response:', result);
+            return result;
         },
         retry: 2,
     });

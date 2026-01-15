@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, Star, Music, Loader2 } from 'lucide-react';
+import { MapPin, Users, ArrowRight, Loader2, Star, Music } from 'lucide-react';
+import { get } from '@/lib/api';
 
 interface Stage {
   id: number;
@@ -20,32 +21,14 @@ interface Stage {
 }
 
 export function StagesSection() {
-  const [stages, setStages] = useState<Stage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStages = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/stages`
-        );
-        const data = await res.json();
-
-        if (data.data && Array.isArray(data.data)) {
-          setStages(data.data.slice(0, 4));
-        } else if (Array.isArray(data)) {
-          setStages(data.slice(0, 4));
-        }
-      } catch (error) {
-        console.error('Failed to fetch stages:', error);
-        setStages([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStages();
-  }, []);
+  const { data: stages = [], isLoading } = useQuery({
+    queryKey: ['home-stages'],
+    queryFn: async () => {
+      const response = await get<{ items: Stage[]; meta: unknown }>('/stages?limit=4');
+      return (response.items || []).slice(0, 4);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
   return (
     <section className="py-16 bg-brand-50/50">

@@ -64,6 +64,7 @@ export function ShowCard({
           src={thumbnailUrl || 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400&h=600&fit=crop'}
           alt={title}
           fill
+          loading="lazy"
           className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
 

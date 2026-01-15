@@ -3,8 +3,13 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
 
+// Check if running with Turbopack (dev mode with --turbo flag)
+const isTurbopack = process.env.TURBOPACK === '1';
+
 const nextConfig = {
-  reactStrictMode: true,
+  // Temporarily disable to debug duplicate requests
+  // Re-enable in production: true
+  reactStrictMode: false,
 
   // Image optimization settings
   images: {
@@ -26,14 +31,39 @@ const nextConfig = {
   // Experimental features for performance
   experimental: {
     // Optimize package imports for tree-shaking
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-select',
+      '@radix-ui/react-label',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-separator',
+      '@tanstack/react-query',
+    ],
+    // Optimize CSS
+    optimizeCss: true,
   },
 
-  // Compiler optimizations
-  compiler: {
-    // Remove console.log in production
-    removeConsole: process.env.NODE_ENV === 'production',
+  // Modularize imports for better tree-shaking
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
+    },
   },
+
+  // Compiler optimizations (not supported by Turbopack yet)
+  ...(isTurbopack
+    ? {}
+    : {
+      compiler: {
+        // Remove console.log in production
+        removeConsole: process.env.NODE_ENV === 'production',
+      },
+    }),
 
   // API rewrites
   async rewrites() {

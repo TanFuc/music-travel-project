@@ -50,9 +50,9 @@ const scheduleStatusColors: Record<string, 'default' | 'secondary' | 'destructiv
 };
 
 const scheduleStatusLabels: Record<string, string> = {
-  OPEN: 'Con cho',
-  CLOSED: 'Da dong',
-  CANCELLED: 'Da huy',
+  OPEN: 'Còn chỗ',
+  CLOSED: 'Đã đóng',
+  CANCELLED: 'Đã hủy',
 };
 
 export default function TourDetailPage() {
@@ -80,7 +80,7 @@ export default function TourDetailPage() {
       quantity,
     });
 
-    toast.success('Da them tour vao gio hang!');
+    toast.success('Đã thêm tour vào giỏ hàng!');
     setSelectedSchedule(schedule.id);
     setTimeout(() => setSelectedSchedule(null), 1000);
   };
@@ -89,11 +89,11 @@ export default function TourDetailPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <p className="text-error-500 mb-4">Khong the tai thong tin tour.</p>
+          <p className="text-error-500 mb-4">Không thể tải thông tin tour.</p>
           <Link href="/tours">
             <Button variant="outline">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Quay lai danh sach
+              Quay lại danh sách
             </Button>
           </Link>
         </div>
@@ -127,7 +127,7 @@ export default function TourDetailPage() {
       {/* Back Button */}
       <Link href="/tours" className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Quay lai danh sach
+        Quay lại danh sách
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -160,7 +160,7 @@ export default function TourDetailPage() {
           {tour.description && (
             <Card>
               <CardHeader>
-                <CardTitle>Gioi thieu chuong trinh</CardTitle>
+                <CardTitle>Giới thiệu chương trình</CardTitle>
               </CardHeader>
               <CardContent>
                 <div
@@ -175,7 +175,7 @@ export default function TourDetailPage() {
           {tour.properties && (
             <Card>
               <CardHeader>
-                <CardTitle>Diem noi bat</CardTitle>
+                <CardTitle>Điểm nổi bật</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -202,12 +202,12 @@ export default function TourDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Lich khoi hanh
+                Lịch khởi hành
               </CardTitle>
             </CardHeader>
             <CardContent>
               {tour.schedules.length === 0 ? (
-                <p className="text-neutral-500 text-center py-4">Chua co lich khoi hanh.</p>
+                <p className="text-neutral-500 text-center py-4">Chưa có lịch khởi hành.</p>
               ) : (
                 <div className="space-y-3">
                   {tour.schedules.map((schedule) => {
@@ -229,11 +229,11 @@ export default function TourDetailPage() {
                           <div className="flex items-center gap-4 text-sm text-neutral-600">
                             <span className="flex items-center gap-1">
                               <Users className="h-4 w-4" />
-                              Con {remaining}/{schedule.capacity} cho
+                              Còn {remaining}/{schedule.capacity} chỗ
                             </span>
                             <span className="flex items-center gap-1">
                               <CreditCard className="h-4 w-4" />
-                              {formatCurrency(schedule.price)}/nguoi
+                              {formatCurrency(schedule.price)}/người
                             </span>
                           </div>
                         </div>
@@ -243,10 +243,10 @@ export default function TourDetailPage() {
                           onClick={() => handleAddToCart(schedule)}
                         >
                           {!isAvailable
-                            ? 'Het cho'
+                            ? 'Hết chỗ'
                             : selectedSchedule === schedule.id
-                              ? 'Da them!'
-                              : 'Dat ngay'}
+                              ? 'Đã thêm!'
+                              : 'Đặt ngay'}
                         </Button>
                       </div>
                     );
@@ -261,17 +261,17 @@ export default function TourDetailPage() {
         <div>
           <Card className="sticky top-24">
             <CardHeader>
-              <CardTitle>Dat tour</CardTitle>
+              <CardTitle>Đặt tour</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {openSchedules.length === 0 ? (
                 <div className="text-center py-4">
-                  <p className="text-neutral-500">Hien tai khong co lich khoi hanh nao.</p>
+                  <p className="text-neutral-500">Hiện tại không có lịch khởi hành nào.</p>
                 </div>
               ) : (
                 <>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">So nguoi</label>
+                    <label className="text-sm font-medium">Số người</label>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
@@ -294,7 +294,7 @@ export default function TourDetailPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Chon lich khoi hanh</label>
+                    <label className="text-sm font-medium">Chọn lịch khởi hành</label>
                     <div className="space-y-2">
                       {openSchedules.slice(0, 3).map((schedule) => {
                         const remaining = schedule.capacity - schedule.bookedCount;
@@ -313,7 +313,7 @@ export default function TourDetailPage() {
                               </span>
                             </div>
                             <p className="text-xs text-neutral-500">
-                              Con {remaining} cho | {quantity} nguoi
+                              Còn {remaining} chỗ | {quantity} người
                             </p>
                           </button>
                         );
@@ -324,7 +324,7 @@ export default function TourDetailPage() {
                   <div className="border-t pt-4">
                     <Link href="/cart">
                       <Button variant="outline" className="w-full">
-                        Xem gio hang
+                        Xem giỏ hàng
                       </Button>
                     </Link>
                   </div>

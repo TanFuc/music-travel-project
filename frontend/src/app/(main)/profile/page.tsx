@@ -2,12 +2,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { User, Phone, Mail, Calendar, Ticket, MapPin, Wallet, Edit2 } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Ticket, MapPin, Wallet, Edit2, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +19,8 @@ import { get, patch } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 const updateProfileSchema = z.object({
-  fullName: z.string().min(2, 'Ho ten phai co it nhat 2 ky tu'),
-  email: z.string().email('Email khong dung dinh dang').optional().or(z.literal('')),
+  fullName: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
+  email: z.string().email('Email không đúng định dạng').optional().or(z.literal('')),
 });
 
 type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
@@ -62,10 +63,10 @@ const bookingStatusColors: Record<string, 'default' | 'secondary' | 'destructive
 };
 
 const bookingStatusLabels: Record<string, string> = {
-  PENDING: 'Cho xu ly',
-  CONFIRMED: 'Da xac nhan',
-  CANCELLED: 'Da huy',
-  COMPLETED: 'Hoan thanh',
+  PENDING: 'Chờ xử lý',
+  CONFIRMED: 'Đã xác nhận',
+  CANCELLED: 'Đã hủy',
+  COMPLETED: 'Hoàn thành',
 };
 
 export default function ProfilePage() {
@@ -131,10 +132,10 @@ export default function ProfilePage() {
         email: updated.email,
         role: updated.role,
       });
-      toast.success('Cap nhat thong tin thanh cong!');
+      toast.success('Cập nhật thông tin thành công!');
       setIsEditing(false);
     } catch {
-      toast.error('Cap nhat that bai. Vui long thu lai.');
+      toast.error('Cập nhật thất bại. Vui lòng thử lại.');
     } finally {
       setIsUpdating(false);
     }
@@ -162,7 +163,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-display font-bold mb-8">Tai khoan cua toi</h1>
+      <h1 className="text-3xl font-display font-bold mb-8">Tài khoản của tôi</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Profile & Wallet */}
@@ -173,7 +174,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Thong tin ca nhan
+                  Thông tin cá nhân
                 </CardTitle>
                 <Button variant="ghost" size="icon" onClick={() => setIsEditing(!isEditing)}>
                   <Edit2 className="h-4 w-4" />
@@ -184,7 +185,7 @@ export default function ProfilePage() {
               {isEditing ? (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Ho va ten</label>
+                    <label className="text-sm font-medium">Họ và tên</label>
                     <Input {...register('fullName')} />
                     {errors.fullName && (
                       <p className="text-sm text-error-500">{errors.fullName.message}</p>
@@ -199,10 +200,10 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex gap-2">
                     <Button type="submit" disabled={isUpdating}>
-                      {isUpdating ? 'Dang luu...' : 'Luu thay doi'}
+                      {isUpdating ? 'Đang lưu...' : 'Lưu thay đổi'}
                     </Button>
                     <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
-                      Huy
+                      Hủy
                     </Button>
                   </div>
                 </form>
@@ -253,6 +254,25 @@ export default function ProfilePage() {
               </p>
             </CardContent>
           </Card>
+
+          {/* Admin Access Card */}
+          {(profile?.role === 'ADMIN' || profile?.role === 'STAFF') && (
+            <Link href="/admin/dashboard">
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-lg transition-shadow cursor-pointer">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                      <Shield className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Quản trị hệ thống</h3>
+                      <p className="text-white/80 text-sm">Truy cập trang quản lý</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          )}
         </div>
 
         {/* Right Column - Bookings */}
@@ -261,9 +281,9 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Ticket className="h-5 w-5" />
-                Lich su dat ve
+                Lịch sử đặt vé
               </CardTitle>
-              <CardDescription>Cac don hang cua ban</CardDescription>
+              <CardDescription>Các đơn hàng của bạn</CardDescription>
             </CardHeader>
             <CardContent>
               {!bookings?.items || bookings.items.length === 0 ? (

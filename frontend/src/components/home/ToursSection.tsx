@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin, Calendar, Users, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { get } from '@/lib/api';
 
 interface Tour {
   id: number;
@@ -22,32 +23,14 @@ interface Tour {
 }
 
 export function ToursSection() {
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchTours = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/tours?limit=3`
-        );
-        const data = await res.json();
-
-        if (data.data && Array.isArray(data.data)) {
-          setTours(data.data);
-        } else if (Array.isArray(data)) {
-          setTours(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch tours:', error);
-        setTours([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTours();
-  }, []);
+  const { data: tours = [], isLoading } = useQuery({
+    queryKey: ['home-tours'],
+    queryFn: async () => {
+      const response = await get<{ items: Tour[]; meta: unknown }>('/tours?limit=2');
+      return response.items || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price);
@@ -100,6 +83,7 @@ export function ToursSection() {
                       src={tour.thumbnailUrl || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop'}
                       alt={tour.title}
                       fill
+                      loading="lazy"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>

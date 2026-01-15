@@ -228,11 +228,11 @@ export function SeatMap({
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span className="w-4 h-4 rounded-full bg-red-500" />
-          <span>Dang giu</span>
+          <span>Đang giữ</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span className="w-4 h-4 rounded-full bg-green-500" />
-          <span>Dang chon</span>
+          <span>Đang chọn</span>
         </div>
         <div className="border-l pl-4 ml-2 flex flex-wrap gap-3">
           {ticketClasses.map((tc) => (
@@ -306,15 +306,15 @@ export function SeatMap({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <p className="text-sm text-muted-foreground">
-                Da chon: <span className="font-semibold">{selectedSeats.length}</span> ghe
+                Đã chọn: <span className="font-semibold">{selectedSeats.length}</span> ghế
               </p>
               <p className="text-lg font-bold">
-                Tong: <span className="text-primary">{formatPrice(totalPrice)}</span>
+                Tổng: <span className="text-primary">{formatPrice(totalPrice)}</span>
               </p>
               {lockCountdown !== null && (
                 <p className="text-sm text-orange-500 font-medium">
-                  Con {Math.floor(lockCountdown / 60)}:
-                  {(lockCountdown % 60).toString().padStart(2, '0')} de thanh toan
+                  Còn {Math.floor(lockCountdown / 60)}:
+                  {(lockCountdown % 60).toString().padStart(2, '0')} để thanh toán
                 </p>
               )}
             </div>
@@ -325,7 +325,7 @@ export function SeatMap({
                   disabled={releaseMutation.isPending}
                   className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50"
                 >
-                  {releaseMutation.isPending ? 'Dang huy...' : 'Huy giu cho'}
+                  {releaseMutation.isPending ? 'Đang hủy...' : 'Hủy giữ chỗ'}
                 </button>
               ) : (
                 <button
@@ -333,14 +333,14 @@ export function SeatMap({
                   disabled={lockMutation.isPending || selectedSeats.length === 0}
                   className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition disabled:opacity-50"
                 >
-                  {lockMutation.isPending ? 'Dang xu ly...' : 'Giu cho'}
+                  {lockMutation.isPending ? 'Đang xử lý...' : 'Giữ chỗ'}
                 </button>
               )}
             </div>
           </div>
         ) : (
           <p className="text-center text-muted-foreground">
-            Nhan vao ghe de chon. Toi da {maxSelectable} ghe.
+            Nhấn vào ghế để chọn. Tối đa {maxSelectable} ghế.
           </p>
         )}
       </div>

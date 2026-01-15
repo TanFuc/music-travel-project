@@ -243,10 +243,10 @@ export function SeatMapEditor({ stageId, onSave, className }: SeatMapEditorProps
 
         if (positions.length === 0) return { minX: 0, minY: 0, width: 1000, height: 600 };
 
-        const minX = Math.min(...positions.map((p) => p.x)) - 80;
-        const minY = Math.min(...positions.map((p) => p.y)) - 120;
-        const maxX = Math.max(...positions.map((p) => p.x)) + 80;
-        const maxY = Math.max(...positions.map((p) => p.y)) + 80;
+        const minX = Math.min(...positions.map((p: { x: number; y: number }) => p.x)) - 80;
+        const minY = Math.min(...positions.map((p: { x: number; y: number }) => p.y)) - 120;
+        const maxX = Math.max(...positions.map((p: { x: number; y: number }) => p.x)) + 80;
+        const maxY = Math.max(...positions.map((p: { x: number; y: number }) => p.y)) + 80;
 
         return { minX, minY, width: maxX - minX, height: maxY - minY };
     }, [currentLayout, pendingUpdates]);

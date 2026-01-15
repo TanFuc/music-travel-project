@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Search, ArrowRight } from 'lucide-react';
 import { ShowCard } from '@/components/shows/ShowCard';
+import { get } from '@/lib/api';
 
 interface Show {
   id: number;
@@ -25,39 +27,24 @@ interface ShowsSectionProps {
 }
 
 export function ShowsSection({ locationFilter }: ShowsSectionProps) {
-  const [shows, setShows] = useState<Show[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchShows = async () => {
-      setIsLoading(true);
-      try {
-        const url = new URL(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/shows`);
-        if (locationFilter) {
-          url.searchParams.set('location', locationFilter);
-        }
-        url.searchParams.set('limit', '6');
-        url.searchParams.set('status', 'UPCOMING');
-
-        const res = await fetch(url.toString());
-        const data = await res.json();
-
-        if (data.data && Array.isArray(data.data)) {
-          setShows(data.data);
-        } else if (Array.isArray(data)) {
-          setShows(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch shows:', error);
-        setShows([]);
-      } finally {
-        setIsLoading(false);
+  // Use React Query instead of manual fetch
+  const { data: shows = [], isLoading } = useQuery({
+    queryKey: ['home-shows', locationFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        limit: '4',
+        status: 'UPCOMING',
+      });
+      if (locationFilter) {
+        params.append('location', locationFilter);
       }
-    };
-
-    fetchShows();
-  }, [locationFilter]);
+      const response = await get<{ items: Show[]; meta: unknown }>(`/shows?${params}`);
+      return response.items || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
   const filteredShows = searchQuery
     ? shows.filter((show) =>
@@ -96,7 +83,7 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
         {/* Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
+            {[...Array(4)].map((_, i) => (
               <div key={i} className="glass-card overflow-hidden">
                 <div className="aspect-[3/4] skeleton" />
                 <div className="p-4 space-y-3">
