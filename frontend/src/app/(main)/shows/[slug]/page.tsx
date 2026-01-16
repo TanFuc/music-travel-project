@@ -159,7 +159,7 @@ export default function ShowDetailPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Back Button */}
-      <Link href="/shows" className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-6">
+      <Link href="/shows" prefetch={false} className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Quay lại danh sách
       </Link>
@@ -334,7 +334,7 @@ export default function ShowDetailPage() {
                       <p className="text-green-700 dark:text-green-300 font-medium">
                         Đã giữ chỗ thành công! Vui lòng hoàn tất thanh toán.
                       </p>
-                      <Link href={`/checkout?lockId=${lockedSeats.lockId}`}>
+                      <Link href={`/checkout?lockId=${lockedSeats.lockId}`} prefetch={false}>
                         <Button className="mt-2">
                           Tiến hành thanh toán
                         </Button>
@@ -402,7 +402,7 @@ export default function ShowDetailPage() {
                   ))}
 
                   <div className="border-t pt-4">
-                    <Link href="/cart">
+                    <Link href="/cart" prefetch={false}>
                       <Button variant="outline" className="w-full">
                         Xem giỏ hàng
                       </Button>

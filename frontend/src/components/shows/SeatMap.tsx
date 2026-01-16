@@ -41,8 +41,10 @@ export function SeatMap({
   } = useQuery({
     queryKey: ['seatMap', showId],
     queryFn: () => showService.getShowSeats(showId),
-    refetchInterval: 30000, // Refresh every 30s
-    staleTime: 10000,
+    // Remove auto-refetch to prevent spam - will refetch manually on lock/release
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Lock tickets mutation

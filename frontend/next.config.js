@@ -7,9 +7,8 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 const isTurbopack = process.env.TURBOPACK === '1';
 
 const nextConfig = {
-  // Temporarily disable to debug duplicate requests
-  // Re-enable in production: true
-  reactStrictMode: false,
+  // Enable strict mode to catch potential issues
+  reactStrictMode: true,
 
   // Image optimization settings
   images: {
@@ -46,6 +45,11 @@ const nextConfig = {
     ],
     // Optimize CSS
     optimizeCss: true,
+    // Disable client router cache to prevent RSC request spam
+    staleTimes: {
+      dynamic: 0,
+      static: 180,
+    },
   },
 
   // Modularize imports for better tree-shaking

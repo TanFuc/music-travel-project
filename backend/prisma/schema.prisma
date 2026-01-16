@@ -837,10 +837,10 @@ model PerformanceRegistration {
   updatedAt       DateTime           @updatedAt @map("updated_at")
 
   // Relations
-  show           Show               @relation(fields: [showId], references: [id])
-  stage          Stage              @relation(fields: [stageId], references: [id])
-  qrCode         PerformanceQRCode  @relation(fields: [qrCodeId], references: [id])
-  slot           PerformanceSlot?
+  show   Show              @relation(fields: [showId], references: [id])
+  stage  Stage             @relation(fields: [stageId], references: [id])
+  qrCode PerformanceQRCode @relation(fields: [qrCodeId], references: [id])
+  slot   PerformanceSlot?
 
   @@index([showId, stageId])
   @@index([status])

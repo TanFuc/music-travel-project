@@ -137,8 +137,13 @@ export function LocationMap({
       'script[src*="maps.googleapis.com"]',
     );
     if (existingScript) {
-      existingScript.addEventListener('load', () => setIsLoaded(true));
-      return;
+      const handleLoad = () => {
+        setIsLoaded(true);
+      };
+      existingScript.addEventListener('load', handleLoad);
+      return () => {
+        existingScript.removeEventListener('load', handleLoad);
+      };
     }
 
     // Load script
@@ -149,6 +154,10 @@ export function LocationMap({
     script.onload = () => setIsLoaded(true);
     script.onerror = () => setError('Khong the tai Google Maps.');
     document.head.appendChild(script);
+
+    return () => {
+      // Cleanup if needed
+    };
   }, []);
 
   // Initialize map
@@ -214,17 +223,26 @@ export function LocationMap({
 
   // Initialize map when loaded
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && !mapInstanceRef.current) {
       initMap();
     }
-  }, [isLoaded, initMap]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded]);
 
   // Update map when coordinates change
+  const prevLatLng = useRef({ lat: latitude, lng: longitude });
   useEffect(() => {
     if (mapInstanceRef.current && markerRef.current) {
-      const position = { lat: latitude, lng: longitude };
-      mapInstanceRef.current.setCenter(position);
-      markerRef.current.setPosition(position);
+      const hasChanged = 
+        prevLatLng.current.lat !== latitude || 
+        prevLatLng.current.lng !== longitude;
+      
+      if (hasChanged) {
+        const position = { lat: latitude, lng: longitude };
+        mapInstanceRef.current.setCenter(position);
+        markerRef.current.setPosition(position);
+        prevLatLng.current = position;
+      }
     }
   }, [latitude, longitude]);
 
