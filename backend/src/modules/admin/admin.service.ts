@@ -958,4 +958,47 @@ export class AdminService {
       data: notifications,
     });
   }
+
+  // ============================================================================
+  // STAGES MANAGEMENT
+  // ============================================================================
+  async getStages(page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.prisma.stage.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          location: true,
+          _count: { select: { shows: true } },
+        },
+      }),
+      this.prisma.stage.count(),
+    ]);
+
+    return {
+      items,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getStageById(id: number) {
+    const stage = await this.prisma.stage.findUnique({
+      where: { id },
+      include: {
+        location: true,
+        physicalSeats: true,
+        _count: { select: { shows: true } },
+      },
+    });
+    if (!stage) throw new Error('Stage not found');
+    return stage;
+  }
 }

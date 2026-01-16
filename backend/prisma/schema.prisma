@@ -160,6 +160,23 @@ enum NotificationType {
   SYSTEM
 }
 
+enum PerformanceType {
+  SINGING
+  DANCING
+  INSTRUMENT
+  MAGIC
+  COMEDY
+  OTHER
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  PERFORMED
+}
+
 // =============================================================================
 // MODULE 1: AUTHENTICATION & USERS
 // =============================================================================
@@ -301,10 +318,13 @@ model Stage {
   updatedBy       Int?      @map("updated_by")
 
   // Relations
-  location      Location         @relation(fields: [locationId], references: [id])
-  shows         Show[]
-  physicalSeats PhysicalSeat[]
-  template      SeatMapTemplate? @relation(fields: [seatMapTemplate], references: [id])
+  location                 Location                  @relation(fields: [locationId], references: [id])
+  shows                    Show[]
+  physicalSeats            PhysicalSeat[]
+  template                 SeatMapTemplate?          @relation(fields: [seatMapTemplate], references: [id])
+  performanceQRCodes       PerformanceQRCode[]
+  performanceRegistrations PerformanceRegistration[]
+  performanceSlots         PerformanceSlot[]
 
   @@map("stages")
 }
@@ -363,10 +383,13 @@ model Show {
   updatedBy       Int?       @map("updated_by")
 
   // Relations
-  stage         Stage         @relation(fields: [stageId], references: [id])
-  artists       ShowArtist[]
-  ticketClasses TicketClass[]
-  tickets       Ticket[]
+  stage                    Stage                     @relation(fields: [stageId], references: [id])
+  artists                  ShowArtist[]
+  ticketClasses            TicketClass[]
+  tickets                  Ticket[]
+  performanceQRCodes       PerformanceQRCode[]
+  performanceRegistrations PerformanceRegistration[]
+  performanceSlots         PerformanceSlot[]
 
   @@map("shows")
 }
@@ -759,4 +782,88 @@ model AuditLog {
 
   @@index([targetTable, targetId])
   @@map("audit_logs")
+}
+
+// =============================================================================
+// MODULE 8: PERFORMANCE REGISTRATION (QR Code System)
+// =============================================================================
+
+model PerformanceQRCode {
+  id                   Int       @id @default(autoincrement())
+  code                 String    @unique @db.VarChar(100)
+  qrImageUrl           String?   @map("qr_image_url") @db.VarChar(500)
+  showId               Int       @map("show_id")
+  stageId              Int       @map("stage_id")
+  isActive             Boolean   @default(true) @map("is_active")
+  maxRegistrations     Int?      @map("max_registrations")
+  registrationDeadline DateTime? @map("registration_deadline")
+  scanCount            Int       @default(0) @map("scan_count")
+  registrationCount    Int       @default(0) @map("registration_count")
+  createdBy            Int       @map("created_by")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  show          Show                      @relation(fields: [showId], references: [id])
+  stage         Stage                     @relation(fields: [stageId], references: [id])
+  registrations PerformanceRegistration[]
+
+  @@unique([showId, stageId])
+  @@map("performance_qr_codes")
+}
+
+model PerformanceRegistration {
+  id              Int                @id @default(autoincrement())
+  showId          Int                @map("show_id")
+  stageId         Int                @map("stage_id")
+  qrCodeId        Int                @map("qr_code_id")
+  userId          Int?               @map("user_id")
+  guestName       String?            @map("guest_name") @db.VarChar(100)
+  guestEmail      String?            @map("guest_email") @db.VarChar(100)
+  guestPhone      String?            @map("guest_phone") @db.VarChar(20)
+  performanceType PerformanceType    @map("performance_type")
+  songTitle       String?            @map("song_title") @db.VarChar(200)
+  artistName      String?            @map("artist_name") @db.VarChar(100)
+  duration        Int?
+  description     String?            @db.Text
+  audioUrl        String?            @map("audio_url") @db.VarChar(500)
+  videoUrl        String?            @map("video_url") @db.VarChar(500)
+  status          RegistrationStatus @default(PENDING)
+  registeredAt    DateTime           @default(now()) @map("registered_at")
+  reviewedBy      Int?               @map("reviewed_by")
+  reviewedAt      DateTime?          @map("reviewed_at")
+  reviewNote      String?            @map("review_note") @db.Text
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  show           Show               @relation(fields: [showId], references: [id])
+  stage          Stage              @relation(fields: [stageId], references: [id])
+  qrCode         PerformanceQRCode  @relation(fields: [qrCodeId], references: [id])
+  slot           PerformanceSlot?
+
+  @@index([showId, stageId])
+  @@index([status])
+  @@index([qrCodeId])
+  @@map("performance_registrations")
+}
+
+model PerformanceSlot {
+  id             Int      @id @default(autoincrement())
+  registrationId Int      @unique @map("registration_id")
+  showId         Int      @map("show_id")
+  stageId        Int      @map("stage_id")
+  startTime      DateTime @map("start_time")
+  endTime        DateTime @map("end_time")
+  slotOrder      Int      @map("slot_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  registration PerformanceRegistration @relation(fields: [registrationId], references: [id])
+  show         Show                    @relation(fields: [showId], references: [id])
+  stage        Stage                   @relation(fields: [stageId], references: [id])
+
+  @@index([showId, stageId])
+  @@map("performance_slots")
 }

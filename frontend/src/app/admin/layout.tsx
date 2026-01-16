@@ -18,6 +18,7 @@ import {
   LogOut,
   Menu,
   ChevronRight,
+  Theater,
 } from 'lucide-react';
 import { Logo } from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,11 @@ const sidebarItems = [
     title: 'Tour',
     href: '/admin/tours',
     icon: MapPin,
+  },
+  {
+    title: 'Sân khấu',
+    href: '/admin/stages',
+    icon: Theater,
   },
   {
     title: 'Vé',

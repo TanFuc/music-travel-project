@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Music, Calendar, MapPin, Ticket } from 'lucide-react';
+import { Music, Calendar, MapPin, Ticket, QrCode, Eye } from 'lucide-react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -94,7 +95,20 @@ export default function AdminShowsPage() {
                                                     </div>
                                                 )}
                                             </div>
-                                            <Button variant="outline" size="sm">Chi tiết</Button>
+                                            <div className="flex gap-2">
+                                                <Link href={`/admin/shows/${show.id}/qr-codes`}>
+                                                    <Button variant="outline" size="sm">
+                                                        <QrCode className="h-4 w-4 mr-1" />
+                                                        QR
+                                                    </Button>
+                                                </Link>
+                                                <Link href={`/admin/shows/${show.id}`}>
+                                                    <Button variant="outline" size="sm">
+                                                        <Eye className="h-4 w-4 mr-1" />
+                                                        Chi tiết
+                                                    </Button>
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

@@ -161,6 +161,26 @@ export class AdminController {
   }
 
   // ============================================================================
+  // STAGES MANAGEMENT
+  // ============================================================================
+  @Get('stages')
+  @ApiOperation({ summary: 'Get all stages with pagination' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getStages(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
+  ) {
+    return this.adminService.getStages(page, limit);
+  }
+
+  @Get('stages/:id')
+  @ApiOperation({ summary: 'Get stage by ID' })
+  async getStageById(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.getStageById(id);
+  }
+
+  // ============================================================================
   // TOURS MANAGEMENT
   // ============================================================================
   @Get('tours')
