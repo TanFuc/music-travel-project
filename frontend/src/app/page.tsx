@@ -21,10 +21,12 @@ export default function HomePage() {
       <HeroBanner />
 
       {/* Quick Location Filter Bar */}
-      <LocationFilter
-        selectedLocation={selectedLocation}
-        onLocationChange={handleLocationChange}
-      />
+      <div className="px-4 sm:px-6 lg:px-8">
+        <LocationFilter
+          selectedLocation={selectedLocation}
+          onLocationChange={handleLocationChange}
+        />
+      </div>
 
       {/* Shows Section - Primary Sales Block */}
       <ShowsSection locationFilter={selectedLocation} />

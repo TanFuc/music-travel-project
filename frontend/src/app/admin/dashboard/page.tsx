@@ -63,15 +63,15 @@ export default function AdminDashboardPage() {
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: () => get<DashboardStats>('/admin/dashboard'),
-    retry: 2,
-    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes - dashboard data doesn't need to refresh frequently
+    retry: false,
   });
 
   const { data: recentBookings, isLoading: bookingsLoading, error: bookingsError } = useQuery({
     queryKey: ['admin-recent-bookings'],
     queryFn: () => get<{ items: RecentBooking[] }>('/admin/recent-bookings'),
-    retry: 2,
-    retryDelay: 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes for recent bookings
+    retry: false,
   });
 
   // Show error state if stats failed to load
@@ -99,9 +99,9 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatCard
           title="Người dùng"
           value={stats?.users.total || 0}
@@ -141,25 +141,25 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Revenue Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card className="bg-gradient-to-br from-brand-500 to-brand-600 text-white">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <CreditCard className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-white text-base sm:text-lg">
+              <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
               Doanh thu tháng này
             </CardTitle>
           </CardHeader>
           <CardContent>
             {statsLoading ? (
-              <Skeleton className="h-10 w-40 bg-white/20" />
+              <Skeleton className="h-8 sm:h-10 w-32 sm:w-40 bg-white/20" />
             ) : (
               <>
-                <p className="text-3xl font-bold">
+                <p className="text-2xl sm:text-3xl font-bold">
                   {formatCurrency(stats?.bookings.revenueThisMonth || 0)}
                 </p>
                 <div className="flex items-center gap-1 mt-2 text-white/80">
-                  <TrendingUp className="h-4 w-4" />
-                  <span className="text-sm">So với tháng trước</span>
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="text-xs sm:text-sm">So với tháng trước</span>
                 </div>
               </>
             )}
@@ -168,20 +168,20 @@ export default function AdminDashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Ticket className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Ticket className="h-4 w-4 sm:h-5 sm:w-5" />
               Tổng doanh thu
             </CardTitle>
           </CardHeader>
           <CardContent>
             {statsLoading ? (
-              <Skeleton className="h-10 w-40" />
+              <Skeleton className="h-8 sm:h-10 w-32 sm:w-40" />
             ) : (
               <>
-                <p className="text-3xl font-bold text-brand-600">
+                <p className="text-2xl sm:text-3xl font-bold text-brand-600">
                   {formatCurrency(stats?.bookings.totalRevenue || 0)}
                 </p>
-                <p className="text-sm text-neutral-500 mt-2">
+                <p className="text-xs sm:text-sm text-neutral-500 mt-2">
                   Từ {stats?.bookings.total || 0} đơn hàng
                 </p>
               </>
@@ -193,11 +193,11 @@ export default function AdminDashboardPage() {
       {/* Recent Bookings */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
             Đơn hàng gần đây
           </CardTitle>
-          <CardDescription>5 đơn hàng mới nhất</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">5 đơn hàng mới nhất</CardDescription>
         </CardHeader>
         <CardContent>
           {bookingsLoading ? (
@@ -213,24 +213,24 @@ export default function AdminDashboardPage() {
               {recentBookings.items.map((booking) => (
                 <div
                   key={booking.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-neutral-50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border rounded-lg hover:bg-neutral-50 transition-colors"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-semibold">
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs sm:text-sm font-semibold">
                         #{booking.bookingCode}
                       </span>
                       <Badge variant={bookingStatusColors[booking.status]}>
                         {booking.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-neutral-600">
+                    <p className="text-xs sm:text-sm text-neutral-600">
                       {booking.user.fullName} | {booking.user.phoneNumber}
                     </p>
                     <p className="text-xs text-neutral-400">{formatDate(booking.createdAt)}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-brand-600">
+                  <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2">
+                    <p className="font-bold text-brand-600 text-sm sm:text-base">
                       {formatCurrency(booking.finalAmount)}
                     </p>
                     <p className="text-xs text-neutral-500">
@@ -268,19 +268,19 @@ function StatCard({
 }: StatCardProps) {
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-neutral-500">{title}</p>
+      <CardContent className="pt-4 sm:pt-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm text-neutral-500">{title}</p>
             {loading ? (
-              <Skeleton className="h-8 w-20 mt-1" />
+              <Skeleton className="h-6 sm:h-8 w-16 sm:w-20 mt-1" />
             ) : (
-              <p className="text-2xl font-bold mt-1">{value.toLocaleString('vi-VN')}</p>
+              <p className="text-xl sm:text-2xl font-bold mt-1">{value.toLocaleString('vi-VN')}</p>
             )}
-            <p className="text-xs text-neutral-400 mt-1">{subtitle}</p>
+            <p className="text-xs text-neutral-400 mt-1 truncate">{subtitle}</p>
           </div>
-          <div className={cn('w-12 h-12 rounded-full flex items-center justify-center', bgColor)}>
-            <Icon className={cn('h-6 w-6', iconColor)} />
+          <div className={cn('w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0', bgColor)}>
+            <Icon className={cn('h-5 w-5 sm:h-6 sm:w-6', iconColor)} />
           </div>
         </div>
       </CardContent>

@@ -364,23 +364,24 @@ model PhysicalSeat {
 }
 
 model Show {
-  id              Int        @id @default(autoincrement())
-  stageId         Int        @map("stage_id")
-  title           String     @db.VarChar(200)
-  slug            String?    @db.VarChar(200)
-  description     String?    @db.Text
-  performTime     DateTime   @map("perform_time")
-  checkInTime     DateTime?  @map("check_in_time")
-  status          ShowStatus @default(UPCOMING)
-  properties      Json?
-  metaTitle       String?    @map("meta_title") @db.VarChar(255)
-  metaDescription String?    @map("meta_description") @db.VarChar(500)
-  metaKeywords    String?    @map("meta_keywords") @db.VarChar(255)
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime   @updatedAt @map("updated_at")
-  deletedAt       DateTime?  @map("deleted_at")
-  createdBy       Int?       @map("created_by")
-  updatedBy       Int?       @map("updated_by")
+  id                   Int        @id @default(autoincrement())
+  stageId              Int        @map("stage_id")
+  title                String     @db.VarChar(200)
+  slug                 String?    @db.VarChar(200)
+  description          String?    @db.Text
+  performTime          DateTime   @map("perform_time")
+  checkInTime          DateTime?  @map("check_in_time")
+  status               ShowStatus @default(UPCOMING)
+  seatSelectionEnabled Boolean    @default(true) @map("seat_selection_enabled") // false = General Admission mode
+  properties           Json?
+  metaTitle            String?    @map("meta_title") @db.VarChar(255)
+  metaDescription      String?    @map("meta_description") @db.VarChar(500)
+  metaKeywords         String?    @map("meta_keywords") @db.VarChar(255)
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+  deletedAt            DateTime?  @map("deleted_at")
+  createdBy            Int?       @map("created_by")
+  updatedBy            Int?       @map("updated_by")
 
   // Relations
   stage                    Stage                     @relation(fields: [stageId], references: [id])

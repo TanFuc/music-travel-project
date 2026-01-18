@@ -6,35 +6,35 @@ import { Button } from '@/components/ui/button';
 
 export default function AdminSettingsPage() {
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             <div>
-                <h1 className="text-2xl font-bold">Cài đặt hệ thống</h1>
-                <p className="text-neutral-600 mt-1">Quản lý cấu hình và thiết lập hệ thống</p>
+                <h1 className="text-xl sm:text-2xl font-bold">Cài đặt hệ thống</h1>
+                <p className="text-sm sm:text-base text-neutral-600 mt-1">Quản lý cấu hình và thiết lập hệ thống</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 {/* General Settings */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <SettingsIcon className="h-5 w-5" />
+                        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                            <SettingsIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                             Cài đặt chung
                         </CardTitle>
-                        <CardDescription>Cấu hình cơ bản của hệ thống</CardDescription>
+                        <CardDescription className="text-xs sm:text-sm">Cấu hình cơ bản của hệ thống</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
-                            <div className="flex items-center justify-between py-2">
-                                <span className="text-sm">Tên hệ thống</span>
-                                <Button variant="outline" size="sm">Chỉnh sửa</Button>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-2">
+                                <span className="text-xs sm:text-sm">Tên hệ thống</span>
+                                <Button variant="outline" size="sm" className="w-full sm:w-auto">Chỉnh sửa</Button>
                             </div>
-                            <div className="flex items-center justify-between py-2">
-                                <span className="text-sm">Múi giờ</span>
-                                <Button variant="outline" size="sm">Chỉnh sửa</Button>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-2">
+                                <span className="text-xs sm:text-sm">Múi giờ</span>
+                                <Button variant="outline" size="sm" className="w-full sm:w-auto">Chỉnh sửa</Button>
                             </div>
-                            <div className="flex items-center justify-between py-2">
-                                <span className="text-sm">Ngôn ngữ mặc định</span>
-                                <Button variant="outline" size="sm">Chỉnh sửa</Button>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-2">
+                                <span className="text-xs sm:text-sm">Ngôn ngữ mặc định</span>
+                                <Button variant="outline" size="sm" className="w-full sm:w-auto">Chỉnh sửa</Button>
                             </div>
                         </div>
                     </CardContent>

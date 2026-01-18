@@ -39,6 +39,20 @@ export const ERROR_CODES = {
   PAYMENT_002: 'PAYMENT_002',
   PAYMENT_003: 'PAYMENT_003',
 
+  // Stage
+  STAGE_001: 'STAGE_001',
+  STAGE_002: 'STAGE_002',
+
+  // Seat
+  SEAT_001: 'SEAT_001',
+  SEAT_002: 'SEAT_002',
+
+  // Location
+  LOCATION_001: 'LOCATION_001',
+
+  // Template
+  TEMPLATE_001: 'TEMPLATE_001',
+
   // Validation
   VAL_001: 'VAL_001',
   VAL_002: 'VAL_002',
@@ -92,6 +106,20 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   PAYMENT_001: 'Thanh toán thất bại. Vui lòng thử lại.',
   PAYMENT_002: 'Số dư ví không đủ.',
   PAYMENT_003: 'Mã giảm giá không hợp lệ hoặc đã hết hạn.',
+
+  // Stage
+  STAGE_001: 'Sân khấu không tồn tại.',
+  STAGE_002: 'Không thể xóa sân khấu đã có show.',
+
+  // Seat
+  SEAT_001: 'Chỗ ngồi không tồn tại hoặc không thuộc sân khấu này.',
+  SEAT_002: 'Chỗ ngồi đã được đặt.',
+
+  // Location
+  LOCATION_001: 'Địa điểm không tồn tại.',
+
+  // Template
+  TEMPLATE_001: 'Template sơ đồ chỗ ngồi không tồn tại.',
 
   // Validation
   VAL_001: 'Dữ liệu không hợp lệ.',

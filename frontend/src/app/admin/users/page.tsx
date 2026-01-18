@@ -56,10 +56,10 @@ export default function AdminUsersPage() {
             const params = new URLSearchParams({ page: page.toString(), limit: '20' });
             if (search) params.append('search', search);
             const result = await get<UsersResponse>(`/admin/users?${params.toString()}`);
-            console.log('Admin Users API Response:', result);
             return result;
         },
-        retry: 2,
+        staleTime: 2 * 60 * 1000, // 2 minutes cache
+        placeholderData: (previousData) => previousData, // Keep previous data while loading new
     });
 
     const createMutation = useMutation({
@@ -162,27 +162,25 @@ export default function AdminUsersPage() {
 
     return (
         <>
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-neutral-800">Quản lý người dùng</h1>
-                            <p className="text-neutral-600 mt-1">
-                                {data?.meta?.total || 0} người dùng
-                            </p>
-                        </div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-neutral-800">Quản lý người dùng</h1>
+                        <p className="text-sm sm:text-base text-neutral-600 mt-1">
+                            {data?.meta?.total || 0} người dùng
+                        </p>
                     </div>
-                    <Button className="gap-2" onClick={handleCreateUser}>
+                    <Button className="gap-2 w-full sm:w-auto" onClick={handleCreateUser}>
                         <UserPlus className="h-4 w-4" />
-                        Thêm người dùng
+                        <span className="sm:inline">Thêm người dùng</span>
                     </Button>
                 </div>
 
                 {/* Search */}
                 <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex gap-2">
+                    <CardContent className="pt-4 sm:pt-6">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                                 <Input
@@ -190,10 +188,10 @@ export default function AdminUsersPage() {
                                     value={searchInput}
                                     onChange={(e) => setSearchInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="pl-10"
+                                    className="pl-10 text-sm sm:text-base"
                                 />
                             </div>
-                            <Button onClick={handleSearch}>Tìm kiếm</Button>
+                            <Button onClick={handleSearch} className="w-full sm:w-auto">Tìm kiếm</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -216,94 +214,100 @@ export default function AdminUsersPage() {
                             </div>
                         ) : (
                             <>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b">
-                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600">Người dùng</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600">Liên hệ</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600">Vai trò</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600">Trạng thái</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600">Ngày tạo</th>
-                                                <th className="text-right py-3 px-4 font-semibold text-sm text-neutral-600">Thao tác</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {data.items.map((user) => (
-                                                <tr key={user.id} className="border-b hover:bg-neutral-50 transition-colors">
-                                                    <td className="py-4 px-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center">
-                                                                <span className="text-brand-600 font-semibold">
-                                                                    {user.fullName.charAt(0).toUpperCase()}
-                                                                </span>
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-medium text-neutral-800">{user.fullName}</p>
-                                                                <p className="text-sm text-neutral-500">ID: {user.id}</p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-4 px-4">
-                                                        <div>
-                                                            <p className="text-sm text-neutral-800">{user.phoneNumber}</p>
-                                                            {user.email && (
-                                                                <p className="text-sm text-neutral-500">{user.email}</p>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-4 px-4">
-                                                        <Badge variant={roleColors[user.role]} className="gap-1">
-                                                            <Shield className="h-3 w-3" />
-                                                            {user.role}
-                                                        </Badge>
-                                                    </td>
-                                                    <td className="py-4 px-4">
-                                                        <button
-                                                            onClick={() => toggleStatusMutation.mutate(user.id)}
-                                                            disabled={toggleStatusMutation.isPending}
-                                                        >
-                                                            {user.isActive ? (
-                                                                <Badge variant="success" className="gap-1 cursor-pointer hover:opacity-80">
-                                                                    <Check className="h-3 w-3" />
-                                                                    Hoạt động
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge variant="destructive" className="gap-1 cursor-pointer hover:opacity-80">
-                                                                    <Ban className="h-3 w-3" />
-                                                                    Bị khóa
-                                                                </Badge>
-                                                            )}
-                                                        </button>
-                                                    </td>
-                                                    <td className="py-4 px-4 text-sm text-neutral-600">
-                                                        {formatDate(user.createdAt)}
-                                                    </td>
-                                                    <td className="py-4 px-4">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => handleEditUser(user)}
-                                                                title="Chỉnh sửa"
-                                                            >
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => setDeleteUser(user)}
-                                                                title="Xóa"
-                                                                className="text-error-600 hover:text-error-700 hover:bg-error-50"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </td>
+                                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                                    <div className="inline-block min-w-full align-middle">
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="border-b">
+                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600">Người dùng</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600 hidden md:table-cell">Liên hệ</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600">Vai trò</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600">Trạng thái</th>
+                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600 hidden lg:table-cell">Ngày tạo</th>
+                                                    <th className="text-right py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600">Thao tác</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {data.items.map((user) => (
+                                                    <tr key={user.id} className="border-b hover:bg-neutral-50 transition-colors">
+                                                        <td className="py-3 sm:py-4 px-4">
+                                                            <div className="flex items-center gap-2 sm:gap-3">
+                                                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+                                                                    <span className="text-brand-600 font-semibold text-xs sm:text-base">
+                                                                        {user.fullName.charAt(0).toUpperCase()}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="font-medium text-neutral-800 text-xs sm:text-sm truncate">{user.fullName}</p>
+                                                                    <p className="text-xs text-neutral-500 md:hidden">{user.phoneNumber}</p>
+                                                                    <p className="text-xs text-neutral-500 hidden md:block">ID: {user.id}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 sm:py-4 px-4 hidden md:table-cell">
+                                                            <div>
+                                                                <p className="text-sm text-neutral-800">{user.phoneNumber}</p>
+                                                                {user.email && (
+                                                                    <p className="text-sm text-neutral-500 truncate max-w-[200px]">{user.email}</p>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 sm:py-4 px-4">
+                                                            <Badge variant={roleColors[user.role]} className="gap-1 text-xs">
+                                                                <Shield className="h-3 w-3 hidden sm:inline" />
+                                                                {user.role}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="py-3 sm:py-4 px-4">
+                                                            <button
+                                                                onClick={() => toggleStatusMutation.mutate(user.id)}
+                                                                disabled={toggleStatusMutation.isPending}
+                                                            >
+                                                                {user.isActive ? (
+                                                                    <Badge variant="success" className="gap-1 cursor-pointer hover:opacity-80 text-xs">
+                                                                        <Check className="h-3 w-3 hidden sm:inline" />
+                                                                        <span className="hidden sm:inline">Hoạt động</span>
+                                                                        <span className="sm:hidden">ON</span>
+                                                                    </Badge>
+                                                                ) : (
+                                                                    <Badge variant="destructive" className="gap-1 cursor-pointer hover:opacity-80 text-xs">
+                                                                        <Ban className="h-3 w-3 hidden sm:inline" />
+                                                                        <span className="hidden sm:inline">Bị khóa</span>
+                                                                        <span className="sm:hidden">OFF</span>
+                                                                    </Badge>
+                                                                )}
+                                                            </button>
+                                                        </td>
+                                                        <td className="py-3 sm:py-4 px-4 text-xs sm:text-sm text-neutral-600 hidden lg:table-cell">
+                                                            {formatDate(user.createdAt)}
+                                                        </td>
+                                                        <td className="py-3 sm:py-4 px-4">
+                                                            <div className="flex items-center justify-end gap-1 sm:gap-2">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => handleEditUser(user)}
+                                                                    title="Chỉnh sửa"
+                                                                    className="h-8 w-8"
+                                                                >
+                                                                    <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => setDeleteUser(user)}
+                                                                    title="Xóa"
+                                                                    className="text-error-600 hover:text-error-700 hover:bg-error-50 h-8 w-8"
+                                                                >
+                                                                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
 
                                 {/* Pagination */}

@@ -31,6 +31,7 @@ export function Logo({ size = 'md', showText = true, className }: LogoProps) {
           src="/logo.png"
           alt="Mãi Cho Hành Tinh Xanh"
           fill
+          sizes="(max-width: 768px) 40px, (max-width: 1024px) 64px, 96px"
           className="object-cover"
           priority
         />

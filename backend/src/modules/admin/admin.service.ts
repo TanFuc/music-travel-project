@@ -413,6 +413,266 @@ export class AdminService {
     });
   }
 
+  /**
+   * Create a show with full configuration including artists, ticket classes, and tickets
+   * Uses a transaction to ensure data consistency
+   */
+  async createShowFull(
+    data: {
+      title: string;
+      description?: string;
+      stageId: number;
+      performTime: string;
+      checkInTime?: string;
+      seatSelectionEnabled?: boolean;
+      artists?: Array<{
+        artistId?: number;
+        name?: string;
+        bio?: string;
+        isHeadline: boolean;
+      }>;
+      ticketClasses: Array<{
+        name: string;
+        price: number;
+        colorCode?: string;
+        quantity: number;
+        sortOrder?: number;
+      }>;
+      properties?: Record<string, unknown>;
+      metaTitle?: string;
+      metaDescription?: string;
+      metaKeywords?: string;
+    },
+    createdBy: number,
+  ) {
+    // Verify stage exists
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: data.stageId },
+      include: { physicalSeats: true },
+    });
+    if (!stage) throw new Error('Stage not found');
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Generate slug from title
+      const slug = this.generateSlug(data.title);
+
+      // 2. Create the show
+      const show = await tx.show.create({
+        data: {
+          title: data.title,
+          slug,
+          description: data.description,
+          stageId: data.stageId,
+          performTime: new Date(data.performTime),
+          checkInTime: data.checkInTime ? new Date(data.checkInTime) : null,
+          seatSelectionEnabled: data.seatSelectionEnabled ?? true,
+          status: 'UPCOMING',
+          properties: data.properties as any,
+          metaTitle: data.metaTitle,
+          metaDescription: data.metaDescription,
+          metaKeywords: data.metaKeywords,
+          createdBy,
+        },
+      });
+
+      // 3. Handle artists
+      if (data.artists && data.artists.length > 0) {
+        for (const artistData of data.artists) {
+          let artistId = artistData.artistId;
+
+          // Create new artist if no existing ID provided
+          if (!artistId && artistData.name) {
+            const newArtist = await tx.artist.create({
+              data: {
+                name: artistData.name,
+                bio: artistData.bio,
+                createdBy,
+              },
+            });
+            artistId = newArtist.id;
+          }
+
+          if (artistId) {
+            await tx.showArtist.create({
+              data: {
+                showId: show.id,
+                artistId,
+                isHeadline: artistData.isHeadline,
+              },
+            });
+          }
+        }
+      }
+
+      // 4. Create ticket classes and generate tickets
+      for (let i = 0; i < data.ticketClasses.length; i++) {
+        const tcData = data.ticketClasses[i];
+
+        // Create ticket class
+        const ticketClass = await tx.ticketClass.create({
+          data: {
+            showId: show.id,
+            name: tcData.name,
+            price: tcData.price,
+            colorCode: tcData.colorCode,
+            totalQuantity: tcData.quantity,
+          },
+        });
+
+        // Generate tickets for this class (General Admission - no seat assignment)
+        const ticketsToCreate = Array.from({ length: tcData.quantity }, (_, idx) => ({
+          showId: show.id,
+          ticketClassId: ticketClass.id,
+          ticketCode: `${show.id}-${ticketClass.id}-${String(idx + 1).padStart(4, '0')}`,
+          status: 'AVAILABLE' as const,
+          physicalSeatId: null, // No seat assignment for General Admission
+        }));
+
+        await tx.ticket.createMany({ data: ticketsToCreate });
+      }
+
+      // 5. Return the created show with relations
+      return tx.show.findUnique({
+        where: { id: show.id },
+        include: {
+          stage: { include: { location: true } },
+          artists: { include: { artist: true } },
+          ticketClasses: true,
+          _count: { select: { tickets: true } },
+        },
+      });
+    });
+  }
+
+  /**
+   * Generate URL-friendly slug from title
+   */
+  private generateSlug(title: string): string {
+    return title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'd')
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens
+      .replace(/^-+|-+$/g, '') // Trim hyphens
+      .concat('-', Date.now().toString(36)); // Add unique suffix
+  }
+
+  // ============================================================================
+  // ARTISTS MANAGEMENT
+  // ============================================================================
+  async getArtists(page: number = 1, limit: number = 50, search?: string) {
+    const skip = (page - 1) * limit;
+    const where = {
+      deletedAt: null,
+      ...(search && {
+        name: { contains: search, mode: 'insensitive' as const },
+      }),
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.artist.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          bio: true,
+          socialLinks: true,
+          createdAt: true,
+          _count: { select: { shows: true } },
+        },
+      }),
+      this.prisma.artist.count({ where }),
+    ]);
+
+    return {
+      items,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getArtistById(id: number) {
+    const artist = await this.prisma.artist.findUnique({
+      where: { id },
+      include: {
+        shows: {
+          include: {
+            show: { select: { id: true, title: true, performTime: true, status: true } },
+          },
+        },
+      },
+    });
+    if (!artist) throw new Error('Artist not found');
+    return artist;
+  }
+
+  async createArtist(
+    data: { name: string; bio?: string; socialLinks?: Record<string, string> },
+    createdBy: number,
+  ) {
+    return this.prisma.artist.create({
+      data: {
+        name: data.name,
+        bio: data.bio,
+        socialLinks: data.socialLinks,
+        createdBy,
+      },
+      select: {
+        id: true,
+        name: true,
+        bio: true,
+        socialLinks: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async updateArtist(
+    id: number,
+    data: { name?: string; bio?: string; socialLinks?: Record<string, string> },
+    updatedBy: number,
+  ) {
+    const artist = await this.prisma.artist.findUnique({ where: { id } });
+    if (!artist) throw new Error('Artist not found');
+
+    return this.prisma.artist.update({
+      where: { id },
+      data: {
+        ...data,
+        updatedBy,
+      },
+    });
+  }
+
+  async deleteArtist(id: number) {
+    const artist = await this.prisma.artist.findUnique({
+      where: { id },
+      include: { _count: { select: { shows: true } } },
+    });
+    if (!artist) throw new Error('Artist not found');
+
+    // Prevent deletion if artist has shows
+    if (artist._count.shows > 0) {
+      throw new Error('Cannot delete artist with existing shows');
+    }
+
+    return this.prisma.artist.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
   // ============================================================================
   // TOURS MANAGEMENT
   // ============================================================================

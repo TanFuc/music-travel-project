@@ -14,6 +14,7 @@ import { useCartStore } from '@/stores/cart.store';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { SeatMap } from '@/components/shows/SeatMap';
+import { GeneralAdmissionView } from '@/components/shows/GeneralAdmissionView';
 import { LocationMap, StaticMap } from '@/components/maps';
 
 interface TicketClass {
@@ -40,6 +41,7 @@ interface ShowDetail {
   performTime: string;
   checkInTime: string | null;
   status: string;
+  seatSelectionEnabled: boolean; // false = General Admission mode
   properties: Record<string, unknown> | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -157,24 +159,24 @@ export default function ShowDetailPage() {
   const isBookable = show.status === 'UPCOMING' || show.status === 'ONGOING';
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Back Button */}
-      <Link href="/shows" prefetch={false} className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-6">
+      <Link href="/shows" prefetch={false} className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-4 sm:mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Quay lại danh sách
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Hero Section */}
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 text-white p-8 md:p-12">
+          <div className="relative rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 text-white p-6 sm:p-8 md:p-12">
             <div className="relative z-10">
-              <Badge variant={statusColors[show.status]} className="mb-4">
+              <Badge variant={statusColors[show.status]} className="mb-3 sm:mb-4">
                 {statusLabels[show.status]}
               </Badge>
-              <h1 className="text-3xl md:text-4xl font-display font-bold mb-4">{show.title}</h1>
-              <div className="flex flex-wrap gap-4 text-white/90">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-3 sm:mb-4">{show.title}</h1>
+              <div className="flex flex-wrap gap-3 sm:gap-4 text-sm sm:text-base text-white/90">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
                   <span>{formatDateTime(show.performTime)}</span>
@@ -212,7 +214,7 @@ export default function ShowDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {show.artists.map((artist) => (
                     <div
                       key={artist.id}
@@ -302,54 +304,81 @@ export default function ShowDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Seat Map Section */}
+          {/* Seat Map / General Admission Section */}
           {isBookable && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Ticket className="h-5 w-5" />
-                    Sơ đồ chỗ ngồi
+                    {show.seatSelectionEnabled ? 'So do cho ngoi' : 'Chon ve'}
                   </CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowSeatMap(!showSeatMap)}
-                  >
-                    {showSeatMap ? 'Ẩn sơ đồ' : 'Xem sơ đồ'}
-                  </Button>
+                  {show.seatSelectionEnabled && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSeatMap(!showSeatMap)}
+                    >
+                      {showSeatMap ? 'An so do' : 'Xem so do'}
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
-              {showSeatMap && (
-                <CardContent>
-                  <SeatMap
-                    showId={show.id}
-                    onSeatsSelected={handleSeatsSelected}
-                    onLockSuccess={handleLockSuccess}
-                    maxSelectable={10}
-                    className="rounded-xl border"
-                  />
-                  {lockedSeats && (
-                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <p className="text-green-700 dark:text-green-300 font-medium">
-                        Đã giữ chỗ thành công! Vui lòng hoàn tất thanh toán.
+              <CardContent>
+                {show.seatSelectionEnabled ? (
+                  // Seat Selection Mode - Show seat map
+                  <>
+                    {showSeatMap && (
+                      <>
+                        <SeatMap
+                          showId={show.id}
+                          onSeatsSelected={handleSeatsSelected}
+                          onLockSuccess={handleLockSuccess}
+                          maxSelectable={10}
+                          className="rounded-xl border"
+                        />
+                        {lockedSeats && (
+                          <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <p className="text-green-700 dark:text-green-300 font-medium">
+                              Da giu cho thanh cong! Vui long hoan tat thanh toan.
+                            </p>
+                            <Link href={`/checkout?lockId=${lockedSeats.lockId}`} prefetch={false}>
+                              <Button className="mt-2">
+                                Tien hanh thanh toan
+                              </Button>
+                            </Link>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {!showSeatMap && (
+                      <p className="text-neutral-500 text-center py-4">
+                        Nhan "Xem so do" de chon cho ngoi cua ban.
                       </p>
-                      <Link href={`/checkout?lockId=${lockedSeats.lockId}`} prefetch={false}>
-                        <Button className="mt-2">
-                          Tiến hành thanh toán
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              )}
+                    )}
+                  </>
+                ) : (
+                  // General Admission Mode - Show zone selection
+                  <GeneralAdmissionView
+                    showId={show.id}
+                    ticketClasses={show.ticketClasses}
+                    onSelectTicketClass={(ticketClass, quantity) => {
+                      // Add tickets to cart
+                      for (let i = 0; i < quantity; i++) {
+                        handleAddToCart(ticketClass);
+                      }
+                    }}
+                    maxQuantity={10}
+                  />
+                )}
+              </CardContent>
             </Card>
           )}
         </div>
 
         {/* Ticket Selection Sidebar */}
         <div>
-          <Card className="sticky top-24">
+          <Card className="lg:sticky lg:top-24">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Ticket className="h-5 w-5" />

@@ -27,13 +27,13 @@ export default function AdminMediaPage() {
     });
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-bold">Quản lý media</h1>
-                    <p className="text-neutral-600 mt-1">{data?.meta?.total || 0} files</p>
+                    <h1 className="text-xl sm:text-2xl font-bold">Quản lý media</h1>
+                    <p className="text-sm sm:text-base text-neutral-600 mt-1">{data?.meta?.total || 0} files</p>
                 </div>
-                <Button className="gap-2">
+                <Button className="gap-2 w-full sm:w-auto">
                     <FileImage className="h-4 w-4" />
                     Upload media
                 </Button>
@@ -41,18 +41,18 @@ export default function AdminMediaPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Thư viện media</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">Thư viện media</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                             {[...Array(8)].map((_, i) => <Skeleton key={i} className="aspect-square w-full" />)}
                         </div>
                     ) : !data?.items?.length ? (
                         <div className="text-center py-12 text-neutral-500">Chưa có media nào.</div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                                 {data.items.map((media) => (
                                     <div key={media.id} className="group relative aspect-square rounded-lg overflow-hidden border hover:shadow-lg transition-shadow">
                                         {media.type === 'IMAGE' ? (
@@ -73,9 +73,9 @@ export default function AdminMediaPage() {
                             </div>
 
                             {data.meta.totalPages > 1 && (
-                                <div className="flex justify-between mt-6 pt-6 border-t">
-                                    <p className="text-sm text-neutral-600">Trang {data.meta.page} / {data.meta.totalPages}</p>
-                                    <div className="flex gap-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6 pt-6 border-t">
+                                    <p className="text-xs sm:text-sm text-neutral-600 text-center sm:text-left">Trang {data.meta.page} / {data.meta.totalPages}</p>
+                                    <div className="flex gap-2 justify-center sm:justify-end">
                                         <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>Trước</Button>
                                         <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === data.meta.totalPages}>Sau</Button>
                                     </div>

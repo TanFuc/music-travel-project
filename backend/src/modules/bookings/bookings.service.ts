@@ -24,9 +24,81 @@ export class BookingsService {
     const bookingCode = this.generateBookingCode();
     let totalAmount = new Decimal(0);
 
-    // Validate and calculate ticket prices
-    const ticketItems: { ticketId: number; price: Decimal }[] = [];
-    if (createBookingDto.ticketIds?.length) {
+    // Validate and calculate ticket prices (new flow with seats)
+    const ticketItems: { ticketId: number; price: Decimal; physicalSeatId?: number }[] = [];
+    
+    // Handle new flow: ticketsWithSeats (includes seat selection)
+    if (createBookingDto.ticketsWithSeats?.length) {
+      const ticketIds = createBookingDto.ticketsWithSeats.map(t => t.ticketId);
+      const tickets = await this.prisma.ticket.findMany({
+        where: {
+          id: { in: ticketIds },
+          holderUserId: userId,
+          status: 'LOCKED',
+        },
+        include: { 
+          ticketClass: true,
+          show: true,
+        },
+      });
+
+      if (tickets.length !== ticketIds.length) {
+        throw new BadRequestException({
+          code: ERROR_CODES.TICKET_002,
+          message: getErrorMessage(ERROR_CODES.TICKET_002),
+        });
+      }
+
+      // Validate and assign seats
+      for (const ticketWithSeat of createBookingDto.ticketsWithSeats) {
+        const ticket = tickets.find(t => t.id === ticketWithSeat.ticketId);
+        if (!ticket) continue;
+
+        // If seat selection is enabled and seat is provided, validate it
+        if (ticket.show.seatSelectionEnabled && ticketWithSeat.physicalSeatId) {
+          // Check if seat exists and belongs to the stage
+          const seat = await this.prisma.physicalSeat.findFirst({
+            where: {
+              id: ticketWithSeat.physicalSeatId,
+              stageId: ticket.show.stageId,
+            },
+          });
+
+          if (!seat) {
+            throw new BadRequestException({
+              code: ERROR_CODES.SEAT_001,
+              message: 'Chỗ ngồi không tồn tại hoặc không thuộc sân khấu này.',
+            });
+          }
+
+          // Check if seat is already taken for this show
+          const existingTicket = await this.prisma.ticket.findFirst({
+            where: {
+              showId: ticket.showId,
+              physicalSeatId: ticketWithSeat.physicalSeatId,
+              status: { in: ['LOCKED', 'SOLD'] },
+              id: { not: ticket.id },
+            },
+          });
+
+          if (existingTicket) {
+            throw new BadRequestException({
+              code: ERROR_CODES.SEAT_002,
+              message: `Chỗ ngồi ${seat.zoneName || ''} ${seat.rowName || ''}-${seat.seatNumber || ''} đã được đặt.`,
+            });
+          }
+        }
+
+        ticketItems.push({ 
+          ticketId: ticket.id, 
+          price: ticket.ticketClass.price,
+          physicalSeatId: ticketWithSeat.physicalSeatId 
+        });
+        totalAmount = totalAmount.plus(ticket.ticketClass.price);
+      }
+    }
+    // Handle old flow: simple ticketIds (backward compatibility)
+    else if (createBookingDto.ticketIds?.length) {
       const tickets = await this.prisma.ticket.findMany({
         where: {
           id: { in: createBookingDto.ticketIds },
@@ -103,7 +175,7 @@ export class BookingsService {
 
     const finalAmount = totalAmount.minus(discountAmount);
 
-    // Create booking with items
+    // Create booking with items and assign seats
     const booking = await this.prisma.$transaction(async (tx) => {
       const newBooking = await tx.booking.create({
         data: {
@@ -119,7 +191,7 @@ export class BookingsService {
         },
       });
 
-      // Create ticket booking items
+      // Create ticket booking items and assign seats
       for (const item of ticketItems) {
         await tx.bookingItem.create({
           data: {
@@ -129,6 +201,14 @@ export class BookingsService {
             originalPrice: item.price,
           },
         });
+
+        // Update ticket with physical seat if provided
+        if (item.physicalSeatId) {
+          await tx.ticket.update({
+            where: { id: item.ticketId },
+            data: { physicalSeatId: item.physicalSeatId },
+          });
+        }
       }
 
       // Create tour booking items

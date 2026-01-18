@@ -106,6 +106,7 @@ export class ShowsService {
       performTime: show.performTime,
       checkInTime: show.checkInTime,
       status: show.status,
+      seatSelectionEnabled: (show as any).seatSelectionEnabled ?? true,
       stage: {
         id: show.stage.id,
         name: show.stage.name,
@@ -186,6 +187,7 @@ export class ShowsService {
       performTime: show.performTime,
       checkInTime: show.checkInTime,
       status: show.status,
+      seatSelectionEnabled: (show as any).seatSelectionEnabled ?? true, // General Admission when false
       properties: show.properties,
       metaTitle: show.metaTitle,
       metaDescription: show.metaDescription,

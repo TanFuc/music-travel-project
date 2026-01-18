@@ -14,12 +14,32 @@ class TourItemDto {
   passengerInfo?: Record<string, unknown>[];
 }
 
+class TicketWithSeatDto {
+  @IsInt()
+  ticketId: number;
+
+  @IsOptional()
+  @IsInt()
+  physicalSeatId?: number;
+}
+
 export class CreateBookingDto {
-  @ApiPropertyOptional({ type: [Number], description: 'Array of ticket IDs' })
+  @ApiPropertyOptional({ type: [Number], description: 'Array of ticket IDs (deprecated - use ticketsWithSeats for seat selection)' })
   @IsOptional()
   @IsArray()
   @IsInt({ each: true })
   ticketIds?: number[];
+
+  @ApiPropertyOptional({ 
+    type: [TicketWithSeatDto], 
+    description: 'Array of tickets with physical seat IDs',
+    example: [{ ticketId: 1, physicalSeatId: 10 }, { ticketId: 2, physicalSeatId: 11 }]
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TicketWithSeatDto)
+  ticketsWithSeats?: TicketWithSeatDto[];
 
   @ApiPropertyOptional({ type: [TourItemDto], description: 'Tour booking items' })
   @IsOptional()

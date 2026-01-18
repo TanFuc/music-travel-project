@@ -83,7 +83,7 @@ export class AdminPerformanceController {
     @Body() dto: CreatePerformanceQRCodeDto,
     @CurrentUser() user: any,
   ) {
-    return this.performanceService.createQRCode(showId, dto, user.id);
+    return this.performanceService.createQRCode(showId, dto, user.sub);
   }
 
   @Get('shows/:showId/qr-codes')

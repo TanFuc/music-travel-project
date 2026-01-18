@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
-import { get, post } from '@/lib/api';
+import { get, post } from '@/lib/api'; // post still needed for registerMutation
 import { useAuthStore } from '@/stores/auth.store';
 import { formatDateTime } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -95,41 +95,48 @@ function RegisterPerformanceContent() {
     },
   });
 
-  // Load QR code info
+  // Load QR code info - using GET instead of POST for read operations
   const { data: qrCodeInfo, isLoading, error } = useQuery({
     queryKey: ['performance-qr-code', code],
     queryFn: async () => {
-      const response = await post<QRCodeInfo>('/performance/qr-codes/scan', { code });
+      // Use GET with query parameter instead of POST for scanning QR codes
+      const response = await get<QRCodeInfo>(`/performance/qr-codes/scan?code=${encodeURIComponent(code!)}`);
       return response;
     },
     enabled: !!code,
-    retry: 1,
-    onSuccess: (data) => {
-      if (data) {
-        // Check if registration is still valid
-        if (!data.isActive) {
-          setErrorMessage('This QR code is no longer active.');
-          setStep('error');
-          return;
-        }
-        if (data.registrationDeadline && new Date(data.registrationDeadline) < new Date()) {
-          setErrorMessage('Registration deadline has passed.');
-          setStep('error');
-          return;
-        }
-        if (data.maxRegistrations && data.registrationCount >= data.maxRegistrations) {
-          setErrorMessage('Maximum registrations reached.');
-          setStep('error');
-          return;
-        }
-        setStep('form');
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    retry: false, // Don't retry on error
+  });
+
+  // Handle side effects when data or error changes (React Query v5 pattern)
+  useEffect(() => {
+    if (qrCodeInfo) {
+      // Check if registration is still valid
+      if (!qrCodeInfo.isActive) {
+        setErrorMessage('This QR code is no longer active.');
+        setStep('error');
+        return;
       }
-    },
-    onError: () => {
+      if (qrCodeInfo.registrationDeadline && new Date(qrCodeInfo.registrationDeadline) < new Date()) {
+        setErrorMessage('Registration deadline has passed.');
+        setStep('error');
+        return;
+      }
+      if (qrCodeInfo.maxRegistrations && qrCodeInfo.registrationCount >= qrCodeInfo.maxRegistrations) {
+        setErrorMessage('Maximum registrations reached.');
+        setStep('error');
+        return;
+      }
+      setStep('form');
+    }
+  }, [qrCodeInfo]);
+
+  useEffect(() => {
+    if (error) {
       setErrorMessage('QR code not found or invalid.');
       setStep('error');
-    },
-  });
+    }
+  }, [error]);
 
   // Submit registration
   const registerMutation = useMutation({

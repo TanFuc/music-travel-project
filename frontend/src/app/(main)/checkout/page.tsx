@@ -173,19 +173,19 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Back Button */}
-      <Link href="/cart" className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-6">
+      <Link href="/cart" className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-4 sm:mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Quay lại giỏ hàng
       </Link>
 
-      <h1 className="text-3xl font-display font-bold mb-8">Thanh Toán</h1>
+      <h1 className="text-2xl sm:text-3xl font-display font-bold mb-6 sm:mb-8">Thanh Toán</h1>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Left Column - Payment Method */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Payment Method Selection */}
             <Card>
               <CardHeader>
@@ -198,11 +198,10 @@ export default function CheckoutPage() {
                 {paymentMethods.map((method) => (
                   <label
                     key={method.id}
-                    className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedMethod === method.id
+                    className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg cursor-pointer transition-colors ${selectedMethod === method.id
                         ? 'border-brand-500 bg-brand-50'
                         : 'hover:border-neutral-300'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -211,18 +210,17 @@ export default function CheckoutPage() {
                       className="sr-only"
                     />
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        selectedMethod === method.id ? 'bg-brand-500 text-white' : 'bg-neutral-100'
-                      }`}
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${selectedMethod === method.id ? 'bg-brand-500 text-white' : 'bg-neutral-100'
+                        }`}
                     >
-                      <method.icon className="h-5 w-5" />
+                      <method.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold">{method.name}</h4>
-                      <p className="text-sm text-neutral-500">{method.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm sm:text-base">{method.name}</h4>
+                      <p className="text-xs sm:text-sm text-neutral-500">{method.description}</p>
                     </div>
                     {selectedMethod === method.id && (
-                      <Badge variant="success">Đã chọn</Badge>
+                      <Badge variant="success" className="hidden sm:inline-flex">Đã chọn</Badge>
                     )}
                   </label>
                 ))}
@@ -297,7 +295,7 @@ export default function CheckoutPage() {
 
           {/* Right Column - Order Summary */}
           <div>
-            <Card className="sticky top-24">
+            <Card className="lg:sticky lg:top-24">
               <CardHeader>
                 <CardTitle>Chi tiết đơn hàng</CardTitle>
               </CardHeader>

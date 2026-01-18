@@ -39,10 +39,10 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-display font-bold mb-8">Giỏ Hàng</h1>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <h1 className="text-2xl sm:text-3xl font-display font-bold mb-6 sm:mb-8">Giỏ Hàng</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {/* Tickets */}
@@ -55,17 +55,17 @@ export default function CartPage() {
                 {tickets.map((ticket) => (
                   <div
                     key={ticket.ticketId}
-                    className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-neutral-50 rounded-lg"
                   >
-                    <div>
-                      <h4 className="font-semibold">{ticket.showTitle}</h4>
-                      <p className="text-sm text-neutral-600">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm sm:text-base">{ticket.showTitle}</h4>
+                      <p className="text-xs sm:text-sm text-neutral-600">
                         {ticket.ticketClassName}
                         {ticket.seatInfo && ` - ${ticket.seatInfo}`}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className="font-bold text-brand-600">
+                    <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4">
+                      <span className="font-bold text-brand-600 text-sm sm:text-base">
                         {formatCurrency(ticket.price)}
                       </span>
                       <Button
@@ -93,17 +93,17 @@ export default function CartPage() {
                 {tours.map((tour) => (
                   <div
                     key={tour.scheduleId}
-                    className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-neutral-50 rounded-lg"
                   >
-                    <div>
-                      <h4 className="font-semibold">{tour.tourTitle}</h4>
-                      <p className="text-sm text-neutral-600">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm sm:text-base">{tour.tourTitle}</h4>
+                      <p className="text-xs sm:text-sm text-neutral-600">
                         Khởi hành: {new Date(tour.startDate).toLocaleDateString('vi-VN')} •{' '}
                         {tour.quantity} người
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className="font-bold text-brand-600">
+                    <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4">
+                      <span className="font-bold text-brand-600 text-sm sm:text-base">
                         {formatCurrency(tour.price * tour.quantity)}
                       </span>
                       <Button
@@ -124,7 +124,7 @@ export default function CartPage() {
 
         {/* Order Summary */}
         <div>
-          <Card className="sticky top-24">
+          <Card className="lg:sticky lg:top-24">
             <CardHeader>
               <CardTitle>Tổng Đơn Hàng</CardTitle>
             </CardHeader>

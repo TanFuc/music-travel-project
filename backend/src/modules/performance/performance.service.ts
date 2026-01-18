@@ -11,6 +11,18 @@ export class PerformanceService {
   // ============================================================================
 
   async createQRCode(showId: number, dto: CreatePerformanceQRCodeDto, userId: number) {
+    // Validate show exists
+    const show = await this.prisma.show.findUnique({ where: { id: showId } });
+    if (!show) {
+      throw new NotFoundException(`Show with ID ${showId} not found`);
+    }
+
+    // Validate stage exists
+    const stage = await this.prisma.stage.findUnique({ where: { id: dto.stageId } });
+    if (!stage) {
+      throw new NotFoundException(`Stage with ID ${dto.stageId} not found`);
+    }
+
     // Check if QR code already exists for this show + stage
     const existing = await this.prisma.performanceQRCode.findUnique({
       where: { showId_stageId: { showId, stageId: dto.stageId } },

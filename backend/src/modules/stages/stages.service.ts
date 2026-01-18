@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CacheService } from '@/cache/cache.service';
-import { CacheKeys, CACHE_TTL } from '@/cache/cache-keys.constant';
+import { CacheKeys, CachePatterns, CACHE_TTL } from '@/cache/cache-keys.constant';
 import { ERROR_CODES } from '@/common/constants/error-codes.constant';
+import { CreateStageDto } from './dto/create-stage.dto';
+import { UpdateStageDto } from './dto/update-stage.dto';
 
 @Injectable()
 export class StagesService {
@@ -128,5 +130,258 @@ export class StagesService {
         })),
       })),
     };
+  }
+
+  async create(createStageDto: CreateStageDto, userId?: number) {
+    // Verify location exists
+    const location = await this.prisma.location.findUnique({
+      where: { id: createStageDto.locationId },
+    });
+
+    if (!location) {
+      throw new NotFoundException({
+        code: ERROR_CODES.LOCATION_001,
+        message: 'Địa điểm không tồn tại.',
+      });
+    }
+
+    // Verify template exists if provided
+    if (createStageDto.seatMapTemplate) {
+      const template = await this.prisma.seatMapTemplate.findUnique({
+        where: { id: createStageDto.seatMapTemplate },
+      });
+
+      if (!template) {
+        throw new NotFoundException({
+          code: ERROR_CODES.TEMPLATE_001,
+          message: 'Template sơ đồ chỗ ngồi không tồn tại.',
+        });
+      }
+    }
+
+    // Create stage
+    const stage = await this.prisma.stage.create({
+      data: {
+        locationId: createStageDto.locationId,
+        name: createStageDto.name,
+        address: createStageDto.address,
+        latitude: createStageDto.latitude,
+        longitude: createStageDto.longitude,
+        mapLink: createStageDto.mapLink,
+        seatMapConfig: createStageDto.seatMapConfig as any,
+        seatMapTemplate: createStageDto.seatMapTemplate,
+        createdBy: userId,
+      },
+      include: {
+        location: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    // Invalidate cache
+    await this.cache.delPattern(CachePatterns.stages());
+
+    return stage;
+  }
+
+  async update(id: number, updateStageDto: UpdateStageDto, userId?: number) {
+    // Verify stage exists
+    const existingStage = await this.prisma.stage.findFirst({
+      where: { id, deletedAt: null },
+    });
+
+    if (!existingStage) {
+      throw new NotFoundException({
+        code: ERROR_CODES.STAGE_001,
+        message: 'Sân khấu không tồn tại.',
+      });
+    }
+
+    // Verify location exists if provided
+    if (updateStageDto.locationId) {
+      const location = await this.prisma.location.findUnique({
+        where: { id: updateStageDto.locationId },
+      });
+
+      if (!location) {
+        throw new NotFoundException({
+          code: ERROR_CODES.LOCATION_001,
+          message: 'Địa điểm không tồn tại.',
+        });
+      }
+    }
+
+    // Verify template exists if provided
+    if (updateStageDto.seatMapTemplate) {
+      const template = await this.prisma.seatMapTemplate.findUnique({
+        where: { id: updateStageDto.seatMapTemplate },
+      });
+
+      if (!template) {
+        throw new NotFoundException({
+          code: ERROR_CODES.TEMPLATE_001,
+          message: 'Template sơ đồ chỗ ngồi không tồn tại.',
+        });
+      }
+    }
+
+    // Update stage
+    const stage = await this.prisma.stage.update({
+      where: { id },
+      data: {
+        ...updateStageDto,
+        seatMapConfig: updateStageDto.seatMapConfig as any,
+        updatedBy: userId,
+      },
+      include: {
+        location: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    // Invalidate cache
+    await this.cache.delPattern(CachePatterns.stages());
+
+    return stage;
+  }
+
+  async remove(id: number, userId?: number) {
+    // Verify stage exists
+    const stage = await this.prisma.stage.findFirst({
+      where: { id, deletedAt: null },
+    });
+
+    if (!stage) {
+      throw new NotFoundException({
+        code: ERROR_CODES.STAGE_001,
+        message: 'Sân khấu không tồn tại.',
+      });
+    }
+
+    // Check if stage has any shows
+    const showCount = await this.prisma.show.count({
+      where: {
+        stageId: id,
+        deletedAt: null,
+      },
+    });
+
+    if (showCount > 0) {
+      throw new BadRequestException({
+        code: ERROR_CODES.STAGE_002,
+        message: 'Không thể xóa sân khấu đã có show.',
+      });
+    }
+
+    // Soft delete
+    await this.prisma.stage.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        updatedBy: userId,
+      },
+    });
+
+    // Invalidate cache
+    await this.cache.delPattern(CachePatterns.stages());
+
+    return { message: 'Xóa sân khấu thành công.' };
+  }
+
+  async getPhysicalSeats(stageId: number, showId?: number) {
+    const cacheKey = showId 
+      ? CacheKeys.showSeats(showId)
+      : CacheKeys.stageSeats(stageId);
+
+    const cached = await this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Verify stage exists
+    const stage = await this.prisma.stage.findFirst({
+      where: { id: stageId, deletedAt: null },
+    });
+
+    if (!stage) {
+      throw new NotFoundException({
+        code: ERROR_CODES.STAGE_001,
+        message: 'Sân khấu không tồn tại.',
+      });
+    }
+
+    // Get all physical seats of the stage
+    const seats = await this.prisma.physicalSeat.findMany({
+      where: { stageId },
+      orderBy: [
+        { zoneName: 'asc' },
+        { rowName: 'asc' },
+        { seatNumber: 'asc' },
+      ],
+    });
+
+    // If showId is provided, get ticket status for each seat
+    let result;
+    if (showId) {
+      const tickets = await this.prisma.ticket.findMany({
+        where: {
+          showId,
+          physicalSeatId: { in: seats.map(s => s.id) },
+        },
+        select: {
+          physicalSeatId: true,
+          status: true,
+          ticketClassId: true,
+        },
+      });
+
+      const ticketMap = new Map(tickets.map(t => [t.physicalSeatId, t]));
+
+      result = seats.map(seat => {
+        const ticket = ticketMap.get(seat.id);
+        return {
+          id: seat.id,
+          stageId: seat.stageId,
+          zoneName: seat.zoneName,
+          rowName: seat.rowName,
+          seatNumber: seat.seatNumber,
+          type: seat.type,
+          position: {
+            x: seat.xPosition,
+            y: seat.yPosition,
+          },
+          isAvailable: !ticket || ticket.status === 'AVAILABLE',
+          status: ticket?.status || 'AVAILABLE',
+          ticketClassId: ticket?.ticketClassId,
+        };
+      });
+    } else {
+      result = seats.map(seat => ({
+        id: seat.id,
+        stageId: seat.stageId,
+        zoneName: seat.zoneName,
+        rowName: seat.rowName,
+        seatNumber: seat.seatNumber,
+        type: seat.type,
+        position: {
+          x: seat.xPosition,
+          y: seat.yPosition,
+        },
+      }));
+    }
+
+    await this.cache.set(cacheKey, result, CACHE_TTL.MEDIUM);
+
+    return result;
   }
 }

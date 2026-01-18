@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Patch, Delete, UseGuards, Query, Param, Body, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, UseGuards, Query, Param, Body, ParseIntPipe, DefaultValuePipe, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { CreateShowFullDto } from '../shows/dto/create-show-full.dto';
 
 @ApiTags('admin')
 @Controller('admin')
@@ -158,6 +159,63 @@ export class AdminController {
     @Body() data: { status: 'UPCOMING' | 'ONGOING' | 'ENDED' | 'CANCELLED' },
   ) {
     return this.adminService.updateShowStatus(id, data.status);
+  }
+
+  @Post('shows/full')
+  @ApiOperation({ summary: 'Create show with full configuration (artists, ticket classes, tickets)' })
+  @ApiResponse({ status: 201, description: 'Show created successfully with all related data' })
+  async createShowFull(
+    @Body() data: CreateShowFullDto,
+    @Req() req: any,
+  ) {
+    return this.adminService.createShowFull(data, req.user.id);
+  }
+
+  // ============================================================================
+  // ARTISTS MANAGEMENT
+  // ============================================================================
+  @Get('artists')
+  @ApiOperation({ summary: 'Get all artists with pagination' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  async getArtists(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number = 50,
+    @Query('search') search?: string,
+  ) {
+    return this.adminService.getArtists(page, limit, search);
+  }
+
+  @Get('artists/:id')
+  @ApiOperation({ summary: 'Get artist by ID' })
+  async getArtistById(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.getArtistById(id);
+  }
+
+  @Post('artists')
+  @ApiOperation({ summary: 'Create new artist' })
+  async createArtist(
+    @Body() data: { name: string; bio?: string; socialLinks?: Record<string, string> },
+    @Req() req: any,
+  ) {
+    return this.adminService.createArtist(data, req.user.id);
+  }
+
+  @Patch('artists/:id')
+  @ApiOperation({ summary: 'Update artist' })
+  async updateArtist(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: { name?: string; bio?: string; socialLinks?: Record<string, string> },
+    @Req() req: any,
+  ) {
+    return this.adminService.updateArtist(id, data, req.user.id);
+  }
+
+  @Delete('artists/:id')
+  @ApiOperation({ summary: 'Delete artist (soft delete)' })
+  async deleteArtist(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deleteArtist(id);
   }
 
   // ============================================================================
@@ -335,9 +393,10 @@ export class AdminController {
   async getTickets(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
-    @Query('showId', new ParseIntPipe({ optional: true })) showId?: number,
+    @Query('showId') showId?: string,
   ) {
-    return this.adminService.getTickets(page, limit, showId);
+    const parsedShowId = showId ? parseInt(showId, 10) : undefined;
+    return this.adminService.getTickets(page, limit, parsedShowId);
   }
 
   // ============================================================================

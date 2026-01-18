@@ -127,6 +127,8 @@ export const CacheKeys = {
   stagesByLocation: (locationId: number) =>
     `${CACHE_PREFIX}:${CACHE_DOMAINS.STAGE}:location:${locationId}`,
   stage: (stageId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.STAGE}:${stageId}`,
+  stageSeats: (stageId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.STAGE}:seats:${stageId}`,
+  showSeats: (showId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.SHOW}:seats:${showId}`,
   artists: () => `${CACHE_PREFIX}:${CACHE_DOMAINS.ARTIST}:all`,
   artist: (artistId: number) => `${CACHE_PREFIX}:${CACHE_DOMAINS.ARTIST}:${artistId}`,
 
@@ -145,6 +147,7 @@ export const CachePatterns = {
   showLists: () => `${CACHE_PREFIX}:${CACHE_DOMAINS.SHOW}:list:*`,
   tourLists: () => `${CACHE_PREFIX}:${CACHE_DOMAINS.TOUR}:list:*`,
   voucherLists: () => `${CACHE_PREFIX}:${CACHE_DOMAINS.VOUCHER}:list*`,
+  stages: () => `${CACHE_PREFIX}:${CACHE_DOMAINS.STAGE}:*`,
 } as const;
 
 // Helper to generate filter hash for list caching
