@@ -13,9 +13,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { get, post } from '@/lib/api';
+import { get, post, patch } from '@/lib/api'; // Add patch
+
 import { toast } from 'sonner';
 import { stageService } from '@/services/stage.service';
+import { branchService } from '@/services/branch.service';
+import { ImageUpload } from '@/components/common/ImageUpload';
 
 // Types
 interface Stage {
@@ -36,6 +39,7 @@ const showFormSchema = z.object({
   title: z.string().min(3, 'Tiêu đề phải có ít nhất 3 ký tự'),
   description: z.string().optional(),
   stageId: z.number({ required_error: 'Vui lòng chọn sân khấu' }),
+  branchId: z.number().optional().nullable(),
   performTime: z.string().min(1, 'Vui lòng chọn thời gian biểu diễn'),
   checkInTime: z.string().optional(),
   seatSelectionEnabled: z.boolean().default(true),
@@ -53,6 +57,7 @@ const showFormSchema = z.object({
   properties: z.object({
     dresscode: z.string().optional(),
     hashtag: z.string().optional(),
+    thumbnailUrl: z.string().optional(),
   }).optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
@@ -65,15 +70,17 @@ interface ShowFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  initialData?: any; // Add initialData
 }
 
 const DEFAULT_COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
 
-export function ShowFormModal({ isOpen, onClose, onSuccess }: ShowFormModalProps) {
+export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowFormModalProps) {
   const [activeTab, setActiveTab] = useState('basic');
   const [artistSearch, setArtistSearch] = useState('');
   const [selectedArtists, setSelectedArtists] = useState<Array<Artist & { isHeadline: boolean }>>([]);
   const queryClient = useQueryClient();
+  const isEdit = !!initialData;
 
   const {
     register,
@@ -86,11 +93,49 @@ export function ShowFormModal({ isOpen, onClose, onSuccess }: ShowFormModalProps
   } = useForm<ShowFormData>({
     resolver: zodResolver(showFormSchema),
     defaultValues: {
-      seatSelectionEnabled: false, // Default to General Admission
+      seatSelectionEnabled: false,
       ticketClasses: [{ name: 'Standard', price: 100000, colorCode: '#3B82F6', quantity: 100 }],
       properties: {},
     },
   });
+
+  // Populate form data when initialData changes
+  useEffect(() => {
+    if (initialData && isOpen) {
+        reset({
+            title: initialData.title,
+            description: initialData.description,
+            stageId: initialData.stage?.id,
+            branchId: initialData.branch?.id,
+            performTime: initialData.performTime ? new Date(initialData.performTime).toISOString().slice(0, 16) : '',
+            checkInTime: initialData.checkInTime ? new Date(initialData.checkInTime).toISOString().slice(0, 16) : '',
+            seatSelectionEnabled: initialData.seatSelectionEnabled,
+            properties: initialData.properties || {},
+            metaTitle: initialData.metaTitle,
+            metaDescription: initialData.metaDescription,
+            metaKeywords: initialData.metaKeywords,
+            ticketClasses: [], // Ticket updates might not be supported directly here
+        });
+
+        // Populate Artists if structure matches or if we can map it
+        if (initialData.artists) {
+            setSelectedArtists(initialData.artists.map((a: any) => ({
+                id: a.artist.id,
+                name: a.artist.name,
+                isHeadline: a.isHeadline,
+                bio: a.artist.bio
+            })));
+        }
+    } else if (!initialData && isOpen) {
+        reset({
+          seatSelectionEnabled: false,
+          ticketClasses: [{ name: 'Standard', price: 100000, colorCode: '#3B82F6', quantity: 100 }],
+          properties: {},
+        });
+        setSelectedArtists([]);
+    }
+  }, [initialData, isOpen, reset]);
+
 
   const { fields: ticketFields, append: appendTicket, remove: removeTicket } = useFieldArray({
     control,
@@ -102,6 +147,14 @@ export function ShowFormModal({ isOpen, onClose, onSuccess }: ShowFormModalProps
     queryKey: ['stages'],
     queryFn: () => stageService.getStages(),
     staleTime: 10 * 60 * 1000,
+  });
+
+  // Fetch branches
+  const { data: branches } = useQuery({
+    queryKey: ['branches'],
+    queryFn: () => branchService.getBranches(),
+    staleTime: 10 * 60 * 1000,
+    enabled: isOpen,
   });
 
   // Fetch artists
@@ -135,6 +188,35 @@ export function ShowFormModal({ isOpen, onClose, onSuccess }: ShowFormModalProps
     },
   });
 
+  // Update show mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: ShowFormData) => {
+      const payload = {
+        title: data.title,
+        description: data.description,
+        stageId: data.stageId,
+        branchId: data.branchId || null,
+        performTime: new Date(data.performTime).toISOString(),
+        checkInTime: data.checkInTime ? new Date(data.checkInTime).toISOString() : undefined,
+        properties: data.properties,
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
+        metaKeywords: data.metaKeywords,
+      };
+      return patch(`/admin/shows/${initialData.id}`, payload);
+    },
+    onSuccess: () => {
+      toast.success('Cập nhật sự kiện thành công!');
+      queryClient.invalidateQueries({ queryKey: ['admin-shows'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-show', initialData.id] });
+      onSuccess?.();
+      handleClose();
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Có lỗi xảy ra khi cập nhật sự kiện');
+    },
+  });
+
   const handleClose = () => {
     reset();
     setSelectedArtists([]);
@@ -144,7 +226,11 @@ export function ShowFormModal({ isOpen, onClose, onSuccess }: ShowFormModalProps
   };
 
   const onFormSubmit = async (data: ShowFormData) => {
-    await createMutation.mutateAsync(data);
+    if (isEdit) {
+        await updateMutation.mutateAsync(data);
+    } else {
+        await createMutation.mutateAsync(data);
+    }
   };
 
   const addArtist = (artist: Artist) => {
@@ -197,28 +283,48 @@ export function ShowFormModal({ isOpen, onClose, onSuccess }: ShowFormModalProps
             <CardContent className="flex-1 overflow-y-auto pt-4">
               {/* Basic Info Tab */}
               <TabsContent value="basic" className="space-y-4 mt-0">
-                <div>
-                  <Label htmlFor="title">Tên sự kiện *</Label>
-                  <Input
-                    id="title"
-                    {...register('title')}
-                    placeholder="Nhập tên sự kiện"
-                    disabled={isSubmitting}
-                  />
-                  {errors.title && (
-                    <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>
-                  )}
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-1">
+                    <Label>Ảnh sự kiện</Label>
+                    <Controller
+                      name="properties.thumbnailUrl"
+                      control={control}
+                      render={({ field }) => (
+                        <ImageUpload
+                          value={field.value}
+                          onChange={field.onChange}
+                          folder="shows"
+                          aspectRatio="portrait"
+                          className="mt-2"
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-4">
+                    <div>
+                      <Label htmlFor="title">Tên sự kiện *</Label>
+                      <Input
+                        id="title"
+                        {...register('title')}
+                        placeholder="Nhập tên sự kiện"
+                        disabled={isSubmitting}
+                      />
+                      {errors.title && (
+                        <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>
+                      )}
+                    </div>
 
-                <div>
-                  <Label htmlFor="description">Mô tả</Label>
-                  <Textarea
-                    id="description"
-                    {...register('description')}
-                    placeholder="Mô tả chi tiết về sự kiện"
-                    rows={3}
-                    disabled={isSubmitting}
-                  />
+                    <div>
+                      <Label htmlFor="description">Mô tả</Label>
+                      <Textarea
+                        id="description"
+                        {...register('description')}
+                        placeholder="Mô tả chi tiết về sự kiện"
+                        rows={5}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -245,6 +351,30 @@ export function ShowFormModal({ isOpen, onClose, onSuccess }: ShowFormModalProps
                   {errors.stageId && (
                     <p className="text-sm text-red-500 mt-1">{errors.stageId.message}</p>
                   )}
+                </div>
+
+                <div>
+                  <Label htmlFor="branchId">Chi nhánh</Label>
+                  <Controller
+                    name="branchId"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        disabled={isSubmitting}
+                      >
+                        <option value="">Chọn chi nhánh (không bắt buộc)</option>
+                        {branches?.map((branch) => (
+                          <option key={branch.id} value={branch.id}>
+                            {branch.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

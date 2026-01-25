@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Music, Calendar, MapPin, Ticket, QrCode, Eye, Plus } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { ShowFormModal } from '@/components/admin/ShowFormModal';
 import { get } from '@/lib/api';
-import { formatDate, formatCurrency } from '@/lib/utils';
+import { formatDate, formatCurrency, cn } from '@/lib/utils';
+import { getCloudinaryUrl } from '@/lib/cloudinary';
 
 interface Show {
     id: number;
@@ -23,6 +24,9 @@ interface Show {
     };
     artists: Array<{ artist: { name: string }; isHeadline: boolean }>;
     _count: { tickets: number };
+    properties?: {
+        thumbnailUrl?: string;
+    };
 }
 
 const statusColors: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
@@ -73,6 +77,19 @@ export default function AdminShowsPage() {
                                 {data.items.map((show) => (
                                     <div key={show.id} className="border rounded-lg p-3 sm:p-4 hover:bg-neutral-50 transition-colors">
                                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 sm:gap-4">
+                                            <div className="w-full lg:w-32 h-20 lg:h-32 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-100 border">
+                                                {show.properties?.thumbnailUrl ? (
+                                                    <img 
+                                                        src={getCloudinaryUrl(show.properties.thumbnailUrl, 'small')} 
+                                                        alt={show.title}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-neutral-400">
+                                                        <Music className="h-8 w-8" />
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex flex-wrap items-center gap-2 mb-2">
                                                     <h3 className="font-semibold text-base sm:text-lg">{show.title}</h3>

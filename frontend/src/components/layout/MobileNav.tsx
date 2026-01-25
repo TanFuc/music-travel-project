@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { usePathname } from 'next/navigation';
 import { Home, Music, MapPin, User, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,7 @@ export function MobileNav() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={cn(
                 'flex flex-col items-center justify-center gap-1 relative',
                 isActive ? 'text-brand-500' : 'text-neutral-500'

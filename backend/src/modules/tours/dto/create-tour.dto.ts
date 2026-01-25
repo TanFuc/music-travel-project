@@ -42,4 +42,9 @@ export class CreateTourDto {
   @IsOptional()
   @IsString()
   metaDescription?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'Branch ID' })
+  @IsOptional()
+  @IsInt()
+  branchId?: number;
 }

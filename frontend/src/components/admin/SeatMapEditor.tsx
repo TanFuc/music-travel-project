@@ -149,6 +149,61 @@ export function SeatMapEditor({ initialConfig, onSave, readonly = false }: SeatM
     updateZone(zoneId, { rows: updatedRows });
   };
 
+  const snapToGrid = (val: number) => {
+    const GRID_SIZE = 10;
+    return Math.round(val / GRID_SIZE) * GRID_SIZE;
+  };
+
+  const updateSeatPosition = (zoneId: string, rowId: string, seatId: string, x: number, y: number, updates?: Partial<Seat>) => {
+    setConfig({
+      ...config,
+      zones: config.zones.map((zone) => {
+        if (zone.id !== zoneId) return zone;
+        return {
+          ...zone,
+          rows: zone.rows.map((row) => {
+            if (row.id !== rowId) return row;
+            return {
+              ...row,
+              seats: row.seats.map((seat) => {
+                if (seat.id !== seatId) return seat;
+                return { 
+                  ...seat, 
+                  x: snapToGrid(x), 
+                  y: snapToGrid(y), 
+                  ...(updates || {}) 
+                };
+              }),
+            };
+          }),
+        };
+      }),
+    });
+  };
+
+  const updateRowPosition = (zoneId: string, rowId: string, deltaX: number, deltaY: number) => {
+     setConfig({
+      ...config,
+      zones: config.zones.map((zone) => {
+        if (zone.id !== zoneId) return zone;
+        return {
+          ...zone,
+          rows: zone.rows.map((row) => {
+            if (row.id !== rowId) return row;
+            return {
+              ...row,
+              seats: row.seats.map((seat) => ({
+                 ...seat,
+                 x: snapToGrid(seat.x + deltaX),
+                 y: snapToGrid(seat.y + deltaY)
+              })),
+            };
+          }),
+        };
+      }),
+    });
+  };
+
   // ============================================================================
   // RENDER FUNCTIONS
   // ============================================================================
@@ -181,7 +236,21 @@ export function SeatMapEditor({ initialConfig, onSave, readonly = false }: SeatM
           {config.zones.map((zone) => (
             <Group key={zone.id}>
               {zone.rows.map((row) => (
-                <Group key={row.id}>
+                <Group
+                   key={row.id}
+                   draggable={!readonly && viewMode === 'edit'}
+                   onDragEnd={(e) => {
+                      if (readonly || viewMode !== 'edit') return;
+                      // Calculate delta
+                      const dx = e.target.x();
+                      const dy = e.target.y();
+                      
+                      // Reset group position immediately to avoid double offset after re-render
+                      e.target.position({ x: 0, y: 0 });
+                      
+                      updateRowPosition(zone.id, row.id, dx, dy);
+                   }}
+                >
                   {/* Row label */}
                   <Text
                     x={20}
@@ -190,18 +259,31 @@ export function SeatMapEditor({ initialConfig, onSave, readonly = false }: SeatM
                     fontSize={16}
                     fill="#666"
                     fontStyle="bold"
+                    onTap={() => console.log('Row text clicked')}
                   />
 
                   {/* Seats */}
                   {row.seats.map((seat) => (
                     <Group
                       key={seat.id}
+                      x={seat.x}
+                      y={seat.y}
+                      draggable={!readonly && viewMode === 'edit'}
+                      onDragStart={(e) => {
+                         // Stop propagation so we don't drag the row
+                         e.cancelBubble = true;
+                      }}
+                      onDragEnd={(e) => {
+                        e.cancelBubble = true; // Stop bubbling to Row Group
+                        if (readonly || viewMode !== 'edit') return;
+                        updateSeatPosition(zone.id, row.id, seat.id, e.target.x(), e.target.y());
+                      }}
                       onClick={() => !readonly && setSelectedSeat(seat.id)}
                       onTap={() => !readonly && setSelectedSeat(seat.id)}
                     >
                       <Rect
-                        x={seat.x}
-                        y={seat.y}
+                        x={0}
+                        y={0}
                         width={seat.width}
                         height={seat.height}
                         fill={seat.status === 'disabled' ? '#ccc' : zone.color}
@@ -213,8 +295,8 @@ export function SeatMapEditor({ initialConfig, onSave, readonly = false }: SeatM
                         shadowColor="black"
                       />
                       <Text
-                        x={seat.x}
-                        y={seat.y + 8}
+                        x={0}
+                        y={8}
                         width={seat.width}
                         text={seat.seatNumber}
                         fontSize={12}
@@ -296,116 +378,251 @@ export function SeatMapEditor({ initialConfig, onSave, readonly = false }: SeatM
       </Card>
 
       <div className="grid grid-cols-4 gap-6">
-        {/* Left Panel - Zone Management */}
+        {/* Left Panel - Zone/Seat Management */}
         {viewMode === 'edit' && !readonly && (
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle className="text-lg">Khu vực</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button onClick={addZone} className="w-full" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Thêm khu vực
-              </Button>
+          <div className="col-span-1 space-y-4">
+            {/* Seat Properties Panel if a seat is selected */}
+            {selectedSeat && (() => {
+               // Find selected seat data
+               let currentZone: SeatZone | undefined;
+               let currentRow: SeatRow | undefined;
+               let currentSeat: Seat | undefined;
 
-              {config.zones.map((zone) => (
-                <Card
-                  key={zone.id}
-                  className={`cursor-pointer transition-all ${
-                    selectedZone === zone.id ? 'ring-2 ring-brand-500' : ''
-                  }`}
-                  onClick={() => setSelectedZone(zone.id)}
-                >
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Badge style={{ backgroundColor: zone.color }}>{zone.name}</Badge>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteZone(zone.id);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
+               for (const zone of config.zones) {
+                 for (const row of zone.rows) {
+                   const seat = row.seats.find((s) => s.id === selectedSeat);
+                   if (seat) {
+                     currentZone = zone;
+                     currentRow = row;
+                     currentSeat = seat;
+                     break;
+                   }
+                 }
+                 if (currentSeat) break;
+               }
+
+               if (!currentSeat || !currentZone || !currentRow) return null;
+
+               return (
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Chi tiết ghế</CardTitle>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedSeat(null)}>
+                         <span className="sr-only">Close</span>
+                         ✕
                       </Button>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Tên khu vực</Label>
-                      <Input
-                        value={zone.name}
-                        onChange={(e) => updateZone(zone.id, { name: e.target.value })}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Loại</Label>
-                      <Select
-                        value={zone.type}
-                        onValueChange={(value: 'SEAT' | 'STANDING') =>
-                          updateZone(zone.id, { type: value })
-                        }
-                      >
-                        <SelectTrigger onClick={(e) => e.stopPropagation()}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="SEAT">Ghế ngồi</SelectItem>
-                          <SelectItem value="STANDING">Khu vực đứng</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Màu</Label>
-                      <Input
-                        type="color"
-                        value={zone.color}
-                        onChange={(e) => updateZone(zone.id, { color: e.target.value })}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-
-                    <div className="pt-2 border-t">
-                      <p className="text-sm text-gray-600 mb-2">
-                        {zone.rows.length} hàng -{' '}
-                        {zone.rows.reduce((total, row) => total + row.seats.length, 0)} ghế
-                      </p>
-                      <div className="flex gap-2">
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-4">
+                      <div className="space-y-2">
+                        <Label>Số ghế</Label>
+                        <Input
+                          value={currentSeat.seatNumber}
+                          onChange={(e) => {
+                             const newNumber = e.target.value;
+                             updateSeatPosition(currentZone!.id, currentRow!.id, currentSeat!.id, currentSeat!.x, currentSeat!.y, { seatNumber: newNumber });
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Trạng thái</Label>
+                        <Select
+                          value={currentSeat.status || 'available'}
+                          onValueChange={(value: any) =>
+                             updateSeatPosition(currentZone!.id, currentRow!.id, currentSeat!.id, currentSeat!.x, currentSeat!.y, { status: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                             <SelectItem value="available">Bình thường</SelectItem>
+                             <SelectItem value="disabled">Vô hiệu hóa</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="pt-4 flex gap-2">
                         <Button
+                          variant="destructive"
                           size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            addRow(zone.id);
+                          className="w-full"
+                          onClick={() => {
+                             // Delete seat logic
+                             const updatedRows = currentZone!.rows.map(r => {
+                               if (r.id !== currentRow!.id) return r;
+                               return {
+                                 ...r,
+                                 seats: r.seats.filter(s => s.id !== currentSeat!.id)
+                               };
+                             });
+                             updateZone(currentZone!.id, { rows: updatedRows });
+                             setSelectedSeat(null);
                           }}
                         >
-                          Thêm hàng
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Xóa ghế
                         </Button>
-                        {zone.rows.length > 0 && (
+                      </div>
+                    </CardContent>
+                 </Card>
+               );
+            })()}
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Khu vực</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button onClick={addZone} className="w-full" variant="outline">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Thêm khu vực
+                </Button>
+
+                {config.zones.map((zone) => (
+                  <Card
+                    key={zone.id}
+                    className={`cursor-pointer transition-all ${
+                      selectedZone === zone.id && !selectedSeat ? 'ring-2 ring-brand-500' : ''
+                    }`}
+                    onClick={() => {
+                        setSelectedZone(zone.id);
+                        setSelectedSeat(null);
+                    }}
+                  >
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Badge style={{ backgroundColor: zone.color }}>{zone.name}</Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteZone(zone.id);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+
+                      {/* Zone Details - Only show if actively selected (not just containing a selected seat, or simplifies logic to always show basics but detailed edit on selection) */}
+                      {selectedZone === zone.id && (
+                        <>
+                          <div className="space-y-2">
+                            <Label>Tên khu vực</Label>
+                            <Input
+                              value={zone.name}
+                              onChange={(e) => updateZone(zone.id, { name: e.target.value })}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Loại</Label>
+                            <Select
+                              value={zone.type}
+                              onValueChange={(value: 'SEAT' | 'STANDING') =>
+                                updateZone(zone.id, { type: value })
+                              }
+                            >
+                              <SelectTrigger onClick={(e) => e.stopPropagation()}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="SEAT">Ghế ngồi</SelectItem>
+                                <SelectItem value="STANDING">Khu vực đứng</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Màu</Label>
+                            <Input
+                              type="color"
+                              value={zone.color}
+                              onChange={(e) => updateZone(zone.id, { color: e.target.value })}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          
+                          {/* Row Management Section */}
+                           <div className="pt-2 border-t space-y-2">
+                             <Label className="text-xs text-muted-foreground">Quản lý hàng ghế</Label>
+                             <div className="max-h-40 overflow-y-auto space-y-1">
+                               {zone.rows.map((row) => (
+                                 <div key={row.id} className="flex items-center justify-between bg-muted/50 p-1.5 rounded text-sm">
+                                   <span>Hàng {row.rowName} ({row.seats.length} ghế)</span>
+                                   <div className="flex gap-1">
+                                      <Button
+                                         size="icon"
+                                         variant="ghost"
+                                         className="h-6 w-6"
+                                         title="Thêm ghế"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            addSeatsToRow(zone.id, row.id, 1);
+                                          }}
+                                      >
+                                        <Plus className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost" 
+                                        className="h-6 w-6 text-destructive"
+                                        title="Xóa hàng"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const updatedRows = zone.rows.filter(r => r.id !== row.id);
+                                            updateZone(zone.id, { rows: updatedRows });
+                                        }}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                   </div>
+                                 </div>
+                               ))}
+                             </div>
+                           </div>
+                        </>
+                      )}
+
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-gray-600 mb-2">
+                          {zone.rows.length} hàng -{' '}
+                          {zone.rows.reduce((total, row) => total + row.seats.length, 0)} ghế
+                        </p>
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             className="flex-1"
                             onClick={(e) => {
                               e.stopPropagation();
-                              const lastRow = zone.rows[zone.rows.length - 1];
-                              addSeatsToRow(zone.id, lastRow.id, 10);
+                              addRow(zone.id);
                             }}
                           >
-                            +10 ghế
+                            Thêm hàng
                           </Button>
-                        )}
+                          {zone.rows.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const lastRow = zone.rows[zone.rows.length - 1];
+                                addSeatsToRow(zone.id, lastRow.id, 10);
+                              }}
+                            >
+                              +10 ghế
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </CardContent>
-          </Card>
+                    </CardContent>
+                  </Card>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Main Canvas */}

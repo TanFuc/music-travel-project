@@ -51,8 +51,8 @@ export const useCartStore = create<CartState>()(
       discount: 0,
 
       getSubtotal: () => {
-        const ticketTotal = get().tickets.reduce((sum, t) => sum + t.price, 0);
-        const tourTotal = get().tours.reduce((sum, t) => sum + t.price * t.quantity, 0);
+        const ticketTotal = get().tickets.reduce((sum, t) => sum + Number(t.price), 0);
+        const tourTotal = get().tours.reduce((sum, t) => sum + Number(t.price) * Number(t.quantity), 0);
         return ticketTotal + tourTotal;
       },
 
@@ -68,7 +68,10 @@ export const useCartStore = create<CartState>()(
 
       addTicket: (ticket) =>
         set((state) => ({
-          tickets: [...state.tickets.filter((t) => t.ticketId !== ticket.ticketId), ticket],
+          tickets: [
+            ...state.tickets.filter((t) => t.ticketId !== ticket.ticketId),
+            { ...ticket, price: Number(ticket.price) },
+          ],
         })),
 
       removeTicket: (ticketId) =>
@@ -88,7 +91,7 @@ export const useCartStore = create<CartState>()(
               ),
             };
           }
-          return { tours: [...state.tours, tour] };
+          return { tours: [...state.tours, { ...tour, price: Number(tour.price) }] };
         }),
 
       removeTour: (scheduleId) =>

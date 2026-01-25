@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { Calendar, MapPin, Clock, Users, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

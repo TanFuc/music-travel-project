@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -13,6 +13,7 @@ import {
   Tag,
   Image,
   Bell,
+  Building,
   Settings,
   LogOut,
   ChevronRight,
@@ -83,6 +84,11 @@ const sidebarItems: SidebarItem[] = [
     title: 'Media',
     href: '/admin/media',
     icon: Image,
+  },
+  {
+    title: 'Chi nhánh',
+    href: '/admin/branches',
+    icon: Building,
   },
   {
     title: 'Thông báo',

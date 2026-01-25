@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { MapPin, Users, ArrowRight, Loader2, Star, Music } from 'lucide-react';
 import { get } from '@/lib/api';
 

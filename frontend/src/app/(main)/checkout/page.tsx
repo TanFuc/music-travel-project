@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -175,7 +175,7 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Back Button */}
-      <Link href="/cart" className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-4 sm:mb-6">
+      <Link href="/cart" prefetch={false} className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-4 sm:mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Quay lại giỏ hàng
       </Link>

@@ -28,6 +28,7 @@ export class ShowsService {
       limit: filterDto.limit,
       status: filterDto.status,
       stageId: filterDto.stageId,
+      branchId: filterDto.branchId,
       search: filterDto.search,
       fromDate: filterDto.fromDate,
       toDate: filterDto.toDate,
@@ -46,6 +47,7 @@ export class ShowsService {
       deletedAt: null,
       ...(filterDto.status && { status: filterDto.status }),
       ...(filterDto.stageId && { stageId: filterDto.stageId }),
+      ...(filterDto.branchId && { branchId: filterDto.branchId }),
       ...(filterDto.search && {
         OR: [
           { title: { contains: filterDto.search } },
@@ -69,6 +71,7 @@ export class ShowsService {
               location: true,
             },
           },
+          branch: true,
           artists: {
             include: {
               artist: true,
@@ -112,6 +115,12 @@ export class ShowsService {
         name: show.stage.name,
         location: show.stage.location.name,
       },
+      branch: show.branch
+        ? {
+            id: show.branch.id,
+            name: show.branch.name,
+          }
+        : null,
       artists: show.artists.map((sa) => ({
         id: sa.artist.id,
         name: sa.artist.name,
@@ -152,6 +161,7 @@ export class ShowsService {
             location: true,
           },
         },
+        branch: true,
         artists: {
           include: {
             artist: true,
@@ -198,6 +208,12 @@ export class ShowsService {
         mapLink: show.stage.mapLink,
         location: show.stage.location,
       },
+      branch: show.branch
+        ? {
+            id: show.branch.id,
+            name: show.branch.name,
+          }
+        : null,
       artists: show.artists.map((sa) => ({
         id: sa.artist.id,
         name: sa.artist.name,
@@ -337,6 +353,7 @@ export class ShowsService {
         slug,
         description: createShowDto.description,
         stageId: createShowDto.stageId,
+        branchId: createShowDto.branchId,
         performTime: new Date(createShowDto.performTime),
         checkInTime: createShowDto.checkInTime ? new Date(createShowDto.checkInTime) : null,
         status: ShowStatus.UPCOMING,
@@ -379,6 +396,9 @@ export class ShowsService {
     if (updateShowDto.stageId !== undefined) {
       updateData.stageId = updateShowDto.stageId;
     }
+    if (updateShowDto.branchId !== undefined) {
+      updateData.branchId = updateShowDto.branchId;
+    }
     if (updateShowDto.performTime !== undefined) {
       updateData.performTime = new Date(updateShowDto.performTime);
     }
@@ -410,6 +430,7 @@ export class ShowsService {
             location: true,
           },
         },
+        branch: true,
       },
     });
 

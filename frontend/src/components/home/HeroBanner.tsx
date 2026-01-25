@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { ChevronLeft, ChevronRight, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { get } from '@/lib/api';
@@ -32,8 +32,8 @@ export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
       return Array.isArray(response) ? response : [];
     },
     staleTime: 10 * 60 * 1000, // 10 minutes cache
-    enabled: !propBanners,
-    initialData: propBanners || [],
+    enabled: true,
+    initialData: propBanners,
   });
 
   const goToSlide = useCallback((index: number) => {

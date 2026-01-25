@@ -6,6 +6,7 @@ export interface ShowsFilter {
   limit?: number;
   status?: string;
   locationId?: number;
+  branchId?: number;
   search?: string;
 }
 
@@ -56,6 +57,7 @@ export const showService = {
     if (filters?.limit) params.append('limit', String(filters.limit));
     if (filters?.status) params.append('status', filters.status);
     if (filters?.locationId) params.append('locationId', String(filters.locationId));
+    if (filters?.branchId) params.append('branchId', String(filters.branchId));
     if (filters?.search) params.append('search', filters.search);
 
     const queryString = params.toString();

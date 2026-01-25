@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { Search, ArrowRight } from 'lucide-react';
 import { ShowCard } from '@/components/shows/ShowCard';
 import { get } from '@/lib/api';

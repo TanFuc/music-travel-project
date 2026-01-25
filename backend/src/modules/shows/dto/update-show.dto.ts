@@ -92,4 +92,9 @@ export class UpdateShowDto {
   @IsOptional()
   @IsString()
   metaKeywords?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'Branch ID' })
+  @IsOptional()
+  @IsInt()
+  branchId?: number;
 }

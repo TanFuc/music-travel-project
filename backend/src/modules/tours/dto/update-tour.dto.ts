@@ -47,4 +47,9 @@ export class UpdateTourDto {
   @IsOptional()
   @IsString()
   metaKeywords?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'Branch ID' })
+  @IsOptional()
+  @IsInt()
+  branchId?: number;
 }

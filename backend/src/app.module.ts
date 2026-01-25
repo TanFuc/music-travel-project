@@ -20,16 +20,18 @@ import { LocationsModule } from './modules/locations/locations.module';
 import { StagesModule } from './modules/stages/stages.module';
 import { SeatMapsModule } from './modules/seat-maps/seat-maps.module';
 import { PerformanceModule } from './modules/performance/performance.module';
+import { BranchesModule } from './modules/branches/branches.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
+import cloudinaryConfig from './config/cloudinary.config';
 
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, redisConfig],
+      load: [appConfig, databaseConfig, redisConfig, cloudinaryConfig],
       envFilePath: ['.env.local', '.env'],
     }),
 
@@ -65,6 +67,7 @@ import redisConfig from './config/redis.config';
     StagesModule,
     SeatMapsModule,
     PerformanceModule,
+    BranchesModule,
   ],
 })
 export class AppModule {}

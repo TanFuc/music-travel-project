@@ -45,4 +45,10 @@ export class ShowFilterDto extends PaginationDto {
   @IsOptional()
   @IsDateString()
   toDate?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'Filter by branch ID' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  branchId?: number;
 }

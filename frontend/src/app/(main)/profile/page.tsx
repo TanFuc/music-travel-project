@@ -2,9 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -12,15 +11,20 @@ import { User, Phone, Mail, Calendar, Ticket, MapPin, Wallet, Edit2, Shield } fr
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { useAuthStore } from '@/stores/auth.store';
 import { get, patch } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { ImageUpload } from '@/components/common/ImageUpload';
+import { getCloudinaryUrl } from '@/lib/cloudinary';
+import { Link } from '@/components/common/Link';
 
 const updateProfileSchema = z.object({
   fullName: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
   email: z.string().email('Email không đúng định dạng').optional().or(z.literal('')),
+  avatarUrl: z.string().optional().nullable(),
 });
 
 type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
@@ -102,6 +106,7 @@ export default function ProfilePage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm<UpdateProfileForm>({
@@ -109,6 +114,7 @@ export default function ProfilePage() {
     defaultValues: {
       fullName: profile?.fullName || '',
       email: profile?.email || '',
+      avatarUrl: profile?.avatarUrl || '',
     },
   });
 
@@ -117,6 +123,7 @@ export default function ProfilePage() {
       reset({
         fullName: profile.fullName,
         email: profile.email || '',
+        avatarUrl: profile.avatarUrl || '',
       });
     }
   }, [profile, reset]);
@@ -184,18 +191,34 @@ export default function ProfilePage() {
             <CardContent>
               {isEditing ? (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="flex flex-col items-center gap-4 mb-4">
+                    <Label>Ảnh đại diện</Label>
+                    <Controller
+                      name="avatarUrl"
+                      control={control}
+                      render={({ field }) => (
+                        <ImageUpload
+                          value={field.value || undefined}
+                          onChange={field.onChange}
+                          folder="avatars"
+                          aspectRatio="square"
+                          className="w-32 h-32"
+                        />
+                      )}
+                    />
+                  </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Họ và tên</label>
-                    <Input {...register('fullName')} />
+                    <Label htmlFor="fullName">Họ và tên</Label>
+                    <Input id="fullName" {...register('fullName')} />
                     {errors.fullName && (
-                      <p className="text-sm text-error-500">{errors.fullName.message}</p>
+                      <p className="text-sm text-red-500">{errors.fullName.message}</p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Email</label>
-                    <Input type="email" {...register('email')} />
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" {...register('email')} />
                     {errors.email && (
-                      <p className="text-sm text-error-500">{errors.email.message}</p>
+                      <p className="text-sm text-red-500">{errors.email.message}</p>
                     )}
                   </div>
                   <div className="flex gap-2">
@@ -209,8 +232,18 @@ export default function ProfilePage() {
                 </form>
               ) : (
                 <div className="space-y-4">
-                  <div className="w-20 h-20 rounded-full bg-brand-100 flex items-center justify-center mx-auto">
-                    <User className="h-10 w-10 text-brand-600" />
+                  <div className="w-20 h-20 rounded-full mx-auto overflow-hidden border">
+                    {profile?.avatarUrl ? (
+                      <img 
+                        src={getCloudinaryUrl(profile.avatarUrl, 'avatar')} 
+                        alt={profile.fullName} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-brand-100 flex items-center justify-center">
+                        <User className="h-10 w-10 text-brand-600" />
+                      </div>
+                    )}
                   </div>
                   <div className="text-center">
                     <h3 className="font-semibold text-lg">{profile?.fullName}</h3>
@@ -229,7 +262,7 @@ export default function ProfilePage() {
                     )}
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-neutral-400" />
-                      <span>Tham gia tu {formatDate(profile?.createdAt || '')}</span>
+                      <span>Tham gia từ {formatDate(profile?.createdAt || '')}</span>
                     </div>
                   </div>
                 </div>
@@ -238,11 +271,11 @@ export default function ProfilePage() {
           </Card>
 
           {/* Wallet Card */}
-          <Card className="bg-gradient-to-br from-brand-500 to-brand-600 text-white">
+          <Card className="bg-gradient-to-br from-brand-500 to-brand-600 text-white border-none shadow-brand-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Wallet className="h-5 w-5" />
-                Vi cua toi
+                Ví của tôi
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -250,7 +283,7 @@ export default function ProfilePage() {
                 {wallet ? formatCurrency(wallet.balance) : '0 VND'}
               </div>
               <p className="text-white/80 text-sm">
-                Trang thai: {wallet?.status === 'ACTIVE' ? 'Hoat dong' : 'Bi khoa'}
+                Trạng thái: {wallet?.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'}
               </p>
             </CardContent>
           </Card>
@@ -258,7 +291,7 @@ export default function ProfilePage() {
           {/* Admin Access Card */}
           {(profile?.role === 'ADMIN' || profile?.role === 'STAFF') && (
             <Link href="/admin/dashboard">
-              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-lg transition-shadow cursor-pointer border-none shadow-purple-200">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
@@ -289,7 +322,7 @@ export default function ProfilePage() {
               {!bookings?.items || bookings.items.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500">
                   <Ticket className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Ban chua co don hang nao.</p>
+                  <p>Bạn chưa có đơn hàng nào.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -308,7 +341,7 @@ export default function ProfilePage() {
                           </Badge>
                         </div>
                         <p className="text-sm text-neutral-600">
-                          {booking.items.reduce((sum, item) => sum + item.quantity, 0)} san pham |{' '}
+                          {booking.items.reduce((sum, item) => sum + item.quantity, 0)} sản phẩm |{' '}
                           {formatDate(booking.createdAt)}
                         </p>
                       </div>
@@ -317,7 +350,7 @@ export default function ProfilePage() {
                           {formatCurrency(booking.finalAmount)}
                         </p>
                         <p className="text-xs text-neutral-500">
-                          {booking.paymentStatus === 'PAID' ? 'Da thanh toan' : 'Chua thanh toan'}
+                          {booking.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
                         </p>
                       </div>
                     </div>

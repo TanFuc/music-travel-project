@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { Heart, MapPin, Calendar, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

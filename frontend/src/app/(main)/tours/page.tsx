@@ -2,13 +2,22 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { Clock, MapPin, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ShowCardSkeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { branchService } from '@/services/branch.service';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Tour {
   id: number;
@@ -17,6 +26,7 @@ interface Tour {
   duration: string;
   departureLoc: { name: string } | null;
   destinationLoc: { name: string } | null;
+  branch: { id: number; name: string } | null;
   minPrice: number | null;
   nextSchedule: {
     id: number;
@@ -37,15 +47,22 @@ interface ToursResponse {
 
 export default function ToursPage() {
   const [page, setPage] = useState(1);
+  const [branchId, setBranchId] = useState<string>('all');
   const limit = 12;
 
+  const { data: branches } = useQuery({
+    queryKey: ['branches'],
+    queryFn: () => branchService.getBranches(),
+  });
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['tours', page],
+    queryKey: ['tours', page, branchId],
     queryFn: async () => {
-      const response = await get<ToursResponse>(`/tours?page=${page}&limit=${limit}`);
+      const branchParam = branchId !== 'all' ? `&branchId=${branchId}` : '';
+      const response = await get<ToursResponse>(`/tours?page=${page}&limit=${limit}${branchParam}`);
       return response;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   if (error) {
@@ -64,6 +81,24 @@ export default function ToursPage() {
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold mb-2">Tour Du Lịch</h1>
         <p className="text-sm sm:text-base text-neutral-600">Khám phá các tour du lịch hấp dẫn trên khắp Việt Nam</p>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-4">
+        <div className="w-full sm:w-64">
+          <Select value={branchId} onValueChange={(val) => { setBranchId(val); setPage(1); }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn chi nhánh" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+              {branches?.map((branch) => (
+                <SelectItem key={branch.id} value={String(branch.id)}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isLoading ? (
@@ -103,6 +138,13 @@ export default function ToursPage() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-brand-500" />
                       <span>Khởi hành: {formatDate(tour.nextSchedule.startDate)}</span>
+                    </div>
+                  )}
+                  {tour.branch && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs font-normal">
+                        {tour.branch.name}
+                      </Badge>
                     </div>
                   )}
                 </div>

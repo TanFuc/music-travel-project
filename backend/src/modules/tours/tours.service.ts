@@ -28,6 +28,7 @@ export class ToursService {
       limit: filterDto.limit,
       search: filterDto.search,
       destinationId: filterDto.destinationId,
+      branchId: filterDto.branchId,
     });
     const cacheKey = CacheKeys.tourList(filterHash);
 
@@ -48,6 +49,7 @@ export class ToursService {
         ],
       }),
       ...(filterDto.destinationId && { destinationLocId: filterDto.destinationId }),
+      ...(filterDto.branchId && { branchId: filterDto.branchId }),
     };
 
     const [tours, total] = await Promise.all([
@@ -56,6 +58,7 @@ export class ToursService {
         include: {
           departureLoc: true,
           destinationLoc: true,
+          branch: true,
           schedules: {
             where: {
               status: 'OPEN',
@@ -80,6 +83,12 @@ export class ToursService {
       duration: tour.duration,
       departureLoc: tour.departureLoc,
       destinationLoc: tour.destinationLoc,
+      branch: tour.branch
+        ? {
+            id: tour.branch.id,
+            name: tour.branch.name,
+          }
+        : null,
       minPrice: tour.schedules.length
         ? Math.min(...tour.schedules.map((s) => Number(s.price)))
         : null,
@@ -108,6 +117,7 @@ export class ToursService {
       include: {
         departureLoc: true,
         destinationLoc: true,
+        branch: true,
         schedules: {
           where: {
             status: 'OPEN',
@@ -178,6 +188,7 @@ export class ToursService {
         duration: createTourDto.duration,
         departureLocId: createTourDto.departureLocId,
         destinationLocId: createTourDto.destinationLocId,
+        branchId: createTourDto.branchId,
         properties: createTourDto.properties as object | undefined,
         metaTitle: createTourDto.metaTitle,
         metaDescription: createTourDto.metaDescription,
@@ -214,6 +225,9 @@ export class ToursService {
     if (updateTourDto.destinationLocId !== undefined) {
       updateData.destinationLocId = updateTourDto.destinationLocId;
     }
+    if (updateTourDto.branchId !== undefined) {
+      updateData.branchId = updateTourDto.branchId;
+    }
     if (updateTourDto.properties !== undefined) {
       updateData.properties = updateTourDto.properties;
     }
@@ -233,6 +247,7 @@ export class ToursService {
       include: {
         departureLoc: true,
         destinationLoc: true,
+        branch: true,
       },
     });
 

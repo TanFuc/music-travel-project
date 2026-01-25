@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { ArrowLeft, Calendar, MapPin, Clock, Users, Ticket, ExternalLink, Navigation } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,7 @@ interface ShowDetail {
   performTime: string;
   checkInTime: string | null;
   status: string;
+  branch: { id: number; name: string } | null;
   seatSelectionEnabled: boolean; // false = General Admission mode
   properties: Record<string, unknown> | null;
   metaTitle: string | null;
@@ -183,7 +184,7 @@ export default function ShowDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  <span>{show.stage.name}</span>
+                  <span>{show.stage.name}{show.branch ? ` - ${show.branch.name}` : ''}</span>
                 </div>
               </div>
             </div>
@@ -311,7 +312,7 @@ export default function ShowDetailPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Ticket className="h-5 w-5" />
-                    {show.seatSelectionEnabled ? 'So do cho ngoi' : 'Chon ve'}
+                    {show.seatSelectionEnabled ? 'Sơ đồ chỗ ngồi' : 'Chọn vé'}
                   </CardTitle>
                   {show.seatSelectionEnabled && (
                     <Button
@@ -319,7 +320,7 @@ export default function ShowDetailPage() {
                       size="sm"
                       onClick={() => setShowSeatMap(!showSeatMap)}
                     >
-                      {showSeatMap ? 'An so do' : 'Xem so do'}
+                      {showSeatMap ? 'Ẩn sơ đồ' : 'Xem sơ đồ'}
                     </Button>
                   )}
                 </div>
@@ -340,11 +341,11 @@ export default function ShowDetailPage() {
                         {lockedSeats && (
                           <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                             <p className="text-green-700 dark:text-green-300 font-medium">
-                              Da giu cho thanh cong! Vui long hoan tat thanh toan.
+                              Đã giữ chỗ thành công! Vui lòng hoàn tất thanh toán.
                             </p>
                             <Link href={`/checkout?lockId=${lockedSeats.lockId}`} prefetch={false}>
                               <Button className="mt-2">
-                                Tien hanh thanh toan
+                                Tiến hành thanh toán
                               </Button>
                             </Link>
                           </div>
@@ -353,7 +354,7 @@ export default function ShowDetailPage() {
                     )}
                     {!showSeatMap && (
                       <p className="text-neutral-500 text-center py-4">
-                        Nhan "Xem so do" de chon cho ngoi cua ban.
+                        Nhấn "Xem sơ đồ" để chọn chỗ ngồi của bạn.
                       </p>
                     )}
                   </>

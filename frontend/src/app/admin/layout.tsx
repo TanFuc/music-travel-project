@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import {
   LayoutDashboard,
   Users,
@@ -77,6 +77,12 @@ const sidebarItems = [
     href: '/admin/media',
     icon: Image,
   },
+  {
+    title: 'Banner',
+    href: '/admin/banners',
+    icon: Image,
+  },
+
   {
     title: 'Thông báo',
     href: '/admin/notifications',

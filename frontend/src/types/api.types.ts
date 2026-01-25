@@ -19,10 +19,17 @@ export interface Show {
   checkInTime: string | null;
   status: 'UPCOMING' | 'ONGOING' | 'ENDED' | 'CANCELLED';
   stage: Stage;
+  branch: Branch | null;
   artists: ShowArtist[];
   ticketClasses: TicketClass[];
   availableTickets: number;
   minPrice: number | null;
+}
+
+export interface Branch {
+  id: number;
+  name: string;
+  description: string | null;
 }
 
 export interface Stage {
@@ -80,6 +87,7 @@ export interface Tour {
   duration: string | null;
   departureLoc: Location | null;
   destinationLoc: Location | null;
+  branch: Branch | null;
   schedules: TourSchedule[];
   minPrice: number | null;
 }

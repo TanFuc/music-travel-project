@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { ArrowLeft, Calendar, MapPin, Clock, Users, CreditCard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,7 @@ interface TourDetail {
     id: number;
     name: string;
   } | null;
+  branch: { id: number; name: string } | null;
   schedules: TourSchedule[];
 }
 
@@ -148,7 +149,7 @@ export default function TourDetailPage() {
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5" />
                     <span>
-                      {tour.departureLoc?.name} &rarr; {tour.destinationLoc.name}
+                      {tour.departureLoc?.name} &rarr; {tour.destinationLoc.name}{tour.branch ? ` (${tour.branch.name})` : ''}
                     </span>
                   </div>
                 )}
@@ -322,7 +323,7 @@ export default function TourDetailPage() {
                   </div>
 
                   <div className="border-t pt-4">
-                    <Link href="/cart">
+                    <Link href="/cart" prefetch={false}>
                       <Button variant="outline" className="w-full">
                         Xem giỏ hàng
                       </Button>

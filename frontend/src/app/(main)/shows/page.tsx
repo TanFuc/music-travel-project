@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import { Calendar, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { ShowCardSkeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
+import { branchService } from '@/services/branch.service';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Show {
   id: number;
@@ -18,6 +26,7 @@ interface Show {
   description: string;
   performTime: string;
   status: string;
+  branch: { id: number; name: string } | null;
   stage: {
     id: number;
     name: string;
@@ -63,15 +72,22 @@ const statusLabels: Record<string, string> = {
 
 export default function ShowsPage() {
   const [page, setPage] = useState(1);
+  const [branchId, setBranchId] = useState<string>('all');
   const limit = 12;
 
+  const { data: branches } = useQuery({
+    queryKey: ['branches'],
+    queryFn: () => branchService.getBranches(),
+  });
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['shows', page],
+    queryKey: ['shows', page, branchId],
     queryFn: async () => {
-      const response = await get<ShowsResponse>(`/shows?page=${page}&limit=${limit}`);
+      const branchParam = branchId !== 'all' ? `&branchId=${branchId}` : '';
+      const response = await get<ShowsResponse>(`/shows?page=${page}&limit=${limit}${branchParam}`);
       return response;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   if (error) {
@@ -90,6 +106,24 @@ export default function ShowsPage() {
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold mb-2">Sự Kiện Âm Nhạc</h1>
         <p className="text-sm sm:text-base text-neutral-600">Khám phá các show nhạc và concert hấp dẫn</p>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-4">
+        <div className="w-full sm:w-64">
+          <Select value={branchId} onValueChange={(val) => { setBranchId(val); setPage(1); }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn chi nhánh" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+              {branches?.map((branch) => (
+                <SelectItem key={branch.id} value={String(branch.id)}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
 
@@ -131,6 +165,13 @@ export default function ShowsPage() {
                       <span className="line-clamp-1">
                         {show.artists.map((a) => a.name).join(', ')}
                       </span>
+                    </div>
+                  )}
+                  {show.branch && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs font-normal">
+                        {show.branch.name}
+                      </Badge>
                     </div>
                   )}
                 </div>

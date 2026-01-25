@@ -219,14 +219,14 @@ export function SeatMap({
     <div className={cn('seat-map-container', className)}>
       {/* Stage visualization */}
       <div className="bg-gradient-to-b from-gray-700 to-gray-800 text-white text-center py-3 rounded-t-xl font-semibold">
-        SAN KHAU
+        SÂN KHẤU
       </div>
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4 p-4 bg-gray-50 dark:bg-gray-900">
         <div className="flex items-center gap-2 text-sm">
           <span className="w-4 h-4 rounded-full bg-gray-500" />
-          <span>Da ban</span>
+          <span>Đã bán</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span className="w-4 h-4 rounded-full bg-red-500" />

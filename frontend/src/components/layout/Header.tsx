@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, ShoppingCart, User, LogOut, Search, ChevronDown, MapPin, X } from 'lucide-react';
@@ -158,7 +158,7 @@ export function Header() {
             </Button>
 
             {/* Cart */}
-            <Link href="/cart" className="relative">
+            <Link href="/cart" prefetch={false} className="relative">
               <Button
                 variant="ghost"
                 size="icon"

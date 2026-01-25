@@ -14,4 +14,10 @@ export class TourFilterDto extends PaginationDto {
   @Type(() => Number)
   @IsInt()
   destinationId?: number;
+
+  @ApiPropertyOptional({ example: 1, description: 'Filter by branch ID' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  branchId?: number;
 }

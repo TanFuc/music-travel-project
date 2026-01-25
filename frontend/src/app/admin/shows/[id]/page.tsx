@@ -2,14 +2,16 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Calendar, MapPin, Users, Ticket, QrCode, Clock, Eye } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, Calendar, MapPin, Users, Ticket, QrCode, Clock, Eye, Edit } from 'lucide-react';
+import { Link } from '@/components/common/Link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatDate, formatCurrency } from '@/lib/utils';
+import { useState } from 'react';
+import { ShowFormModal } from '@/components/admin/ShowFormModal';
 
 interface Show {
   id: number;
@@ -72,6 +74,7 @@ export default function ShowDetailPage() {
   const params = useParams();
   const router = useRouter();
   const showId = Number(params.id);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const { data: show, isLoading } = useQuery({
     queryKey: ['admin-show', showId],
@@ -135,6 +138,10 @@ export default function ShowDetailPage() {
           <Badge variant={statusColors[show.status]}>{show.status}</Badge>
         </div>
         <div className="flex gap-2">
+           <Button variant="outline" className="gap-2" onClick={() => setIsEditOpen(true)}>
+            <Edit className="h-4 w-4" />
+            Chỉnh sửa
+          </Button>
           <Link href={`/admin/shows/${show.id}/qr-codes`}>
             <Button variant="outline" className="gap-2">
               <QrCode className="h-4 w-4" />
@@ -149,6 +156,14 @@ export default function ShowDetailPage() {
           </Link>
         </div>
       </div>
+
+       <ShowFormModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        initialData={show}
+        onSuccess={() => setIsEditOpen(false)}
+      />
+
 
       {/* Basic Info */}
       <Card>

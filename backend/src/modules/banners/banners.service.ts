@@ -66,6 +66,13 @@ export class BannersService {
     });
   }
 
+  async findById(id: number) {
+    return this.prisma.banner.findUnique({
+      where: { id },
+    });
+  }
+
+
   async create(data: {
     title?: string;
     imageUrl: string;

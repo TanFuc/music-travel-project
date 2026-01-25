@@ -179,3 +179,15 @@ export async function del<T>(url: string): Promise<T> {
   }
   return response.data as T;
 }
+
+export async function upload<T>(url: string, formData: FormData): Promise<T> {
+  const response = await api.post<T | ApiResponse<T>>(url, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  if (response.data && typeof response.data === 'object' && 'data' in response.data && 'success' in response.data) {
+    return (response.data as ApiResponse<T>).data as T;
+  }
+  return response.data as T;
+}
