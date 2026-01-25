@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@/components/common/Link';
-import { Clock, MapPin, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, MapPin, Calendar, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { ShowCardSkeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -48,6 +49,8 @@ interface ToursResponse {
 export default function ToursPage() {
   const [page, setPage] = useState(1);
   const [branchId, setBranchId] = useState<string>('all');
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const limit = 12;
 
   const { data: branches } = useQuery({
@@ -56,14 +59,30 @@ export default function ToursPage() {
   });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['tours', page, branchId],
+    queryKey: ['tours', page, branchId, search],
     queryFn: async () => {
-      const branchParam = branchId !== 'all' ? `&branchId=${branchId}` : '';
-      const response = await get<ToursResponse>(`/tours?page=${page}&limit=${limit}${branchParam}`);
+      const params = new URLSearchParams();
+      params.append('page', String(page));
+      params.append('limit', String(limit));
+      if (branchId !== 'all') params.append('branchId', branchId);
+      if (search) params.append('search', search);
+      const response = await get<ToursResponse>(`/tours?${params.toString()}`);
       return response;
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearch(searchInput);
+    setPage(1);
+  };
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setSearch('');
+    setPage(1);
+  };
 
   if (error) {
     // console.error('Tours API Error:', error);
@@ -83,10 +102,34 @@ export default function ToursPage() {
         <p className="text-sm sm:text-base text-neutral-600">Khám phá các tour du lịch hấp dẫn trên khắp Việt Nam</p>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-4">
-        <div className="w-full sm:w-64">
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        {/* Search Input */}
+        <form onSubmit={handleSearch} className="flex-1 max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Tìm kiếm tour..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-10 pr-10 h-10 bg-white"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </form>
+
+        {/* Branch Filter */}
+        <div className="w-full sm:w-48">
           <Select value={branchId} onValueChange={(val) => { setBranchId(val); setPage(1); }}>
-            <SelectTrigger>
+            <SelectTrigger className="h-10">
               <SelectValue placeholder="Chọn chi nhánh" />
             </SelectTrigger>
             <SelectContent>
@@ -100,6 +143,16 @@ export default function ToursPage() {
           </Select>
         </div>
       </div>
+
+      {/* Search Result Info */}
+      {search && !isLoading && data && (
+        <p className="mb-4 text-gray-600">
+          Tìm thấy <span className="font-semibold">{data.meta?.total || 0}</span> kết quả cho "{search}"
+          <button onClick={clearSearch} className="ml-2 text-brand-600 hover:underline">
+            Xóa bộ lọc
+          </button>
+        </p>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -170,7 +223,32 @@ export default function ToursPage() {
 
       {data?.items?.length === 0 && (
         <div className="text-center py-12 text-neutral-500">
-          Chưa có tour nào. Vui lòng quay lại sau.
+          {search ? `Không tìm thấy tour nào cho "${search}"` : 'Chưa có tour nào. Vui lòng quay lại sau.'}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {data && data.meta && data.meta.totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1 || isLoading}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="hidden sm:inline ml-1">Trước</span>
+          </Button>
+          <span className="px-4 py-2 text-sm text-neutral-600">
+            Trang {page} / {data.meta.totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+            disabled={page === data.meta.totalPages || isLoading}
+          >
+            <span className="hidden sm:inline mr-1">Sau</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       )}
     </div>

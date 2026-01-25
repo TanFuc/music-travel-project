@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useEffect, useState } from 'react';
 
 interface User {
   id: number;
@@ -63,8 +64,34 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
+        // Use requestIdleCallback or setTimeout to avoid blocking
+        if (typeof window !== 'undefined') {
+          if ('requestIdleCallback' in window) {
+            (window as Window).requestIdleCallback(() => {
+              state?.setHasHydrated(true);
+            });
+          } else {
+            setTimeout(() => {
+              state?.setHasHydrated(true);
+            }, 0);
+          }
+        } else {
+          state?.setHasHydrated(true);
+        }
       },
     }
   )
 );
+
+// Hook for checking auth without blocking - returns optimistic value immediately
+export function useAuthHydrated() {
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Return true immediately on server or if mounted and hydrated
+  return mounted && hasHydrated;
+}

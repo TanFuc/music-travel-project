@@ -325,6 +325,8 @@ model Stage {
   performanceQRCodes       PerformanceQRCode[]
   performanceRegistrations PerformanceRegistration[]
   performanceSlots         PerformanceSlot[]
+  branch                   Branch?                   @relation(fields: [branchId], references: [id])
+  branchId                 Int?                      @map("branch_id")
 
   @@map("stages")
 }
@@ -501,8 +503,9 @@ model Branch {
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  shows Show[]
-  tours Tour[]
+  shows  Show[]
+  tours  Tour[]
+  stages Stage[]
 
   @@map("branches")
 }
@@ -891,4 +894,23 @@ model PerformanceSlot {
 
   @@index([showId, stageId])
   @@map("performance_slots")
+}
+
+// =============================================================================
+// MODULE 9: HOME PAGE CONTENT
+// =============================================================================
+
+model HomeStage {
+  id           Int      @id @default(autoincrement())
+  title        String   @db.VarChar(150)
+  imageUrl     String   @map("image_url") @db.VarChar(500)
+  description  String?  @db.Text
+  location     String?  @db.VarChar(100)
+  isActive     Boolean  @default(true) @map("is_active")
+  displayOrder Int      @default(0) @map("display_order")
+  createdBy    Int?     @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("home_stages")
 }

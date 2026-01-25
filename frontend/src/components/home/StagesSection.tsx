@@ -6,28 +6,19 @@ import { Link } from '@/components/common/Link';
 import { MapPin, Users, ArrowRight, Loader2, Star, Music } from 'lucide-react';
 import { get } from '@/lib/api';
 
-interface Stage {
+interface HomeStage {
   id: number;
-  name: string;
-  address?: string;
-  location: {
-    name: string;
-    slug: string;
-  };
-  activeShowCount: number;
-  thumbnailUrl?: string;
-  rating?: number;
-  reviewCount?: number;
+  title: string;
+  imageUrl: string;
+  description?: string;
+  location?: string;
 }
 
 export function StagesSection() {
   const { data: stages = [], isLoading } = useQuery({
     queryKey: ['home-stages'],
-    queryFn: async () => {
-      const response = await get<{ items: Stage[]; meta: unknown }>('/stages?limit=4');
-      return (response.items || []).slice(0, 4);
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    queryFn: () => get<HomeStage[]>('/home-stages?activeOnly=true'),
+    staleTime: 5 * 60 * 1000,
   });
 
   return (
@@ -56,62 +47,44 @@ export function StagesSection() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {stages.map((stage, index) => (
-              <Link
+              <div
                 key={stage.id}
-                href={`/stages/${stage.id}`}
-                className="group relative overflow-hidden rounded-2xl glass-card card-hover animate-fadeIn opacity-0"
+                className="group relative overflow-hidden rounded-2xl glass-card animate-fadeIn opacity-0"
                 style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
               >
                 {/* Image */}
                 <div className="relative aspect-[16/9] overflow-hidden">
                   <Image
-                    src={stage.thumbnailUrl || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop'}
-                    alt={stage.name}
+                    src={stage.imageUrl}
+                    alt={stage.title}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
 
-                  {/* Gradient Overlay - Bright green */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-800/80 via-brand-700/40 to-transparent" />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
                   {/* Content */}
                   <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                    <h3 className="font-display font-bold text-2xl text-white mb-2 group-hover:text-brand-400 transition-colors">
-                      {stage.name}
+                    <h3 className="font-display font-bold text-2xl text-white mb-2">
+                      {stage.title}
                     </h3>
 
-                    <div className="flex items-center gap-2 text-white/70 text-sm mb-3">
-                      <MapPin className="w-4 h-4 text-brand-400" />
-                      <span>{stage.location.name}</span>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      {stage.rating && (
-                        <div className="flex items-center gap-1 text-gold-400">
-                          <Star className="w-4 h-4 fill-current" />
-                          <span className="font-medium">{stage.rating}</span>
-                          <span className="text-white/70 text-sm">
-                            ({stage.reviewCount} đánh giá)
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-1 text-brand-400">
-                        <Music className="w-4 h-4" />
-                        <span className="font-medium">{stage.activeShowCount} show</span>
-                        <span className="text-white/70 text-sm">đang mở bán</span>
+                    {stage.location && (
+                      <div className="flex items-center gap-2 text-white/90 text-sm mb-2">
+                        <MapPin className="w-4 h-4 text-brand-400" />
+                        <span>{stage.location}</span>
                       </div>
-                    </div>
+                    )}
 
-                    {/* CTA */}
-                    <div className="mt-4">
-                      <span className="inline-flex items-center px-4 py-2 rounded-lg bg-white/10 backdrop-blur-sm text-white text-sm font-medium group-hover:bg-brand-500 transition-colors">
-                        Xem show tại đây
-                      </span>
-                    </div>
+                    {stage.description && (
+                      <p className="text-white/80 text-sm line-clamp-2">
+                        {stage.description}
+                      </p>
+                    )}
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

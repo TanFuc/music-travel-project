@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useCartStore } from '@/stores/cart.store';
 import { cn } from '@/lib/utils';
 import { get } from '@/lib/api';
+import { SearchModal } from '@/components/search';
 
 interface Location {
   id: number;
@@ -33,15 +34,17 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Use React Query for locations
-  const { data: locations = [] } = useQuery({
+  // Use React Query for locations - only fetch when dropdown opens (lazy load)
+  const { data: locations = [], isLoading: isLoadingLocations } = useQuery({
     queryKey: ['locations'],
     queryFn: async () => {
       const response = await get<Location[]>('/locations');
       return Array.isArray(response) ? response : [];
     },
     staleTime: 10 * 60 * 1000, // 10 minutes cache
+    enabled: isLocationDropdownOpen || mobileMenuOpen, // Only fetch when needed
   });
 
   useEffect(() => {
@@ -153,6 +156,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               className="text-gray-600 hover:text-brand-600 hover:bg-brand-50"
+              onClick={() => setIsSearchOpen(true)}
             >
               <Search className="h-5 w-5" />
             </Button>
@@ -293,6 +297,9 @@ export function Header() {
           </div>
         )}
       </div>
+
+      {/* Search Modal */}
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 }

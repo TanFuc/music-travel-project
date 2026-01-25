@@ -134,7 +134,7 @@ export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
             </div>
 
             {/* Title */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white leading-tight">
               {currentBanner.title}
             </h1>
 

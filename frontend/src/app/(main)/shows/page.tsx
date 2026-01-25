@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@/components/common/Link';
-import { Calendar, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, MapPin, Users, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { ShowCardSkeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
@@ -73,6 +74,8 @@ const statusLabels: Record<string, string> = {
 export default function ShowsPage() {
   const [page, setPage] = useState(1);
   const [branchId, setBranchId] = useState<string>('all');
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const limit = 12;
 
   const { data: branches } = useQuery({
@@ -81,14 +84,30 @@ export default function ShowsPage() {
   });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['shows', page, branchId],
+    queryKey: ['shows', page, branchId, search],
     queryFn: async () => {
-      const branchParam = branchId !== 'all' ? `&branchId=${branchId}` : '';
-      const response = await get<ShowsResponse>(`/shows?page=${page}&limit=${limit}${branchParam}`);
+      const params = new URLSearchParams();
+      params.append('page', String(page));
+      params.append('limit', String(limit));
+      if (branchId !== 'all') params.append('branchId', branchId);
+      if (search) params.append('search', search);
+      const response = await get<ShowsResponse>(`/shows?${params.toString()}`);
       return response;
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearch(searchInput);
+    setPage(1);
+  };
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setSearch('');
+    setPage(1);
+  };
 
   if (error) {
     // console.error('Shows API Error:', error);
@@ -108,10 +127,34 @@ export default function ShowsPage() {
         <p className="text-sm sm:text-base text-neutral-600">Khám phá các show nhạc và concert hấp dẫn</p>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-4">
-        <div className="w-full sm:w-64">
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        {/* Search Input */}
+        <form onSubmit={handleSearch} className="flex-1 max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Tìm kiếm sự kiện..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-10 pr-10 h-10 bg-white"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </form>
+
+        {/* Branch Filter */}
+        <div className="w-full sm:w-48">
           <Select value={branchId} onValueChange={(val) => { setBranchId(val); setPage(1); }}>
-            <SelectTrigger>
+            <SelectTrigger className="h-10">
               <SelectValue placeholder="Chọn chi nhánh" />
             </SelectTrigger>
             <SelectContent>
@@ -125,6 +168,16 @@ export default function ShowsPage() {
           </Select>
         </div>
       </div>
+
+      {/* Search Result Info */}
+      {search && !isLoading && data && (
+        <p className="mb-4 text-gray-600">
+          Tìm thấy <span className="font-semibold">{data.meta?.total || 0}</span> kết quả cho "{search}"
+          <button onClick={clearSearch} className="ml-2 text-brand-600 hover:underline">
+            Xóa bộ lọc
+          </button>
+        </p>
+      )}
 
 
       {isLoading ? (
@@ -197,7 +250,7 @@ export default function ShowsPage() {
 
       {data?.items?.length === 0 && (
         <div className="text-center py-12 text-neutral-500">
-          Chưa có sự kiện nào. Vui lòng quay lại sau.
+          {search ? `Không tìm thấy sự kiện nào cho "${search}"` : 'Chưa có sự kiện nào. Vui lòng quay lại sau.'}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, ShowStatus, TicketStatus, TourScheduleStatus, VoucherDiscountType, BannerPosition, MediaType, MediaTargetType, SeatType } from '@prisma/client';
+import { PrismaClient, UserRole, ShowStatus, TicketStatus, TourScheduleStatus, VoucherDiscountType, BannerPosition, MediaType, MediaTargetType, SeatType, BookingStatus, PaymentStatus, BookingItemType, WalletTransactionType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -24,6 +24,9 @@ async function main() {
   await prisma.ticket.deleteMany();
   await prisma.ticketClass.deleteMany();
   await prisma.showArtist.deleteMany();
+  await prisma.performanceSlot.deleteMany();
+  await prisma.performanceRegistration.deleteMany();
+  await prisma.performanceQRCode.deleteMany();
   await prisma.show.deleteMany();
   await prisma.physicalSeat.deleteMany();
   await prisma.stage.deleteMany();
@@ -674,6 +677,7 @@ async function main() {
   ]);
 
   // ============================================================================
+  // ============================================================================
   // 8. CREATE TOURS
   // ============================================================================
   console.log('🌄 Creating tours...');
@@ -1144,6 +1148,7 @@ async function main() {
     vouchers: await prisma.voucher.count(),
     media: await prisma.media.count(),
     marketingEvents: await prisma.marketingEvent.count(),
+    bookings: await prisma.booking.count(),
   };
 
   console.log('\n✅ Seed completed successfully!');
@@ -1162,6 +1167,7 @@ async function main() {
   console.log(`   🏷️ Vouchers: ${counts.vouchers}`);
   console.log(`   📸 Media: ${counts.media}`);
   console.log(`   📣 Marketing Events: ${counts.marketingEvents}`);
+  console.log(`   🛍️ Bookings: ${counts.bookings}`);
   console.log('\n🔑 Test credentials:');
   console.log('   Admin: 0901234567 / password123');
   console.log('   Staff: 0901234568 / password123');

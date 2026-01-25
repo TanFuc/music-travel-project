@@ -196,7 +196,7 @@ export default function AdminUsersPage() {
                     </CardContent>
                 </Card>
 
-                {/* Users Table */}
+                {/* Users List - Responsive */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Danh sách người dùng</CardTitle>
@@ -214,114 +214,181 @@ export default function AdminUsersPage() {
                             </div>
                         ) : (
                             <>
-                                <div className="overflow-x-auto -mx-4 sm:mx-0">
-                                    <div className="inline-block min-w-full align-middle">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b">
-                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600">Người dùng</th>
-                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600 hidden md:table-cell">Liên hệ</th>
-                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600">Vai trò</th>
-                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600">Trạng thái</th>
-                                                    <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600 hidden lg:table-cell">Ngày tạo</th>
-                                                    <th className="text-right py-3 px-4 font-semibold text-xs sm:text-sm text-neutral-600">Thao tác</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {data.items.map((user) => (
-                                                    <tr key={user.id} className="border-b hover:bg-neutral-50 transition-colors">
-                                                        <td className="py-3 sm:py-4 px-4">
-                                                            <div className="flex items-center gap-2 sm:gap-3">
-                                                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
-                                                                    <span className="text-brand-600 font-semibold text-xs sm:text-base">
-                                                                        {user.fullName.charAt(0).toUpperCase()}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="min-w-0">
-                                                                    <p className="font-medium text-neutral-800 text-xs sm:text-sm truncate">{user.fullName}</p>
-                                                                    <p className="text-xs text-neutral-500 md:hidden">{user.phoneNumber}</p>
-                                                                    <p className="text-xs text-neutral-500 hidden md:block">ID: {user.id}</p>
-                                                                </div>
+                                {/* Desktop Table View */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600">Người dùng</th>
+                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600">Liên hệ</th>
+                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600">Vai trò</th>
+                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600">Trạng thái</th>
+                                                <th className="text-left py-3 px-4 font-semibold text-sm text-neutral-600 hidden lg:table-cell">Ngày tạo</th>
+                                                <th className="text-right py-3 px-4 font-semibold text-sm text-neutral-600">Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {data.items.map((user) => (
+                                                <tr key={user.id} className="border-b hover:bg-neutral-50 transition-colors">
+                                                    <td className="py-4 px-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+                                                                <span className="text-brand-600 font-semibold">
+                                                                    {user.fullName.charAt(0).toUpperCase()}
+                                                                </span>
                                                             </div>
-                                                        </td>
-                                                        <td className="py-3 sm:py-4 px-4 hidden md:table-cell">
                                                             <div>
-                                                                <p className="text-sm text-neutral-800">{user.phoneNumber}</p>
-                                                                {user.email && (
-                                                                    <p className="text-sm text-neutral-500 truncate max-w-[200px]">{user.email}</p>
-                                                                )}
+                                                                <p className="font-medium text-neutral-800">{user.fullName}</p>
+                                                                <p className="text-xs text-neutral-500">ID: {user.id}</p>
                                                             </div>
-                                                        </td>
-                                                        <td className="py-3 sm:py-4 px-4">
-                                                            <Badge variant={roleColors[user.role]} className="gap-1 text-xs">
-                                                                <Shield className="h-3 w-3 hidden sm:inline" />
-                                                                {user.role}
-                                                            </Badge>
-                                                        </td>
-                                                        <td className="py-3 sm:py-4 px-4">
-                                                            <button
-                                                                onClick={() => toggleStatusMutation.mutate(user.id)}
-                                                                disabled={toggleStatusMutation.isPending}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-4">
+                                                        <div>
+                                                            <p className="text-sm text-neutral-800">{user.phoneNumber}</p>
+                                                            {user.email && (
+                                                                <p className="text-sm text-neutral-500 truncate max-w-[200px]">{user.email}</p>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-4">
+                                                        <Badge variant={roleColors[user.role]} className="gap-1">
+                                                            <Shield className="h-3 w-3" />
+                                                            {user.role}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="py-4 px-4">
+                                                        <button
+                                                            onClick={() => toggleStatusMutation.mutate(user.id)}
+                                                            disabled={toggleStatusMutation.isPending}
+                                                        >
+                                                            {user.isActive ? (
+                                                                <Badge variant="success" className="gap-1 cursor-pointer hover:opacity-80">
+                                                                    <Check className="h-3 w-3" />
+                                                                    Hoạt động
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge variant="destructive" className="gap-1 cursor-pointer hover:opacity-80">
+                                                                    <Ban className="h-3 w-3" />
+                                                                    Bị khóa
+                                                                </Badge>
+                                                            )}
+                                                        </button>
+                                                    </td>
+                                                    <td className="py-4 px-4 text-sm text-neutral-600 hidden lg:table-cell">
+                                                        {formatDate(user.createdAt)}
+                                                    </td>
+                                                    <td className="py-4 px-4">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => handleEditUser(user)}
+                                                                title="Chỉnh sửa"
                                                             >
-                                                                {user.isActive ? (
-                                                                    <Badge variant="success" className="gap-1 cursor-pointer hover:opacity-80 text-xs">
-                                                                        <Check className="h-3 w-3 hidden sm:inline" />
-                                                                        <span className="hidden sm:inline">Hoạt động</span>
-                                                                        <span className="sm:hidden">ON</span>
-                                                                    </Badge>
-                                                                ) : (
-                                                                    <Badge variant="destructive" className="gap-1 cursor-pointer hover:opacity-80 text-xs">
-                                                                        <Ban className="h-3 w-3 hidden sm:inline" />
-                                                                        <span className="hidden sm:inline">Bị khóa</span>
-                                                                        <span className="sm:hidden">OFF</span>
-                                                                    </Badge>
-                                                                )}
-                                                            </button>
-                                                        </td>
-                                                        <td className="py-3 sm:py-4 px-4 text-xs sm:text-sm text-neutral-600 hidden lg:table-cell">
-                                                            {formatDate(user.createdAt)}
-                                                        </td>
-                                                        <td className="py-3 sm:py-4 px-4">
-                                                            <div className="flex items-center justify-end gap-1 sm:gap-2">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    onClick={() => handleEditUser(user)}
-                                                                    title="Chỉnh sửa"
-                                                                    className="h-8 w-8"
-                                                                >
-                                                                    <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    onClick={() => setDeleteUser(user)}
-                                                                    title="Xóa"
-                                                                    className="text-error-600 hover:text-error-700 hover:bg-error-50 h-8 w-8"
-                                                                >
-                                                                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                                </Button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => setDeleteUser(user)}
+                                                                title="Xóa"
+                                                                className="text-error-600 hover:text-error-700 hover:bg-error-50"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Card View */}
+                                <div className="grid grid-cols-1 gap-4 md:hidden">
+                                    {data.items.map((user) => (
+                                        <div key={user.id} className="bg-white border rounded-lg p-4 space-y-4 shadow-sm">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+                                                        <span className="text-brand-600 font-semibold text-lg">
+                                                            {user.fullName.charAt(0).toUpperCase()}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-neutral-800">{user.fullName}</p>
+                                                        <p className="text-xs text-neutral-500">ID: {user.id}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={() => handleEditUser(user)}
+                                                    >
+                                                        <Edit className="h-4 w-4 text-neutral-600" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-error-600"
+                                                        onClick={() => setDeleteUser(user)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                                <div className="col-span-2">
+                                                    <p className="text-neutral-500 text-xs">Liên hệ</p>
+                                                    <p className="font-medium">{user.phoneNumber}</p>
+                                                    <p className="text-neutral-600">{user.email || 'None'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-neutral-500 text-xs mb-1">Vai trò</p>
+                                                    <Badge variant={roleColors[user.role]} className="text-xs">
+                                                        {user.role}
+                                                    </Badge>
+                                                </div>
+                                                <div>
+                                                    <p className="text-neutral-500 text-xs mb-1">Trạng thái</p>
+                                                    <button
+                                                        onClick={() => toggleStatusMutation.mutate(user.id)}
+                                                        disabled={toggleStatusMutation.isPending}
+                                                        className="touch-manipulation"
+                                                    >
+                                                        {user.isActive ? (
+                                                            <Badge variant="success" className="text-xs">Hoạt động</Badge>
+                                                        ) : (
+                                                            <Badge variant="destructive" className="text-xs">Bị khóa</Badge>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2 border-t text-xs text-neutral-400">
+                                                Đăng ký: {formatDate(user.createdAt)}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 {/* Pagination */}
                                 {data.meta.totalPages > 1 && (
-                                    <div className="flex items-center justify-between mt-6 pt-6 border-t">
-                                        <p className="text-sm text-neutral-600">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-6 border-t gap-4">
+                                        <p className="text-sm text-neutral-600 order-2 sm:order-1">
                                             Trang {data.meta.page} / {data.meta.totalPages} ({data.meta.total} người dùng)
                                         </p>
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                                 disabled={page === 1}
+                                                className="flex-1 sm:flex-none"
                                             >
                                                 Trước
                                             </Button>
@@ -330,6 +397,7 @@ export default function AdminUsersPage() {
                                                 size="sm"
                                                 onClick={() => setPage(p => Math.min(data.meta.totalPages, p + 1))}
                                                 disabled={page === data.meta.totalPages}
+                                                className="flex-1 sm:flex-none"
                                             >
                                                 Sau
                                             </Button>

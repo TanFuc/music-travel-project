@@ -74,4 +74,9 @@ export class CreateStageDto {
   @IsOptional()
   @IsInt()
   seatMapTemplate?: number;
+
+  @ApiPropertyOptional({ example: 1, description: 'Branch ID' })
+  @IsOptional()
+  @IsInt()
+  branchId?: number;
 }

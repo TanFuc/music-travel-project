@@ -53,6 +53,11 @@ const sidebarItems = [
     icon: Theater,
   },
   {
+    title: 'Sân khấu (Home)',
+    href: '/admin/home-stages',
+    icon: Image,
+  },
+  {
     title: 'Vé',
     href: '/admin/tickets',
     icon: Ticket,
@@ -103,7 +108,31 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, user, logout, hasHydrated } = useAuthStore();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Auto-open sidebar on desktop, close on mobile
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close sidebar on route change (mobile only)
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     // Wait for hydration before checking auth
@@ -145,30 +174,56 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-neutral-100">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-screen bg-white border-r transition-all duration-300',
-          sidebarOpen ? 'w-64' : 'w-20'
+          'fixed top-0 left-0 z-50 h-screen bg-white border-r transition-all duration-300',
+          // Mobile: always w-64 but slide in/out
+          'w-64',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          // Desktop: reset translate, control width
+          'lg:translate-x-0',
+          sidebarOpen ? 'lg:w-64' : 'lg:w-20'
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b">
-            {sidebarOpen ? (
+            <div className={cn("transition-opacity duration-200", !sidebarOpen && "lg:opacity-0 lg:hidden")}>
               <Logo size="sm" />
-            ) : (
+            </div>
+            {/* Show icon only logo when collapsed on desktop */}
+            <div className={cn("absolute left-0 w-full flex justify-center transition-opacity duration-200", sidebarOpen ? "opacity-0 hidden" : "opacity-100 hidden lg:flex")}>
               <Logo size="sm" showText={false} />
-            )}
+            </div>
+
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="hidden lg:flex"
+              className="hidden lg:flex ml-auto"
             >
               <ChevronRight
                 className={cn('h-4 w-4 transition-transform', !sidebarOpen && 'rotate-180')}
               />
+            </Button>
+
+            {/* Mobile Close Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden ml-auto"
+            >
+              <ChevronRight className="h-4 w-4 rotate-180" />
             </Button>
           </div>
 
@@ -185,11 +240,17 @@ export default function AdminLayout({
                         'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
                         isActive
                           ? 'bg-brand-50 text-brand-600'
-                          : 'text-neutral-600 hover:bg-neutral-100'
+                          : 'text-neutral-600 hover:bg-neutral-100',
+                        !sidebarOpen && 'lg:justify-center lg:px-2'
                       )}
+                      title={!sidebarOpen ? item.title : undefined}
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {sidebarOpen && <span className="text-sm font-medium">{item.title}</span>}
+                      <span className={cn("text-sm font-medium transition-all duration-300",
+                        !sidebarOpen ? "lg:w-0 lg:opacity-0 lg:overflow-hidden" : "lg:w-auto lg:opacity-100"
+                      )}>
+                        {item.title}
+                      </span>
                     </Link>
                   </li>
                 );
@@ -202,29 +263,30 @@ export default function AdminLayout({
             <div
               className={cn(
                 'flex items-center gap-3',
-                !sidebarOpen && 'justify-center'
+                !sidebarOpen && 'lg:justify-center'
               )}
             >
               <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
                 <Users className="h-5 w-5 text-brand-600" />
               </div>
-              {sidebarOpen && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{user?.fullName}</p>
-                  <p className="text-xs text-neutral-500">{user?.role}</p>
-                </div>
-              )}
+              <div className={cn("flex-1 min-w-0 transition-all duration-300", !sidebarOpen && "lg:w-0 lg:opacity-0 lg:overflow-hidden")}>
+                <p className="text-sm font-semibold truncate">{user?.fullName}</p>
+                <p className="text-xs text-neutral-500">{user?.role}</p>
+              </div>
             </div>
             <Button
               variant="ghost"
               className={cn(
                 'w-full mt-3 text-neutral-600',
-                !sidebarOpen && 'px-0'
+                !sidebarOpen && 'lg:px-0 lg:justify-center'
               )}
               onClick={handleLogout}
+              title={!sidebarOpen ? "Đăng xuất" : undefined}
             >
               <LogOut className="h-4 w-4" />
-              {sidebarOpen && <span className="ml-2">Đăng xuất</span>}
+              <span className={cn("ml-2 transition-all duration-300", !sidebarOpen && "lg:w-0 lg:opacity-0 lg:overflow-hidden")}>
+                Đăng xuất
+              </span>
             </Button>
           </div>
         </div>

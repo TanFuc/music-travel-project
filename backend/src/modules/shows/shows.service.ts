@@ -19,7 +19,7 @@ export class ShowsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-  ) {}
+  ) { }
 
   async findAll(filterDto: ShowFilterDto) {
     // Generate cache key from filters
@@ -117,9 +117,9 @@ export class ShowsService {
       },
       branch: show.branch
         ? {
-            id: show.branch.id,
-            name: show.branch.name,
-          }
+          id: show.branch.id,
+          name: show.branch.name,
+        }
         : null,
       artists: show.artists.map((sa) => ({
         id: sa.artist.id,
@@ -210,9 +210,9 @@ export class ShowsService {
       },
       branch: show.branch
         ? {
-            id: show.branch.id,
-            name: show.branch.name,
-          }
+          id: show.branch.id,
+          name: show.branch.name,
+        }
         : null,
       artists: show.artists.map((sa) => ({
         id: sa.artist.id,
@@ -280,22 +280,24 @@ export class ShowsService {
       },
     });
 
-    const result = tickets.map((ticket) => ({
+    const ticketsList = tickets.map((ticket) => ({
       id: ticket.id,
       status: ticket.status,
       ticketClass: ticket.ticketClass,
       seat: ticket.physicalSeat
         ? {
-            id: ticket.physicalSeat.id,
-            zone: ticket.physicalSeat.zoneName,
-            row: ticket.physicalSeat.rowName,
-            number: ticket.physicalSeat.seatNumber,
-            type: ticket.physicalSeat.type,
-            x: ticket.physicalSeat.xPosition,
-            y: ticket.physicalSeat.yPosition,
-          }
+          id: ticket.physicalSeat.id,
+          zone: ticket.physicalSeat.zoneName,
+          row: ticket.physicalSeat.rowName,
+          number: ticket.physicalSeat.seatNumber,
+          type: ticket.physicalSeat.type,
+          x: ticket.physicalSeat.xPosition,
+          y: ticket.physicalSeat.yPosition,
+        }
         : null,
     }));
+
+    const result = { tickets: ticketsList };
 
     // Cache seat map for 1 minute only (high volatility)
     await this.cache.set(cacheKey, result, CACHE_TTL.VERY_SHORT);
@@ -346,6 +348,32 @@ export class ShowsService {
 
   async create(createShowDto: CreateShowDto) {
     const slug = this.generateSlug(createShowDto.title);
+
+    // Verify stage exists
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: createShowDto.stageId },
+    });
+
+    if (!stage) {
+      throw new NotFoundException({
+        code: ERROR_CODES.STAGE_001,
+        message: 'Sân khấu không tồn tại.',
+      });
+    }
+
+    // Verify branch exists if provided
+    if (createShowDto.branchId) {
+      const branch = await this.prisma.branch.findUnique({
+        where: { id: createShowDto.branchId },
+      });
+
+      if (!branch) {
+        throw new NotFoundException({
+          code: 'BRANCH_001',
+          message: 'Chi nhánh không tồn tại.',
+        });
+      }
+    }
 
     const show = await this.prisma.show.create({
       data: {
@@ -419,6 +447,20 @@ export class ShowsService {
     }
     if (updateShowDto.metaKeywords !== undefined) {
       updateData.metaKeywords = updateShowDto.metaKeywords;
+    }
+
+    // Verify branch exists if provided
+    if (updateShowDto.branchId) {
+      const branch = await this.prisma.branch.findUnique({
+        where: { id: updateShowDto.branchId },
+      });
+
+      if (!branch) {
+        throw new NotFoundException({
+          code: 'BRANCH_001',
+          message: 'Chi nhánh không tồn tại.',
+        });
+      }
     }
 
     const updatedShow = await this.prisma.show.update({

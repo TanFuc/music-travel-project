@@ -12,7 +12,7 @@ import { get } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useCartStore } from '@/stores/cart.store';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { SeatMap } from '@/components/shows/SeatMap';
 import { GeneralAdmissionView } from '@/components/shows/GeneralAdmissionView';
 import { LocationMap, StaticMap } from '@/components/maps';
@@ -84,7 +84,7 @@ export default function ShowDetailPage() {
   const slug = params.slug as string;
   const addTicket = useCartStore((state) => state.addTicket);
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
-  const [showSeatMap, setShowSeatMap] = useState(false);
+  const [showSeatMap, setShowSeatMap] = useState(true); // Show by default
   const [lockedSeats, setLockedSeats] = useState<{ lockId: string; expiresAt: Date } | null>(null);
 
   const { data: show, isLoading, error } = useQuery({
@@ -93,10 +93,10 @@ export default function ShowDetailPage() {
     enabled: !!slug,
   });
 
-  const handleSeatsSelected = (ticketIds: number[], totalPrice: number) => {
+  const handleSeatsSelected = useCallback((ticketIds: number[], totalPrice: number) => {
     // Seats selected but not yet locked
     console.log(`Selected ${ticketIds.length} seats, total: ${totalPrice}`);
-  };
+  }, []);
 
   const handleLockSuccess = (lockId: string, expiresAt: Date) => {
     setLockedSeats({ lockId, expiresAt });

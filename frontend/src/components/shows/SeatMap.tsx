@@ -36,15 +36,15 @@ export function SeatMap({
   // Fetch seat map data
   const {
     data: seats,
-    isLoading,
+    isPending,
+    isRefetching,
     refetch,
   } = useQuery({
     queryKey: ['seatMap', showId],
     queryFn: () => showService.getShowSeats(showId),
-    // Remove auto-refetch to prevent spam - will refetch manually on lock/release
     refetchInterval: false,
     refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   // Lock tickets mutation
@@ -82,7 +82,6 @@ export function SeatMap({
       setLockCountdown((prev) => {
         if (prev === null || prev <= 1) {
           clearInterval(timer);
-          // Lock expired - reset selection
           setSelectedSeats([]);
           setLockId(null);
           refetch();
@@ -128,7 +127,7 @@ export function SeatMap({
   const handleSeatClick = useCallback(
     (ticket: SeatMapTicket) => {
       if (ticket.status !== 'AVAILABLE') return;
-      if (lockCountdown !== null) return; // Don't allow changes when locked
+      if (lockCountdown !== null) return;
 
       setSelectedSeats((prev) => {
         const isSelected = prev.includes(ticket.id);
@@ -146,20 +145,6 @@ export function SeatMap({
     [lockCountdown, maxSelectable, onSeatsSelected, calculatePrice],
   );
 
-  // Get seat color based on status and selection
-  const getSeatColor = (ticket: SeatMapTicket) => {
-    if (selectedSeats.includes(ticket.id)) {
-      return '#10B981'; // Green for selected
-    }
-    if (ticket.status === 'SOLD') {
-      return '#374151'; // Gray for sold
-    }
-    if (ticket.status === 'LOCKED') {
-      return '#EF4444'; // Red for locked
-    }
-    return ticket.ticketClass?.colorCode || '#3B82F6'; // Ticket class color or default blue
-  };
-
   // Handle lock button click
   const handleLockClick = () => {
     if (selectedSeats.length === 0) return;
@@ -171,127 +156,204 @@ export function SeatMap({
     releaseMutation.mutate();
   };
 
-  // Calculate SVG viewBox dimensions
+  // Calculate SVG viewBox dimensions - MEMOIZED to prevent shifts
   const viewBoxDimensions = useMemo(() => {
-    if (!seats?.tickets?.length) return { minX: 0, minY: 0, width: 1000, height: 600 };
+    const fallback = { minX: 0, minY: 0, width: 800, height: 600 };
+    if (!seats?.tickets?.length) return fallback;
 
     const seatsWithPosition = seats.tickets.filter(
-      (t: SeatMapTicket) => t.seat?.x !== null && t.seat?.y !== null,
+      (t: SeatMapTicket) => typeof t.seat?.x === 'number' && typeof t.seat?.y === 'number'
     );
 
-    if (seatsWithPosition.length === 0) {
-      return { minX: 0, minY: 0, width: 1000, height: 600 };
-    }
+    if (seatsWithPosition.length === 0) return fallback;
 
-    const xs = seatsWithPosition.map((t: SeatMapTicket) => t.seat?.x || 0);
-    const ys = seatsWithPosition.map((t: SeatMapTicket) => t.seat?.y || 0);
+    const xs = seatsWithPosition.map((t: SeatMapTicket) => t.seat!.x as number);
+    const ys = seatsWithPosition.map((t: SeatMapTicket) => t.seat!.y as number);
 
-    const minX = Math.min(...xs) - 50;
-    const minY = Math.min(...ys) - 100;
-    const maxX = Math.max(...xs) + 50;
-    const maxY = Math.max(...ys) + 50;
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const maxX = Math.max(...xs);
+    const maxY = Math.max(...ys);
+
+    const paddingX = 60;
+    const paddingY = 100;
 
     return {
-      minX,
-      minY,
-      width: maxX - minX,
-      height: maxY - minY,
+      minX: minX - paddingX,
+      minY: minY - paddingY,
+      width: maxX - minX + paddingX * 2,
+      height: maxY - minY + paddingY * 2,
     };
   }, [seats]);
 
-  if (isLoading) {
+  // Loading state
+  if (isPending && !seats) {
     return (
-      <div className={cn('flex items-center justify-center p-8', className)}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className={cn('flex items-center justify-center p-12 min-h-[400px]', className)}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
+          <p className="text-sm text-muted-foreground">Đang tải sơ đồ...</p>
+        </div>
       </div>
     );
   }
 
   if (!seats?.tickets?.length) {
     return (
-      <div className={cn('text-center p-8 text-muted-foreground', className)}>
+      <div className={cn('flex items-center justify-center p-12 min-h-[300px] text-muted-foreground bg-neutral-50 rounded-xl border border-dashed', className)}>
         Chưa có sơ đồ ghế cho sự kiện này.
       </div>
     );
   }
 
   return (
-    <div className={cn('seat-map-container', className)}>
-      {/* Stage visualization */}
-      <div className="bg-gradient-to-b from-gray-700 to-gray-800 text-white text-center py-3 rounded-t-xl font-semibold">
-        SÂN KHẤU
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 p-4 bg-gray-50 dark:bg-gray-900">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="w-4 h-4 rounded-full bg-gray-500" />
-          <span>Đã bán</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="w-4 h-4 rounded-full bg-red-500" />
-          <span>Đang giữ</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="w-4 h-4 rounded-full bg-green-500" />
-          <span>Đang chọn</span>
-        </div>
-        <div className="border-l pl-4 ml-2 flex flex-wrap gap-3">
+    <div className={cn('flex flex-col h-full bg-white border rounded-xl shadow-sm overflow-hidden', className)}>
+      {/* Legend Header */}
+      <div className="bg-neutral-50 border-b p-4">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-md bg-neutral-200 border border-neutral-300" />
+            <span className="text-neutral-600">Đã bán</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-md bg-red-100 border border-red-200" />
+            <span className="text-neutral-600">Đang giữ</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-md bg-green-500 border border-green-600 shadow-sm" />
+            <span className="text-neutral-600 font-medium">Đang chọn</span>
+          </div>
+          <div className="hidden sm:block w-px h-4 bg-neutral-300 mx-2" />
           {ticketClasses.map((tc) => (
-            <div key={tc.id} className="flex items-center gap-2 text-sm">
-              <span
-                className="w-4 h-4 rounded-full"
+            <div key={tc.id} className="flex items-center gap-2">
+              <div
+                className="w-5 h-5 rounded-md shadow-sm"
                 style={{ backgroundColor: tc.colorCode || '#3B82F6' }}
               />
-              <span>
-                {tc.name} - {formatPrice(tc.price)}
-              </span>
+              <span className="text-neutral-700 font-medium">{tc.name}</span>
+              <span className="text-neutral-500 text-xs">({formatPrice(tc.price)})</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* SVG Seat Grid */}
-      <div className="relative overflow-auto bg-gray-100 dark:bg-gray-800 p-4">
+      {/* Main Map Area */}
+      <div className="relative flex-1 overflow-auto bg-white p-6 min-h-[500px] flex items-center justify-center">
+        {isRefetching && (
+          <div className="absolute top-4 right-4 z-10">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-500" />
+          </div>
+        )}
+
+        {/* Helper text for mobile */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm sm:hidden pointer-events-none z-10">
+          Chạm và kéo để di chuyển
+        </div>
+
         <svg
           viewBox={`${viewBoxDimensions.minX} ${viewBoxDimensions.minY} ${viewBoxDimensions.width} ${viewBoxDimensions.height}`}
-          className="w-full max-h-[500px]"
+          className="min-w-[800px] sm:min-w-0 w-full h-full max-h-[600px] touch-pan-x touch-pan-y select-none"
           preserveAspectRatio="xMidYMid meet"
         >
-          {seats.tickets.map((ticket: SeatMapTicket) => {
-            if (!ticket.seat?.x || !ticket.seat?.y) return null;
+          {/* Stage Visual */}
+          <g transform={`translate(${viewBoxDimensions.minX + viewBoxDimensions.width / 2}, ${viewBoxDimensions.minY + 40})`}>
+            <defs>
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="15" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            <path
+              d="M -300 0 Q 0 60 300 0 L 300 20 Q 0 80 -300 20 Z"
+              fill="#1e293b"
+              filter="url(#glow)"
+              opacity="0.2"
+            />
+            <path
+              d="M -300 0 Q 0 60 300 0 L 300 10 Q 0 70 -300 10 Z"
+              fill="#1e293b"
+              stroke="#334155"
+              strokeWidth="2"
+            />
+            <text x="0" y="35" textAnchor="middle" fill="#64748b" fontSize="14" fontWeight="600" letterSpacing="0.1em">
+              SÂN KHẤU
+            </text>
+          </g>
 
-            const isSelectable =
-              ticket.status === 'AVAILABLE' && lockCountdown === null;
+          {/* Seats */}
+          {seats.tickets.map((ticket: SeatMapTicket) => {
+            if (typeof ticket.seat?.x !== 'number' || typeof ticket.seat?.y !== 'number') return null;
+
+            const isAvailable = ticket.status === 'AVAILABLE';
+            const isLocked = ticket.status === 'LOCKED';
+            const isSold = ticket.status === 'SOLD';
+            const isSelectable = isAvailable && lockCountdown === null;
             const isSelected = selectedSeats.includes(ticket.id);
+
+            let fillColor = ticket.ticketClass?.colorCode || '#3B82F6';
+            let strokeColor = 'transparent';
+
+            if (isSelected) {
+              fillColor = '#10B981';
+              strokeColor = '#059669';
+            } else if (isSold) {
+              fillColor = '#E5E7EB';
+              strokeColor = '#D1D5DB';
+            } else if (isLocked) {
+              fillColor = '#FEE2E2';
+              strokeColor = '#FCA5A5';
+            }
+
+            const seatWidth = 26;
+            const seatHeight = 22;
 
             return (
               <g
                 key={ticket.id}
+                transform={`translate(${ticket.seat.x}, ${ticket.seat.y})`}
                 onClick={() => handleSeatClick(ticket)}
                 className={cn(
-                  'transition-transform',
-                  isSelectable && 'cursor-pointer hover:scale-110',
-                  !isSelectable && 'cursor-not-allowed opacity-80',
+                  'transition-all duration-200 ease-out',
+                  isSelectable ? 'cursor-pointer hover:opacity-90' : 'cursor-not-allowed',
+                  isSold && 'opacity-60 grayscale'
                 )}
+                style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
               >
-                <circle
-                  cx={ticket.seat.x}
-                  cy={ticket.seat.y}
-                  r={ticket.seat.type === 'STANDING' ? 12 : 15}
-                  fill={getSeatColor(ticket)}
-                  stroke={isSelected ? '#fff' : 'transparent'}
-                  strokeWidth={isSelected ? 3 : 0}
-                  className="transition-all"
+                <title>{`${ticket.ticketClass?.name} - Hàng ${ticket.seat.row || ''} - Ghế ${ticket.seat.number || ''} - ${formatPrice(ticket.ticketClass?.price || 0)}`}</title>
+
+                {isSelected && (
+                  <circle r="20" fill="none" stroke="#10B981" strokeWidth="2" opacity="0.5" />
+                )}
+
+                <rect
+                  x={-seatWidth / 2}
+                  y={-seatHeight / 2}
+                  width={seatWidth}
+                  height={seatHeight - 5}
+                  rx={4}
+                  ry={4}
+                  fill={fillColor}
+                  stroke={strokeColor}
+                  strokeWidth="1"
                 />
-                {ticket.seat.type === 'SEAT' && ticket.seat.number && (
+                <path
+                  d={`M ${-seatWidth / 2} ${-seatHeight / 2 + 8} Q ${-seatWidth / 2 - 4} ${-seatHeight / 2 + 12} ${-seatWidth / 2} ${seatHeight / 2}
+                     L ${seatWidth / 2} ${seatHeight / 2} Q ${seatWidth / 2 + 4} ${-seatHeight / 2 + 12} ${seatWidth / 2} ${-seatHeight / 2 + 8}`}
+                  fill={fillColor}
+                  fillOpacity="0.8"
+                  stroke={strokeColor}
+                  strokeWidth="1"
+                />
+
+                {ticket.seat.number && (
                   <text
-                    x={ticket.seat.x}
-                    y={ticket.seat.y + 4}
+                    y={5}
                     textAnchor="middle"
-                    fontSize={10}
-                    fill="#fff"
-                    fontWeight="bold"
+                    fontSize="9"
+                    fill={isSold ? '#9CA3AF' : '#FFFFFF'}
+                    fontWeight="500"
+                    pointerEvents="none"
+                    style={{ textShadow: isSelected ? 'none' : '0px 1px 2px rgba(0,0,0,0.3)' }}
                   >
                     {ticket.seat.number}
                   </text>
@@ -302,48 +364,63 @@ export function SeatMap({
         </svg>
       </div>
 
-      {/* Selected seats summary */}
-      <div className="p-4 bg-white dark:bg-gray-900 border-t">
+      {/* Footer / Action Bar */}
+      <div className="p-4 bg-white border-t z-10 shadow-up">
         {selectedSeats.length > 0 ? (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Đã chọn: <span className="font-semibold">{selectedSeats.length}</span> ghế
-              </p>
-              <p className="text-lg font-bold">
-                Tổng: <span className="text-primary">{formatPrice(totalPrice)}</span>
-              </p>
-              {lockCountdown !== null && (
-                <p className="text-sm text-orange-500 font-medium">
-                  Còn {Math.floor(lockCountdown / 60)}:
-                  {(lockCountdown % 60).toString().padStart(2, '0')} để thanh toán
-                </p>
-              )}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-bottom-2 fade-in duration-300">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold">
+                {selectedSeats.length}
+              </div>
+              <div>
+                <p className="text-sm text-neutral-500">Tổng tiền tạm tính</p>
+                <p className="text-xl font-bold text-brand-600">{formatPrice(totalPrice)}</p>
+              </div>
             </div>
-            <div className="flex gap-2">
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               {lockCountdown !== null ? (
-                <button
-                  onClick={handleReleaseClick}
-                  disabled={releaseMutation.isPending}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50"
-                >
-                  {releaseMutation.isPending ? 'Đang hủy...' : 'Hủy giữ chỗ'}
-                </button>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="text-right mr-2">
+                    <p className="text-xs text-neutral-500">Thời gian giữ vé</p>
+                    <p className="text-lg font-mono font-bold text-orange-600 w-[60px]">
+                      {Math.floor(lockCountdown / 60)}:{(lockCountdown % 60).toString().padStart(2, '0')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleReleaseClick}
+                    disabled={releaseMutation.isPending}
+                    className="flex-1 sm:flex-none px-6 py-2.5 bg-neutral-100 text-neutral-700 font-medium rounded-lg hover:bg-neutral-200 transition disabled:opacity-50"
+                  >
+                    {releaseMutation.isPending ? 'Đang hủy...' : 'Hủy bỏ'}
+                  </button>
+                </div>
               ) : (
-                <button
-                  onClick={handleLockClick}
-                  disabled={lockMutation.isPending || selectedSeats.length === 0}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition disabled:opacity-50"
-                >
-                  {lockMutation.isPending ? 'Đang xử lý...' : 'Giữ chỗ'}
-                </button>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <button
+                    onClick={() => setSelectedSeats([])}
+                    className="px-4 py-2.5 text-neutral-500 hover:text-neutral-700 font-medium transition"
+                  >
+                    Xóa chọn
+                  </button>
+                  <button
+                    onClick={handleLockClick}
+                    disabled={lockMutation.isPending}
+                    className={cn(
+                      'flex-1 sm:flex-none px-8 py-2.5 bg-brand-600 text-white font-bold rounded-lg shadow-lg shadow-brand-200 hover:bg-brand-700 hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none',
+                      lockMutation.isPending && 'animate-pulse'
+                    )}
+                  >
+                    {lockMutation.isPending ? 'Đang xử lý...' : 'Xác nhận giữ chỗ'}
+                  </button>
+                </div>
               )}
             </div>
           </div>
         ) : (
-          <p className="text-center text-muted-foreground">
-            Nhấn vào ghế để chọn. Tối đa {maxSelectable} ghế.
-          </p>
+          <div className="flex items-center justify-center gap-2 text-neutral-400 py-2">
+            <span className="text-sm">Vui lòng chọn ghế trên sơ đồ. Tối đa {maxSelectable} ghế mỗi lần đặt.</span>
+          </div>
         )}
       </div>
     </div>

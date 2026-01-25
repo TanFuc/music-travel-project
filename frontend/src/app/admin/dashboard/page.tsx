@@ -142,7 +142,7 @@ export default function AdminDashboardPage() {
 
       {/* Revenue Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <Card className="bg-gradient-to-br from-brand-500 to-brand-600 text-white">
+        <Card className="bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white text-base sm:text-lg">
               <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Ticket className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -191,13 +191,13 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Recent Bookings */}
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
             Đơn hàng gần đây
           </CardTitle>
-          <CardDescription className="text-xs sm:text-sm">5 đơn hàng mới nhất</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">5 đơn hàng mới nhất trên hệ thống</CardDescription>
         </CardHeader>
         <CardContent>
           {bookingsLoading ? (
@@ -217,25 +217,33 @@ export default function AdminDashboardPage() {
                 >
                   <div className="space-y-1 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs sm:text-sm font-semibold">
+                      <span className="font-mono text-xs sm:text-sm font-semibold bg-gray-100 px-2 py-0.5 rounded">
                         #{booking.bookingCode}
                       </span>
                       <Badge variant={bookingStatusColors[booking.status]}>
                         {booking.status}
                       </Badge>
                     </div>
-                    <p className="text-xs sm:text-sm text-neutral-600">
-                      {booking.user.fullName} | {booking.user.phoneNumber}
-                    </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <p className="text-xs sm:text-sm font-medium text-neutral-900 truncate">
+                        {booking.user.fullName}
+                      </p>
+                      <span className="hidden sm:inline text-neutral-400">|</span>
+                      <p className="text-xs sm:text-sm text-neutral-600">
+                        {booking.user.phoneNumber}
+                      </p>
+                    </div>
                     <p className="text-xs text-neutral-400">{formatDate(booking.createdAt)}</p>
                   </div>
-                  <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2">
+                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 mt-2 sm:mt-0">
                     <p className="font-bold text-brand-600 text-sm sm:text-base">
                       {formatCurrency(booking.finalAmount)}
                     </p>
-                    <p className="text-xs text-neutral-500">
-                      {booking.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
-                    </p>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}
+                    >
+                      {booking.paymentStatus === 'PAID' ? 'OK' : 'Chưa TT'}
+                    </span>
                   </div>
                 </div>
               ))}

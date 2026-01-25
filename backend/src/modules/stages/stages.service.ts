@@ -11,7 +11,7 @@ export class StagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-  ) {}
+  ) { }
 
   async findAll(locationId?: number) {
     const cacheKey = locationId ? CacheKeys.stagesByLocation(locationId) : CacheKeys.stages();
@@ -28,6 +28,13 @@ export class StagesService {
       },
       include: {
         location: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        branch: {
           select: {
             id: true,
             name: true,
@@ -54,6 +61,7 @@ export class StagesService {
       address: stage.address,
       mapLink: stage.mapLink,
       location: stage.location,
+      branch: stage.branch,
       activeShowCount: stage._count.shows,
     }));
 
@@ -68,6 +76,7 @@ export class StagesService {
       where: { deletedAt: null },
       include: {
         location: true,
+        branch: true,
         shows: {
           where: {
             status: 'UPCOMING',
@@ -159,6 +168,20 @@ export class StagesService {
       }
     }
 
+    // Verify branch exists if provided
+    if (createStageDto.branchId) {
+      const branch = await this.prisma.branch.findUnique({
+        where: { id: createStageDto.branchId },
+      });
+
+      if (!branch) {
+        throw new NotFoundException({
+          code: 'BRANCH_001',
+          message: 'Chi nhánh không tồn tại.',
+        });
+      }
+    }
+
     // Create stage
     const stage = await this.prisma.stage.create({
       data: {
@@ -170,10 +193,18 @@ export class StagesService {
         mapLink: createStageDto.mapLink,
         seatMapConfig: createStageDto.seatMapConfig as any,
         seatMapTemplate: createStageDto.seatMapTemplate,
+        branchId: createStageDto.branchId,
         createdBy: userId,
       },
       include: {
         location: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        branch: {
           select: {
             id: true,
             name: true,
@@ -230,6 +261,20 @@ export class StagesService {
       }
     }
 
+    // Verify branch exists if provided
+    if (updateStageDto.branchId) {
+      const branch = await this.prisma.branch.findUnique({
+        where: { id: updateStageDto.branchId },
+      });
+
+      if (!branch) {
+        throw new NotFoundException({
+          code: 'BRANCH_001',
+          message: 'Chi nhánh không tồn tại.',
+        });
+      }
+    }
+
     // Update stage
     const stage = await this.prisma.stage.update({
       where: { id },
@@ -240,6 +285,13 @@ export class StagesService {
       },
       include: {
         location: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        branch: {
           select: {
             id: true,
             name: true,
@@ -299,7 +351,7 @@ export class StagesService {
   }
 
   async getPhysicalSeats(stageId: number, showId?: number) {
-    const cacheKey = showId 
+    const cacheKey = showId
       ? CacheKeys.showSeats(showId)
       : CacheKeys.stageSeats(stageId);
 
