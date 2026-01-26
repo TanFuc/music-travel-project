@@ -2,17 +2,23 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
 import { Search, UserPlus, MoreVertical, Shield, Ban, Check, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
-import { UserFormModal } from '@/components/admin/UserFormModal';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { get, post, patch, del } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
+
+// Dynamic import for heavy modal - only loads when opened
+const UserFormModal = dynamic(() => import('@/components/admin/UserFormModal').then(mod => ({ default: mod.UserFormModal })), {
+  loading: () => null,
+  ssr: false,
+});
 
 interface User {
     id: number;

@@ -4,7 +4,6 @@ import './globals.css';
 import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { Toaster as HotToaster } from 'react-hot-toast';
-import { Header } from '@/components/layout/Header';
 import { WebVitals } from '@/components/common/WebVitals';
 
 const inter = Inter({
@@ -89,8 +88,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} font-sans antialiased bg-white text-gray-900`}>
         <Providers>
           <WebVitals />
-          <Header />
-          <main>{children}</main>
+          {children}
           <Toaster position="top-right" richColors />
           <HotToaster position="top-right" />
         </Providers>

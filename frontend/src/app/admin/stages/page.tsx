@@ -2,14 +2,20 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
 import { Link } from '@/components/common/Link';
 import { Theater, MapPin, Layout, Plus, Users, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
-import { StageFormModal } from '@/components/admin/StageFormModal';
 import { stageService, Stage } from '@/services/stage.service';
+
+// Dynamic import for heavy modal - only loads when opened
+const StageFormModal = dynamic(() => import('@/components/admin/StageFormModal').then(mod => ({ default: mod.StageFormModal })), {
+  loading: () => null,
+  ssr: false,
+});
 
 export default function AdminStagesPage() {
   const [page, setPage] = useState(1);

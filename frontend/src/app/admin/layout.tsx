@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Link } from '@/components/common/Link';
 import {
@@ -25,6 +25,24 @@ import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+
+// Admin page loading skeleton
+function AdminPageSkeleton() {
+  return (
+    <div className="animate-pulse space-y-4">
+      <div className="h-8 w-48 bg-neutral-200 rounded" />
+      <div className="h-4 w-32 bg-neutral-100 rounded" />
+      <div className="mt-6 bg-white rounded-lg p-6 space-y-4">
+        <div className="h-6 w-40 bg-neutral-200 rounded" />
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-16 bg-neutral-100 rounded" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const sidebarItems = [
   {
@@ -317,7 +335,11 @@ export default function AdminLayout({
         </header>
 
         {/* Page Content */}
-        <div className="p-4 lg:p-8">{children}</div>
+        <div className="p-4 lg:p-8">
+          <Suspense fallback={<AdminPageSkeleton />}>
+            {children}
+          </Suspense>
+        </div>
       </main>
     </div>
   );

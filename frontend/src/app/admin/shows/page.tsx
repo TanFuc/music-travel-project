@@ -2,16 +2,22 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
 import { Music, Calendar, MapPin, Ticket, QrCode, Eye, Plus } from 'lucide-react';
 import { Link } from '@/components/common/Link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
-import { ShowFormModal } from '@/components/admin/ShowFormModal';
 import { get } from '@/lib/api';
 import { formatDate, formatCurrency, cn } from '@/lib/utils';
 import { getCloudinaryUrl } from '@/lib/cloudinary';
+
+// Dynamic import for heavy modal - only loads when opened
+const ShowFormModal = dynamic(() => import('@/components/admin/ShowFormModal').then(mod => ({ default: mod.ShowFormModal })), {
+  loading: () => null,
+  ssr: false,
+});
 
 interface Show {
     id: number;

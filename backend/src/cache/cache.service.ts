@@ -9,17 +9,19 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private client: Redis;
   private isConnected = false;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   async onModuleInit() {
     const host = this.configService.get<string>('redis.host', 'localhost');
     const port = this.configService.get<number>('redis.port', 6379);
     const password = this.configService.get<string>('redis.password');
+    const tls = this.configService.get('redis.tls');
 
     this.client = new Redis({
       host,
       port,
       password: password || undefined,
+      tls,
       retryStrategy: (times) => {
         if (times > 3) {
           this.logger.warn('Redis connection failed, running without cache');

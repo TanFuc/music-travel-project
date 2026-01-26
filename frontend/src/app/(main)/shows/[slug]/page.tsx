@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Link } from '@/components/common/Link';
 import { ArrowLeft, Calendar, MapPin, Clock, Users, Ticket, ExternalLink, Navigation } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +14,25 @@ import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useCartStore } from '@/stores/cart.store';
 import { toast } from 'sonner';
 import { useState, useCallback } from 'react';
-import { SeatMap } from '@/components/shows/SeatMap';
 import { GeneralAdmissionView } from '@/components/shows/GeneralAdmissionView';
-import { LocationMap, StaticMap } from '@/components/maps';
+
+// Dynamic imports for heavy components - improves initial page load
+const SeatMap = dynamic(() => import('@/components/shows/SeatMap').then(mod => ({ default: mod.SeatMap })), {
+  loading: () => (
+    <div className="flex items-center justify-center p-12 min-h-[400px]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
+        <p className="text-sm text-muted-foreground">Đang tải sơ đồ...</p>
+      </div>
+    </div>
+  ),
+  ssr: false,
+});
+
+const LocationMap = dynamic(() => import('@/components/maps/LocationMap').then(mod => ({ default: mod.LocationMap })), {
+  loading: () => <Skeleton className="h-[300px] w-full rounded-lg" />,
+  ssr: false,
+});
 
 interface TicketClass {
   id: number;
