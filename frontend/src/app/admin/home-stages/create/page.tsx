@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { post } from '@/lib/api';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { ImageUpload } from '@/components/common/ImageUpload';
 
 const formSchema = z.object({
     title: z.string().min(3, 'Tên phải có ít nhất 3 ký tự'),
@@ -36,6 +37,7 @@ export default function CreateHomeStagePage() {
         register,
         handleSubmit,
         watch,
+        control,
         formState: { errors },
     } = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -84,15 +86,20 @@ export default function CreateHomeStagePage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="imageUrl">URL Hình ảnh <span className="text-red-500">*</span></Label>
-                            <Input id="imageUrl" {...register('imageUrl')} placeholder="https://..." />
+                            <Label htmlFor="imageUrl">Hình ảnh <span className="text-red-500">*</span></Label>
+                            <Controller
+                                name="imageUrl"
+                                control={control}
+                                render={({ field }) => (
+                                    <ImageUpload
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        folder="home-stages"
+                                        aspectRatio="video"
+                                    />
+                                )}
+                            />
                             {errors.imageUrl && <p className="text-sm text-red-500">{errors.imageUrl.message}</p>}
-
-                            {imageUrl && !errors.imageUrl && (
-                                <div className="mt-2 relative aspect-video w-full max-w-md rounded-lg overflow-hidden border bg-neutral-100">
-                                    <Image src={imageUrl} alt="Preview" fill className="object-cover" />
-                                </div>
-                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

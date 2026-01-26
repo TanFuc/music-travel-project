@@ -1,18 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ImageUpload } from '@/components/common/ImageUpload';
 
 interface UserFormData {
     phoneNumber: string;
     fullName: string;
     email?: string;
     password?: string;
+    avatarUrl?: string;
     role: 'USER' | 'STAFF' | 'ADMIN' | 'PARTNER';
 }
 
@@ -26,7 +28,7 @@ interface UserFormModalProps {
 
 export function UserFormModal({ isOpen, onClose, onSubmit, initialData, isLoading }: UserFormModalProps) {
     const isEdit = !!initialData?.id;
-    const { register, handleSubmit, formState: { errors } } = useForm<UserFormData>({
+    const { register, handleSubmit, control, formState: { errors } } = useForm<UserFormData>({
         defaultValues: initialData || { role: 'USER' },
     });
 
@@ -59,6 +61,24 @@ export function UserFormModal({ isOpen, onClose, onSubmit, initialData, isLoadin
                             {errors.phoneNumber && (
                                 <p className="text-sm text-error-500 mt-1">{errors.phoneNumber.message}</p>
                             )}
+                        </div>
+
+                        {/* Avatar */}
+                        <div>
+                            <Label>Ảnh đại diện</Label>
+                            <Controller
+                                name="avatarUrl"
+                                control={control}
+                                render={({ field }) => (
+                                    <ImageUpload
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        folder="avatars"
+                                        aspectRatio="square"
+                                        className="mt-2 w-32 mx-auto"
+                                    />
+                                )}
+                            />
                         </div>
 
                         {/* Full Name */}
