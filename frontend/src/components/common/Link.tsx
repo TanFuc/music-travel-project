@@ -1,13 +1,27 @@
+'use client';
+
 import NextLink, { LinkProps } from 'next/link';
 import { AnchorHTMLAttributes, forwardRef, useCallback, useState } from 'react';
 
 // Routes that should be prefetched on hover for better UX
-const PREFETCH_ON_HOVER_ROUTES = ['/shows', '/tours', '/', '/search'];
+const PREFETCH_ON_HOVER_ROUTES = [
+  '/shows',
+  '/tours',
+  '/',
+  '/search',
+  '/cart',
+  '/admin/dashboard',
+  '/admin/shows',
+  '/admin/users',
+  '/admin/stages',
+  '/admin/bookings',
+];
 
 /**
  * Custom Link component with smart prefetching:
  * - Disables automatic prefetching to prevent RSC request spam
  * - Enables prefetch on hover for main navigation routes
+ * - Uses viewport intersection for critical routes
  */
 interface CustomLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps>, LinkProps {
   prefetch?: boolean;
@@ -15,7 +29,7 @@ interface CustomLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 
 }
 
 export const Link = forwardRef<HTMLAnchorElement, CustomLinkProps>(
-  ({ prefetch = false, prefetchOnHover, onMouseEnter, href, ...props }, ref) => {
+  ({ prefetch = false, prefetchOnHover, onMouseEnter, onFocus, href, ...props }, ref) => {
     const [shouldPrefetch, setShouldPrefetch] = useState(prefetch);
 
     // Determine if this route should prefetch on hover
@@ -24,12 +38,22 @@ export const Link = forwardRef<HTMLAnchorElement, CustomLinkProps>(
       hrefString === route || hrefString.startsWith(route + '/')
     );
 
-    const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    const triggerPrefetch = useCallback(() => {
       if (shouldPrefetchOnHover && !shouldPrefetch) {
         setShouldPrefetch(true);
       }
+    }, [shouldPrefetchOnHover, shouldPrefetch]);
+
+    const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+      triggerPrefetch();
       onMouseEnter?.(e);
-    }, [shouldPrefetchOnHover, shouldPrefetch, onMouseEnter]);
+    }, [triggerPrefetch, onMouseEnter]);
+
+    // Also prefetch on focus for keyboard navigation
+    const handleFocus = useCallback((e: React.FocusEvent<HTMLAnchorElement>) => {
+      triggerPrefetch();
+      onFocus?.(e);
+    }, [triggerPrefetch, onFocus]);
 
     return (
       <NextLink
@@ -37,6 +61,7 @@ export const Link = forwardRef<HTMLAnchorElement, CustomLinkProps>(
         href={href}
         prefetch={shouldPrefetch}
         onMouseEnter={handleMouseEnter}
+        onFocus={handleFocus}
         {...props}
       />
     );
