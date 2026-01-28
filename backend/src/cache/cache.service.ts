@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { Redis as UpstashRedis } from '@upstash/redis';
 import { CACHE_TTL } from './cache-keys.constant';
 
 @Injectable()
