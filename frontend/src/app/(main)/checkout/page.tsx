@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Link } from '@/components/common/Link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/stores/cart.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { post } from '@/lib/api';
+import { get, post } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 
 const checkoutSchema = z.object({
@@ -29,6 +29,24 @@ interface VoucherValidation {
   valid: boolean;
   discountAmount: number;
   message: string;
+}
+
+interface BookingItem {
+  id: number;
+  ticketTier?: {
+    id: number;
+    name: string;
+    price: number;
+  };
+  quantity: number;
+}
+
+interface Booking {
+  id: number;
+  bookingCode: string;
+  totalAmount: number;
+  status: string;
+  items: BookingItem[];
 }
 
 const paymentMethods = [
@@ -60,14 +78,21 @@ const paymentMethods = [
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const bookingCode = searchParams.get('code');
+
   const { isAuthenticated } = useAuthStore();
-  const { tickets, tours, getSubtotal, getTotal, discount, voucherCode, setVoucher, clearVoucher, clearCart } =
+  const { tickets, tours, ticketTiers, getSubtotal, getTotal, discount, voucherCode, setVoucher, clearVoucher, clearCart } =
     useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
   const [voucherInput, setVoucherInput] = useState(voucherCode || '');
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [isLoadingBooking, setIsLoadingBooking] = useState(false);
 
-  const isEmpty = tickets.length === 0 && tours.length === 0;
+  // Check if we're in "Buy Now" mode (has booking code) or "Cart" mode
+  const isBuyNowMode = !!bookingCode;
+  const isEmpty = !isBuyNowMode && tickets.length === 0 && tours.length === 0 && ticketTiers.length === 0;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -76,10 +101,28 @@ export default function CheckoutPage() {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    if (isEmpty) {
+    if (isEmpty && !isBuyNowMode) {
       router.push('/cart');
     }
-  }, [isEmpty, router]);
+  }, [isEmpty, isBuyNowMode, router]);
+
+  // Load booking if in "Buy Now" mode
+  useEffect(() => {
+    if (bookingCode && isAuthenticated) {
+      setIsLoadingBooking(true);
+      get<Booking>(`/bookings/${bookingCode}`)
+        .then(data => {
+          setBooking(data);
+        })
+        .catch(() => {
+          toast.error('Không thể tải thông tin đơn hàng');
+          router.push('/cart');
+        })
+        .finally(() => {
+          setIsLoadingBooking(false);
+        });
+    }
+  }, [bookingCode, isAuthenticated, router]);
 
   const {
     register,
@@ -130,39 +173,55 @@ export default function CheckoutPage() {
   const onSubmit = async (data: CheckoutForm) => {
     setIsProcessing(true);
     try {
-      const bookingData = {
-        items: [
-          ...tickets.map((t) => ({
-            type: 'SHOW_TICKET',
-            ticketId: t.ticketId,
-          })),
-          ...tours.map((t) => ({
-            type: 'TOUR',
-            scheduleId: t.scheduleId,
-            quantity: t.quantity,
-          })),
-        ],
-        paymentMethod: data.paymentMethod,
-        voucherCode: data.voucherCode || undefined,
-        note: data.note || undefined,
-      };
+      if (isBuyNowMode && booking) {
+        // Buy Now mode: Process payment for existing booking
+        const result = await post<{ redirectUrl?: string }>(`/bookings/${booking.id}/payment`, {
+          paymentMethod: data.paymentMethod,
+          note: data.note || undefined,
+        });
 
-      const result = await post<{ bookingCode: string; redirectUrl?: string }>(
-        '/bookings',
-        bookingData
-      );
-
-      clearCart();
-
-      if (result.redirectUrl) {
-        window.location.href = result.redirectUrl;
+        if (result.redirectUrl) {
+          window.location.href = result.redirectUrl;
+        } else {
+          toast.success('Thanh toán thành công!');
+          router.push(`/profile?booking=${booking.bookingCode}`);
+        }
       } else {
-        toast.success('Dat hang thanh cong!');
-        router.push(`/profile?booking=${result.bookingCode}`);
+        // Cart mode: Create new booking
+        const bookingData = {
+          items: [
+            ...tickets.map((t) => ({
+              type: 'SHOW_TICKET',
+              ticketId: t.ticketId,
+            })),
+            ...tours.map((t) => ({
+              type: 'TOUR',
+              scheduleId: t.scheduleId,
+              quantity: t.quantity,
+            })),
+          ],
+          paymentMethod: data.paymentMethod,
+          voucherCode: data.voucherCode || undefined,
+          note: data.note || undefined,
+        };
+
+        const result = await post<{ bookingCode: string; redirectUrl?: string }>(
+          '/bookings',
+          bookingData
+        );
+
+        clearCart();
+
+        if (result.redirectUrl) {
+          window.location.href = result.redirectUrl;
+        } else {
+          toast.success('Đặt hàng thành công!');
+          router.push(`/profile?booking=${result.bookingCode}`);
+        }
       }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Dat hang that bai. Vui long thu lai.');
+      toast.error(err.response?.data?.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
     } finally {
       setIsProcessing(false);
     }
@@ -199,8 +258,8 @@ export default function CheckoutPage() {
                   <label
                     key={method.id}
                     className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg cursor-pointer transition-colors ${selectedMethod === method.id
-                        ? 'border-brand-500 bg-brand-50'
-                        : 'hover:border-neutral-300'
+                      ? 'border-brand-500 bg-brand-50'
+                      : 'hover:border-neutral-300'
                       }`}
                   >
                     <input
@@ -230,53 +289,55 @@ export default function CheckoutPage() {
               </CardContent>
             </Card>
 
-            {/* Voucher */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Tag className="h-5 w-5" />
-                  Mã giảm giá
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nhập mã giảm giá"
-                    value={voucherInput}
-                    onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleValidateVoucher}
-                    disabled={isValidatingVoucher}
-                  >
-                    {isValidatingVoucher ? 'Đang kiểm tra...' : 'Áp dụng'}
-                  </Button>
-                </div>
-                {voucherCode && discount > 0 && (
-                  <div className="mt-3 p-3 bg-success-50 rounded-lg flex items-center justify-between">
-                    <span className="text-success-600 text-sm">
-                      Mã {voucherCode}: Giảm {formatCurrency(discount)}
-                    </span>
+            {/* Voucher - Only in Cart mode */}
+            {!isBuyNowMode && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Tag className="h-5 w-5" />
+                    Mã giảm giá
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nhập mã giảm giá"
+                      value={voucherInput}
+                      onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
+                      className="flex-1"
+                    />
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        clearVoucher();
-                        setVoucherInput('');
-                        setValue('voucherCode', '');
-                      }}
-                      className="text-neutral-500 h-auto py-1"
+                      variant="outline"
+                      onClick={handleValidateVoucher}
+                      disabled={isValidatingVoucher}
                     >
-                      Xóa
+                      {isValidatingVoucher ? 'Đang kiểm tra...' : 'Áp dụng'}
                     </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  {voucherCode && discount > 0 && (
+                    <div className="mt-3 p-3 bg-success-50 rounded-lg flex items-center justify-between">
+                      <span className="text-success-600 text-sm">
+                        Mã {voucherCode}: Giảm {formatCurrency(discount)}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          clearVoucher();
+                          setVoucherInput('');
+                          setValue('voucherCode', '');
+                        }}
+                        className="text-neutral-500 h-auto py-1"
+                      >
+                        Xóa
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Note */}
             <Card>
@@ -302,39 +363,70 @@ export default function CheckoutPage() {
               <CardContent className="space-y-4">
                 {/* Items */}
                 <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {tickets.map((ticket) => (
-                    <div
-                      key={ticket.ticketId}
-                      className="flex justify-between text-sm py-2 border-b"
-                    >
-                      <div>
-                        <p className="font-medium">{ticket.showTitle}</p>
-                        <p className="text-neutral-500">{ticket.ticketClassName}</p>
+                  {isBuyNowMode && booking ? (
+                    // Buy Now mode: Show booking items
+                    booking.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex justify-between text-sm py-2 border-b"
+                      >
+                        <div>
+                          <p className="font-medium">{item.ticketTier?.name || 'Vé'}</p>
+                          <p className="text-neutral-500">Số lượng: {item.quantity}</p>
+                        </div>
+                        <span>{formatCurrency((item.ticketTier?.price || 0) * item.quantity)}</span>
                       </div>
-                      <span>{formatCurrency(ticket.price)}</span>
-                    </div>
-                  ))}
-                  {tours.map((tour) => (
-                    <div
-                      key={tour.scheduleId}
-                      className="flex justify-between text-sm py-2 border-b"
-                    >
-                      <div>
-                        <p className="font-medium">{tour.tourTitle}</p>
-                        <p className="text-neutral-500">{tour.quantity} người</p>
-                      </div>
-                      <span>{formatCurrency(tour.price * tour.quantity)}</span>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    // Cart mode: Show cart items
+                    <>
+                      {ticketTiers.map((tier) => (
+                        <div
+                          key={tier.tierId}
+                          className="flex justify-between text-sm py-2 border-b"
+                        >
+                          <div>
+                            <p className="font-medium">{tier.tierName}</p>
+                            <p className="text-neutral-500">Số lượng: {tier.quantity}</p>
+                          </div>
+                          <span>{formatCurrency(tier.price * tier.quantity)}</span>
+                        </div>
+                      ))}
+                      {tickets.map((ticket) => (
+                        <div
+                          key={ticket.ticketId}
+                          className="flex justify-between text-sm py-2 border-b"
+                        >
+                          <div>
+                            <p className="font-medium">{ticket.showTitle}</p>
+                            <p className="text-neutral-500">{ticket.ticketClassName}</p>
+                          </div>
+                          <span>{formatCurrency(ticket.price)}</span>
+                        </div>
+                      ))}
+                      {tours.map((tour) => (
+                        <div
+                          key={tour.scheduleId}
+                          className="flex justify-between text-sm py-2 border-b"
+                        >
+                          <div>
+                            <p className="font-medium">{tour.tourTitle}</p>
+                            <p className="text-neutral-500">{tour.quantity} người</p>
+                          </div>
+                          <span>{formatCurrency(tour.price * tour.quantity)}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
 
                 {/* Summary */}
                 <div className="space-y-2 pt-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-neutral-600">Tạm tính</span>
-                    <span>{formatCurrency(getSubtotal())}</span>
+                    <span>{formatCurrency(isBuyNowMode && booking ? booking.totalAmount : getSubtotal())}</span>
                   </div>
-                  {discount > 0 && (
+                  {!isBuyNowMode && discount > 0 && (
                     <div className="flex justify-between text-sm text-success-600">
                       <span>Giảm giá</span>
                       <span>-{formatCurrency(discount)}</span>
@@ -343,7 +435,7 @@ export default function CheckoutPage() {
                   <div className="border-t pt-2">
                     <div className="flex justify-between font-bold text-lg">
                       <span>Tổng cộng</span>
-                      <span className="text-brand-600">{formatCurrency(getTotal())}</span>
+                      <span className="text-brand-600">{formatCurrency(isBuyNowMode && booking ? booking.totalAmount : getTotal())}</span>
                     </div>
                   </div>
                 </div>

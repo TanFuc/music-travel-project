@@ -112,7 +112,7 @@ export default function AdminDashboardPage() {
           loading={statsLoading}
         />
         <StatCard
-          title="Sự kiện"
+          title="Show diễn"
           value={stats?.shows.total || 0}
           subtitle={`${stats?.shows.upcoming || 0} sắp diễn ra`}
           icon={Music}

@@ -60,6 +60,16 @@ export interface TicketClass {
   availableCount: number;
 }
 
+export interface TicketTier {
+  id: number;
+  name: string;
+  price: number;
+  description: string | null;
+  benefits: string | null;
+  colorCode: string | null;
+  priority: number;
+}
+
 export interface Ticket {
   id: number;
   ticketCode: string | null;

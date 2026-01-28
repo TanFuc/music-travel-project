@@ -29,39 +29,12 @@ interface CustomLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 
 }
 
 export const Link = forwardRef<HTMLAnchorElement, CustomLinkProps>(
-  ({ prefetch = false, prefetchOnHover, onMouseEnter, onFocus, href, ...props }, ref) => {
-    const [shouldPrefetch, setShouldPrefetch] = useState(prefetch);
-
-    // Determine if this route should prefetch on hover
-    const hrefString = typeof href === 'string' ? href : href.pathname || '';
-    const shouldPrefetchOnHover = prefetchOnHover ?? PREFETCH_ON_HOVER_ROUTES.some(route =>
-      hrefString === route || hrefString.startsWith(route + '/')
-    );
-
-    const triggerPrefetch = useCallback(() => {
-      if (shouldPrefetchOnHover && !shouldPrefetch) {
-        setShouldPrefetch(true);
-      }
-    }, [shouldPrefetchOnHover, shouldPrefetch]);
-
-    const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
-      triggerPrefetch();
-      onMouseEnter?.(e);
-    }, [triggerPrefetch, onMouseEnter]);
-
-    // Also prefetch on focus for keyboard navigation
-    const handleFocus = useCallback((e: React.FocusEvent<HTMLAnchorElement>) => {
-      triggerPrefetch();
-      onFocus?.(e);
-    }, [triggerPrefetch, onFocus]);
-
+  ({ prefetch = false, href, ...props }, ref) => {
     return (
       <NextLink
         ref={ref}
         href={href}
-        prefetch={shouldPrefetch}
-        onMouseEnter={handleMouseEnter}
-        onFocus={handleFocus}
+        prefetch={prefetch}
         {...props}
       />
     );

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Link } from '@/components/common/Link';
-import { ArrowLeft, Calendar, MapPin, Clock, Users, Ticket, ExternalLink, Navigation } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Clock, Users, Ticket, ExternalLink, Navigation, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -322,141 +322,64 @@ export default function ShowDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Seat Map / General Admission Section */}
-          {isBookable && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Ticket className="h-5 w-5" />
-                    {show.seatSelectionEnabled ? 'Sơ đồ chỗ ngồi' : 'Chọn vé'}
-                  </CardTitle>
-                  {show.seatSelectionEnabled && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowSeatMap(!showSeatMap)}
-                    >
-                      {showSeatMap ? 'Ẩn sơ đồ' : 'Xem sơ đồ'}
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {show.seatSelectionEnabled ? (
-                  // Seat Selection Mode - Show seat map
-                  <>
-                    {showSeatMap && (
-                      <>
-                        <SeatMap
-                          showId={show.id}
-                          onSeatsSelected={handleSeatsSelected}
-                          onLockSuccess={handleLockSuccess}
-                          maxSelectable={10}
-                          className="rounded-xl border"
-                        />
-                        {lockedSeats && (
-                          <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                            <p className="text-green-700 dark:text-green-300 font-medium">
-                              Đã giữ chỗ thành công! Vui lòng hoàn tất thanh toán.
-                            </p>
-                            <Link href={`/checkout?lockId=${lockedSeats.lockId}`} prefetch={false}>
-                              <Button className="mt-2">
-                                Tiến hành thanh toán
-                              </Button>
-                            </Link>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {!showSeatMap && (
-                      <p className="text-neutral-500 text-center py-4">
-                        Nhấn "Xem sơ đồ" để chọn chỗ ngồi của bạn.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  // General Admission Mode - Show zone selection
-                  <GeneralAdmissionView
-                    showId={show.id}
-                    ticketClasses={show.ticketClasses}
-                    onSelectTicketClass={(ticketClass, quantity) => {
-                      // Add tickets to cart
-                      for (let i = 0; i < quantity; i++) {
-                        handleAddToCart(ticketClass);
-                      }
-                    }}
-                    maxQuantity={10}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          )}
+          {/* Seat Map / General Admission Section Removed - Replaced with Universal Ticket Note */}
+          <Card className="bg-brand-50 border-brand-100">
+            <CardContent className="p-6 text-center space-y-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-brand-600">
+                <Ticket className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">Vui lòng mua vé để tham dự show diễn</h3>
+                <p className="text-neutral-600 max-w-md mx-auto mt-1">
+                  Chúng tôi hiện sử dụng hệ thống vé chung. Một tấm vé có thể tham dự bất kỳ show diễn nào trong hệ thống của Music Travel.
+                </p>
+              </div>
+              <Link href="/tickets" prefetch={false}>
+                <Button size="lg" className="px-8 py-6 text-lg font-bold rounded-xl shadow-lg shadow-brand-200">
+                  Mua vé ngay
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Ticket Selection Sidebar */}
+        {/* Sidebar Simplified */}
         <div>
-          <Card className="lg:sticky lg:top-24">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="lg:sticky lg:top-24 overflow-hidden border-2 border-brand-100">
+            <CardHeader className="bg-brand-50 border-b border-brand-100">
+              <CardTitle className="flex items-center gap-2 text-brand-700">
                 <Ticket className="h-5 w-5" />
-                Chọn vé
+                Thông tin tham dự
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {!isBookable ? (
-                <div className="text-center py-4">
-                  <p className="text-neutral-500">Sự kiện này không còn mở bán vé.</p>
-                </div>
-              ) : show.ticketClasses.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-neutral-500">Chưa có thông tin vé.</p>
-                </div>
-              ) : (
-                <>
-                  {show.ticketClasses.map((ticketClass) => (
-                    <div
-                      key={ticketClass.id}
-                      className="border rounded-lg p-4 space-y-3"
-                      style={{
-                        borderLeftColor: ticketClass.colorCode || '#22C55E',
-                        borderLeftWidth: '4px',
-                      }}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-semibold">{ticketClass.name || 'Vé chung'}</h4>
-                          <p className="text-sm text-neutral-500">
-                            Còn {ticketClass.availableCount} vé
-                          </p>
-                        </div>
-                        <span className="text-lg font-bold text-brand-600">
-                          {formatCurrency(ticketClass.price)}
-                        </span>
-                      </div>
-                      <Button
-                        className="w-full"
-                        disabled={ticketClass.availableCount === 0 || selectedClass === ticketClass.id}
-                        onClick={() => handleAddToCart(ticketClass)}
-                      >
-                        {ticketClass.availableCount === 0
-                          ? 'Hết vé'
-                          : selectedClass === ticketClass.id
-                            ? 'Đã thêm!'
-                            : 'Thêm vào giỏ'}
-                      </Button>
-                    </div>
-                  ))}
-
-                  <div className="border-t pt-4">
-                    <Link href="/cart" prefetch={false}>
-                      <Button variant="outline" className="w-full">
-                        Xem giỏ hàng
-                      </Button>
-                    </Link>
+            <CardContent className="p-6 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mt-1" />
+                  <div>
+                    <p className="font-semibold text-sm">Vé không định danh</p>
+                    <p className="text-xs text-neutral-500">Sử dụng cho bất kỳ show diễn nào bạn yêu thích.</p>
                   </div>
-                </>
-              )}
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mt-1" />
+                  <div>
+                    <p className="font-semibold text-sm">Check-in linh hoạt</p>
+                    <p className="text-xs text-neutral-500">Chỉ cần mang theo mã vé đến điểm diễn để được hỗ trợ.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <Link href="/tickets" prefetch={false}>
+                  <Button className="w-full h-12 font-bold text-lg">
+                    Mua vé ngay
+                  </Button>
+                </Link>
+                <p className="text-[10px] text-center text-neutral-400 mt-3 uppercase tracking-wider">
+                  Áp dụng cho mọi show diễn trên toàn quốc
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

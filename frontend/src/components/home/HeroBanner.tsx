@@ -117,8 +117,8 @@ export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
         </div>
       ))}
 
-      {/* Gradient Overlay - Bright green theme */}
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-500/20 via-brand-600/40 to-brand-700/60" />
+      {/* Lighter Gradient Overlay for readability but keeping it airy */}
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-900/10 via-brand-900/30 to-brand-900/60 opacity-80" />
 
       {/* Particles Background */}
       <div className="particles-bg" />
@@ -151,10 +151,10 @@ export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
             </div>
 
             {/* CTA Button */}
-            <div className="pt-4">
+            <div className="pt-8">
               <Link
                 href={currentBanner.actionLink}
-                className="btn-neon inline-flex items-center gap-2 text-lg"
+                className="btn-neon inline-flex items-center gap-3 text-xl px-12 py-6 rounded-3xl"
               >
                 <span>💳</span>
                 <span>ĐẶT VÉ NGAY - Từ 350,000đ</span>

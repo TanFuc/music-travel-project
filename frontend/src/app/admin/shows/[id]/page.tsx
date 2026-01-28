@@ -95,7 +95,7 @@ export default function ShowDetailPage() {
   if (!show) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-semibold mb-2">Không tìm thấy sự kiện</h2>
+        <h2 className="text-xl font-semibold mb-2">Không tìm thấy show diễn</h2>
         <Button onClick={() => router.back()} variant="outline">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Quay lại
@@ -138,7 +138,7 @@ export default function ShowDetailPage() {
           <Badge variant={statusColors[show.status]}>{show.status}</Badge>
         </div>
         <div className="flex gap-2">
-           <Button variant="outline" className="gap-2" onClick={() => setIsEditOpen(true)}>
+          <Button variant="outline" className="gap-2" onClick={() => setIsEditOpen(true)}>
             <Edit className="h-4 w-4" />
             Chỉnh sửa
           </Button>
@@ -157,7 +157,7 @@ export default function ShowDetailPage() {
         </div>
       </div>
 
-       <ShowFormModal
+      <ShowFormModal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         initialData={show}

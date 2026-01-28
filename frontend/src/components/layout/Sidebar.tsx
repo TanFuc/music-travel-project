@@ -51,7 +51,7 @@ const sidebarItems: SidebarItem[] = [
     icon: Users,
   },
   {
-    title: 'Sự kiện',
+    title: 'Show diễn',
     href: '/admin/shows',
     icon: Music,
   },

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Trang chủ' },
-  { href: '/shows', icon: Music, label: 'Sự kiện' },
+  { href: '/shows', icon: Music, label: 'Show' },
   { href: '/tours', icon: MapPin, label: 'Tour' },
   { href: '/cart', icon: ShoppingCart, label: 'Giỏ hàng' },
   { href: '/profile', icon: User, label: 'Tài khoản' },

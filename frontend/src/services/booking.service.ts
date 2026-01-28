@@ -17,7 +17,7 @@ export interface LockTicketsResponse {
 
 export interface CreateBookingRequest {
   lockId?: string;
-  items: Array<{
+  items?: Array<{
     type: 'SHOW_TICKET' | 'TOUR_SLOT';
     ticketIds?: number[];
     tourScheduleId?: number;
@@ -27,6 +27,10 @@ export interface CreateBookingRequest {
       dateOfBirth?: string;
       idNumber?: string;
     }>;
+  }>;
+  ticketTiers?: Array<{
+    tierId: number;
+    quantity: number;
   }>;
   voucherCode?: string;
   note?: string;

@@ -37,11 +37,11 @@ interface Artist {
 // Validation schema
 const showFormSchema = z.object({
   title: z.string().min(3, 'Tiêu đề phải có ít nhất 3 ký tự'),
-  description: z.string().optional(),
+  description: z.string().optional().nullable(),
   stageId: z.number({ required_error: 'Vui lòng chọn sân khấu' }),
   branchId: z.number().optional().nullable(),
   performTime: z.string().min(1, 'Vui lòng chọn thời gian biểu diễn'),
-  checkInTime: z.string().optional(),
+  checkInTime: z.string().optional().nullable(),
   seatSelectionEnabled: z.boolean().default(true),
   artists: z.array(z.object({
     artistId: z.number().optional(),
@@ -53,15 +53,11 @@ const showFormSchema = z.object({
     price: z.number().min(0, 'Giá không được âm'),
     colorCode: z.string().optional(),
     quantity: z.number().min(1, 'Số lượng phải lớn hơn 0'),
-  })).min(1, 'Cần ít nhất một hạng vé'),
-  properties: z.object({
-    dresscode: z.string().optional(),
-    hashtag: z.string().optional(),
-    thumbnailUrl: z.string().optional(),
-  }).optional(),
-  metaTitle: z.string().optional(),
-  metaDescription: z.string().optional(),
-  metaKeywords: z.string().optional(),
+  })).optional(),
+  properties: z.any().optional().nullable(),
+  metaTitle: z.string().optional().nullable(),
+  metaDescription: z.string().optional().nullable(),
+  metaKeywords: z.string().optional().nullable(),
 });
 
 type ShowFormData = z.infer<typeof showFormSchema>;
@@ -102,39 +98,55 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
   // Populate form data when initialData changes
   useEffect(() => {
     if (initialData && isOpen) {
-        reset({
-            title: initialData.title,
-            description: initialData.description,
-            stageId: initialData.stage?.id,
-            branchId: initialData.branch?.id,
-            performTime: initialData.performTime ? new Date(initialData.performTime).toISOString().slice(0, 16) : '',
-            checkInTime: initialData.checkInTime ? new Date(initialData.checkInTime).toISOString().slice(0, 16) : '',
-            seatSelectionEnabled: initialData.seatSelectionEnabled,
-            properties: initialData.properties || {},
-            metaTitle: initialData.metaTitle,
-            metaDescription: initialData.metaDescription,
-            metaKeywords: initialData.metaKeywords,
-            ticketClasses: [], // Ticket updates might not be supported directly here
-        });
+      reset({
+        title: initialData.title,
+        description: initialData.description,
+        stageId: initialData.stage?.id,
+        branchId: initialData.branch?.id,
+        performTime: initialData.performTime ? new Date(initialData.performTime).toISOString().slice(0, 16) : '',
+        checkInTime: initialData.checkInTime ? new Date(initialData.checkInTime).toISOString().slice(0, 16) : '',
+        seatSelectionEnabled: initialData.seatSelectionEnabled,
+        properties: initialData.properties || {},
+        metaTitle: initialData.metaTitle,
+        metaDescription: initialData.metaDescription,
+        metaKeywords: initialData.metaKeywords,
+        ticketClasses: (initialData.ticketClasses && initialData.ticketClasses.length > 0)
+          ? initialData.ticketClasses.map((tc: any) => ({
+            name: tc.name || '',
+            price: tc.price ? Number(tc.price) : 0,
+            colorCode: tc.colorCode || '#3B82F6',
+            quantity: tc.totalQuantity || tc.quantity || 1,
+          }))
+          : [{ name: 'Standard', price: 100000, colorCode: '#3B82F6', quantity: 100 }],
+      });
 
-        // Populate Artists if structure matches or if we can map it
-        if (initialData.artists) {
-            setSelectedArtists(initialData.artists.map((a: any) => ({
-                id: a.artist.id,
-                name: a.artist.name,
-                isHeadline: a.isHeadline,
-                bio: a.artist.bio
-            })));
-        }
+      // Populate Artists if structure matches or if we can map it
+      if (initialData.artists) {
+        setSelectedArtists(initialData.artists.map((a: any) => ({
+          id: a.artist.id,
+          name: a.artist.name,
+          isHeadline: a.isHeadline,
+          bio: a.artist.bio
+        })));
+      }
     } else if (!initialData && isOpen) {
-        reset({
-          seatSelectionEnabled: false,
-          ticketClasses: [{ name: 'Standard', price: 100000, colorCode: '#3B82F6', quantity: 100 }],
-          properties: {},
-        });
-        setSelectedArtists([]);
+      reset({
+        seatSelectionEnabled: false,
+        ticketClasses: [{ name: 'Standard', price: 100000, colorCode: '#3B82F6', quantity: 100 }],
+        properties: {},
+      });
+      setSelectedArtists([]);
     }
   }, [initialData, isOpen, reset]);
+
+  // Sync artists state to form data
+  useEffect(() => {
+    setValue('artists', selectedArtists.map(a => ({
+      artistId: a.id,
+      name: a.name,
+      isHeadline: a.isHeadline
+    })));
+  }, [selectedArtists, setValue]);
 
 
   const { fields: ticketFields, append: appendTicket, remove: removeTicket } = useFieldArray({
@@ -178,7 +190,7 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
       return post('/admin/shows/full', payload);
     },
     onSuccess: () => {
-      toast.success('Tạo sự kiện thành công!');
+      toast.success('Tạo show diễn thành công!');
       queryClient.invalidateQueries({ queryKey: ['admin-shows'] });
       onSuccess?.();
       handleClose();
@@ -196,9 +208,10 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
         description: data.description,
         stageId: data.stageId,
         branchId: data.branchId || null,
-        performTime: new Date(data.performTime).toISOString(),
-        checkInTime: data.checkInTime ? new Date(data.checkInTime).toISOString() : undefined,
+        performTime: data.performTime ? new Date(data.performTime).toISOString() : undefined,
+        checkInTime: data.checkInTime ? new Date(data.checkInTime).toISOString() : null,
         properties: data.properties,
+        seatSelectionEnabled: data.seatSelectionEnabled,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         metaKeywords: data.metaKeywords,
@@ -206,14 +219,14 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
       return patch(`/admin/shows/${initialData.id}`, payload);
     },
     onSuccess: () => {
-      toast.success('Cập nhật sự kiện thành công!');
+      toast.success('Cập nhật show diễn thành công!');
       queryClient.invalidateQueries({ queryKey: ['admin-shows'] });
       queryClient.invalidateQueries({ queryKey: ['admin-show', initialData.id] });
       onSuccess?.();
       handleClose();
     },
     onError: (error: any) => {
-      toast.error(error?.message || 'Có lỗi xảy ra khi cập nhật sự kiện');
+      toast.error(error?.message || 'Có lỗi xảy ra khi cập nhật show diễn');
     },
   });
 
@@ -226,11 +239,23 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
   };
 
   const onFormSubmit = async (data: ShowFormData) => {
-    if (isEdit) {
+    console.log('Form data being submitted:', data);
+    try {
+      if (isEdit) {
         await updateMutation.mutateAsync(data);
-    } else {
+      } else {
         await createMutation.mutateAsync(data);
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
     }
+  };
+
+  const onFormError = (err: any) => {
+    console.log('Form Validation Errors:', err);
+    // Detail error message for user
+    const errorFields = Object.keys(err).join(', ');
+    toast.error(`Vui lòng kiểm tra lại: ${errorFields}`);
   };
 
   const addArtist = (artist: Artist) => {
@@ -260,22 +285,21 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
           <div>
             <CardTitle className="flex items-center gap-2">
               <Music className="h-5 w-5" />
-              Tạo sự kiện mới
+              {isEdit ? 'Chỉnh sửa show diễn' : 'Tạo show diễn mới'}
             </CardTitle>
-            <CardDescription>Điền thông tin để tạo sự kiện biểu diễn</CardDescription>
+            <CardDescription>Điền thông tin để {isEdit ? 'cập nhật' : 'tạo'} nội dung show diễn</CardDescription>
           </div>
           <Button variant="ghost" size="icon" onClick={handleClose} disabled={isSubmitting}>
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
 
-        <form onSubmit={handleSubmit(onFormSubmit)} className="flex flex-col flex-1 overflow-hidden">
+        <form onSubmit={handleSubmit(onFormSubmit, onFormError)} className="flex flex-col flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             <div className="px-6 flex-shrink-0">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="basic">Cơ bản</TabsTrigger>
                 <TabsTrigger value="artists">Nghệ sĩ</TabsTrigger>
-                <TabsTrigger value="tickets">Vé</TabsTrigger>
                 <TabsTrigger value="settings">Cài đặt</TabsTrigger>
               </TabsList>
             </div>
@@ -285,7 +309,7 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
               <TabsContent value="basic" className="space-y-4 mt-0">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="md:col-span-1">
-                    <Label>Ảnh sự kiện</Label>
+                    <Label>Ảnh show diễn</Label>
                     <Controller
                       name="properties.thumbnailUrl"
                       control={control}
@@ -302,7 +326,7 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
                   </div>
                   <div className="md:col-span-2 space-y-4">
                     <div>
-                      <Label htmlFor="title">Tên sự kiện *</Label>
+                      <Label htmlFor="title">Tên show diễn *</Label>
                       <Input
                         id="title"
                         {...register('title')}
@@ -319,7 +343,7 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
                       <Textarea
                         id="description"
                         {...register('description')}
-                        placeholder="Mô tả chi tiết về sự kiện"
+                        placeholder="Mô tả chi tiết về show diễn"
                         rows={5}
                         disabled={isSubmitting}
                       />
@@ -409,7 +433,7 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
                       <p className="text-sm text-neutral-500 mt-1">
                         {seatSelectionEnabled
                           ? 'Khách hàng sẽ chọn ghế cụ thể khi mua vé'
-                          : 'Vé tự do (General Admission) - Khách tự chọn chỗ khi vào sự kiện'}
+                          : 'Vé tự do (General Admission) - Khách tự chọn chỗ khi vào show diễn'}
                       </p>
                     </div>
                     <Controller
@@ -513,133 +537,7 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
               </TabsContent>
 
               {/* Tickets Tab */}
-              <TabsContent value="tickets" className="space-y-4 mt-0">
-                <div className="flex items-center justify-between">
-                  <Label>Hạng vé ({ticketFields.length})</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => appendTicket({
-                      name: '',
-                      price: 0,
-                      colorCode: DEFAULT_COLORS[ticketFields.length % DEFAULT_COLORS.length],
-                      quantity: 50,
-                    })}
-                    disabled={isSubmitting}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Thêm hạng vé
-                  </Button>
-                </div>
-
-                {errors.ticketClasses?.message && (
-                  <p className="text-sm text-red-500">{errors.ticketClasses.message}</p>
-                )}
-
-                <div className="space-y-3">
-                  {ticketFields.map((field, index) => (
-                    <div key={field.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: watch(`ticketClasses.${index}.colorCode`) || '#3B82F6' }}
-                          />
-                          <span className="font-medium">Hạng vé #{index + 1}</span>
-                        </div>
-                        {ticketFields.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeTicket(index)}
-                            disabled={isSubmitting}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Tên hạng vé *</Label>
-                          <Input
-                            {...register(`ticketClasses.${index}.name`)}
-                            placeholder="VIP, Standard, ..."
-                            disabled={isSubmitting}
-                          />
-                          {errors.ticketClasses?.[index]?.name && (
-                            <p className="text-sm text-red-500 mt-1">
-                              {errors.ticketClasses[index]?.name?.message}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <Label>Giá (VNĐ) *</Label>
-                          <Controller
-                            name={`ticketClasses.${index}.price`}
-                            control={control}
-                            render={({ field }) => (
-                              <Input
-                                type="number"
-                                {...field}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                                placeholder="100000"
-                                disabled={isSubmitting}
-                              />
-                            )}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Số lượng *</Label>
-                          <Controller
-                            name={`ticketClasses.${index}.quantity`}
-                            control={control}
-                            render={({ field }) => (
-                              <Input
-                                type="number"
-                                {...field}
-                                onChange={(e) => field.onChange(Number(e.target.value))}
-                                placeholder="100"
-                                disabled={isSubmitting}
-                              />
-                            )}
-                          />
-                        </div>
-                        <div>
-                          <Label>Màu hiển thị</Label>
-                          <div className="flex gap-2">
-                            <Controller
-                              name={`ticketClasses.${index}.colorCode`}
-                              control={control}
-                              render={({ field }) => (
-                                <>
-                                  <Input
-                                    type="color"
-                                    {...field}
-                                    className="w-12 h-10 p-1 cursor-pointer"
-                                    disabled={isSubmitting}
-                                  />
-                                  <Input
-                                    {...field}
-                                    placeholder="#3B82F6"
-                                    className="flex-1"
-                                    disabled={isSubmitting}
-                                  />
-                                </>
-                              )}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
+              {/* Tickets Tab Removed */}
 
               {/* Settings Tab */}
               <TabsContent value="settings" className="space-y-4 mt-0">
@@ -716,7 +614,9 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
               Hủy
             </Button>
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? 'Đang tạo...' : 'Tạo sự kiện'}
+              {isSubmitting
+                ? (isEdit ? 'Đang cập nhật...' : 'Đang tạo...')
+                : (isEdit ? 'Cập nhật show diễn' : 'Tạo show diễn')}
             </Button>
           </div>
         </form>

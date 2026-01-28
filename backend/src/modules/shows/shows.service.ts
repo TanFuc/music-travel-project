@@ -113,7 +113,7 @@ export class ShowsService {
       stage: {
         id: show.stage.id,
         name: show.stage.name,
-        location: show.stage.location.name,
+        location: show.stage.location,
       },
       branch: show.branch
         ? {

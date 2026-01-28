@@ -1,4 +1,5 @@
 import { get, post, del } from '@/lib/api';
+import { TicketTier } from '@/types/api.types';
 
 export interface LockTicketsRequest {
   ticketIds: number[];
@@ -77,6 +78,11 @@ export interface SeatMapTicket {
 }
 
 export const ticketService = {
+  /**
+   * Get all ticket tiers (Public)
+   */
+  getTiers: () => get<TicketTier[]>('/tickets/tiers'),
+
   /**
    * Lock tickets for purchase
    */

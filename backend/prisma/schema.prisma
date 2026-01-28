@@ -61,6 +61,8 @@ enum TicketStatus {
   AVAILABLE
   LOCKED
   SOLD
+  USED
+  CANCELLED
 }
 
 enum TourScheduleStatus {
@@ -390,6 +392,7 @@ model Show {
   artists                  ShowArtist[]
   ticketClasses            TicketClass[]
   tickets                  Ticket[]
+  redeemedTickets          Ticket[]                  @relation("RedeemedTickets")
   performanceQRCodes       PerformanceQRCode[]
   performanceRegistrations PerformanceRegistration[]
   performanceSlots         PerformanceSlot[]
@@ -432,8 +435,8 @@ model TicketClass {
 model Ticket {
   id             Int          @id @default(autoincrement())
   ticketCode     String?      @unique @map("ticket_code") @db.VarChar(50)
-  showId         Int          @map("show_id")
-  ticketClassId  Int          @map("ticket_class_id")
+  showId         Int?         @map("show_id")
+  ticketClassId  Int?         @map("ticket_class_id")
   physicalSeatId Int?         @map("physical_seat_id")
   status         TicketStatus @default(AVAILABLE)
   lockedAt       DateTime?    @map("locked_at")
@@ -446,15 +449,43 @@ model Ticket {
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
   // Relations
-  show         Show          @relation(fields: [showId], references: [id])
-  ticketClass  TicketClass   @relation(fields: [ticketClassId], references: [id])
+  show         Show?         @relation(fields: [showId], references: [id])
+  ticketClass  TicketClass?  @relation(fields: [ticketClassId], references: [id]) // Made optional
   physicalSeat PhysicalSeat? @relation(fields: [physicalSeatId], references: [id])
   booking      Booking?      @relation(fields: [bookingId], references: [id])
+
+  ticketTierId Int?        @map("ticket_tier_id")
+  ticketTier   TicketTier? @relation(fields: [ticketTierId], references: [id])
+
+  redeemedShowId Int?  @map("redeemed_show_id")
+  redeemedShow   Show? @relation("RedeemedTickets", fields: [redeemedShowId], references: [id])
+
   bookingItems BookingItem[]
   cartItems    CartItem[]
 
   @@index([showId, status, ticketClassId])
   @@map("tickets")
+}
+
+model TicketTier {
+  id              Int      @id @default(autoincrement())
+  name            String   @db.VarChar(100)
+  price           Decimal  @db.Decimal(15, 2)
+  description     String?  @db.Text
+  benefits        String?  @db.Text // Store structured benefits or simple text
+  colorCode       String?  @map("color_code") @db.VarChar(10)
+  priority        Int      @default(0) // For sorting: 1, 2, 3, 4, 5
+  userMaxQuantity Int      @default(10) @map("user_max_quantity")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tickets      Ticket[]
+  bookingItems BookingItem[]
+  cartItems    CartItem[]
+
+  @@map("ticket_tiers")
 }
 
 // =============================================================================
@@ -581,6 +612,8 @@ model CartItem {
   cart         Cart          @relation(fields: [cartId], references: [id])
   ticket       Ticket?       @relation(fields: [ticketId], references: [id])
   tourSchedule TourSchedule? @relation(fields: [tourScheduleId], references: [id])
+  ticketTier   TicketTier?   @relation(fields: [ticketTierId], references: [id])
+  ticketTierId Int?
 
   @@map("cart_items")
 }
@@ -628,6 +661,8 @@ model BookingItem {
   booking      Booking       @relation(fields: [bookingId], references: [id])
   ticket       Ticket?       @relation(fields: [ticketId], references: [id])
   tourSchedule TourSchedule? @relation(fields: [tourScheduleId], references: [id])
+  ticketTier   TicketTier?   @relation(fields: [ticketTierId], references: [id])
+  ticketTierId Int?
 
   @@map("booking_items")
 }

@@ -17,7 +17,7 @@ const QR_PREFIX = 'MTICKET:';
 interface TicketLockData {
   userId: number;
   ticketIds: number[];
-  showId: number;
+  showId: number | null;
   totalPrice: number;
   lockedAt: string;
   expiresAt: string;
@@ -26,7 +26,7 @@ interface TicketLockData {
 interface QRPayload {
   tc: string; // ticketCode
   bk: string; // bookingCode
-  sh: number; // showId
+  sh: number | null; // showId
   iat: number; // issued at (timestamp)
 }
 
@@ -82,7 +82,7 @@ export class TicketsService {
     }
 
     // Check show status
-    const showStatuses = new Set(tickets.map((t) => t.show.status));
+    const showStatuses = new Set(tickets.map((t) => t.show?.status).filter(Boolean));
     if (showStatuses.has('ENDED') || showStatuses.has('CANCELLED')) {
       throw new BadRequestException({
         code: ERROR_CODES.SHOW_002,
@@ -106,10 +106,10 @@ export class TicketsService {
     const lockId = uuidv4();
     const lockTime = new Date();
     const expiresAt = new Date(lockTime.getTime() + LOCK_TTL_MINUTES * 60 * 1000);
-    const showId = tickets[0].showId;
+    const showId = tickets[0]?.showId || null;
 
     // Calculate total price
-    const totalPrice = tickets.reduce((sum, t) => sum + Number(t.ticketClass.price), 0);
+    const totalPrice = tickets.reduce((sum, t) => sum + Number(t.ticketClass?.price || 0), 0);
 
     // Store lock data in Redis for fast retrieval and expiration
     const lockData: TicketLockData = {
@@ -141,7 +141,9 @@ export class TicketsService {
     });
 
     // Invalidate seat map cache for this show
-    await this.invalidateShowTicketCache(showId);
+    if (showId) {
+      await this.invalidateShowTicketCache(showId);
+    }
 
     this.logger.log(`User ${userId} locked ${ticketIds.length} tickets. Lock ID: ${lockId}`);
 
@@ -224,7 +226,9 @@ export class TicketsService {
     });
 
     // Invalidate cache
-    await this.invalidateShowTicketCache(ticket.showId);
+    if (ticket.showId) {
+      await this.invalidateShowTicketCache(ticket.showId);
+    }
 
     return { message: 'Đã hủy giữ vé thành công.' };
   }
@@ -253,7 +257,9 @@ export class TicketsService {
     await this.cache.del(cacheKey);
 
     // Invalidate cache
-    await this.invalidateShowTicketCache(lockData.showId);
+    if (lockData.showId) {
+      await this.invalidateShowTicketCache(lockData.showId);
+    }
 
     this.logger.log(`Released lock ${lockId} for user ${userId}`);
 
@@ -275,7 +281,7 @@ export class TicketsService {
       select: { showId: true },
     });
 
-    const showIds = [...new Set(lockedTickets.map((t) => t.showId))];
+    const showIds = [...new Set(lockedTickets.map((t) => t.showId).filter((id): id is number => id !== null))];
 
     const result = await this.prisma.ticket.updateMany({
       where: {
@@ -314,7 +320,7 @@ export class TicketsService {
       select: { showId: true },
     });
 
-    const showIds = [...new Set(expiredTickets.map((t) => t.showId))];
+    const showIds = [...new Set(expiredTickets.map((t) => t.showId).filter((id): id is number => id !== null))];
 
     const result = await this.prisma.ticket.updateMany({
       where: {
@@ -349,7 +355,7 @@ export class TicketsService {
       select: { showId: true },
     });
 
-    const showIds = [...new Set(tickets.map((t) => t.showId))];
+    const showIds = [...new Set(tickets.map((t) => t.showId).filter((id): id is number => id !== null))];
 
     await this.prisma.ticket.updateMany({
       where: {
@@ -420,7 +426,53 @@ export class TicketsService {
     return new Date() > expirationTime;
   }
 
+  /**
+   * Get all ticket tiers
+   */
+  async getTicketTiers() {
+    const cacheKey = 'ticket_tiers_all';
+    const cached = await this.cache.get(cacheKey);
+    if (cached) return cached;
+
+    const tiers = await this.prisma.ticketTier.findMany({
+      where: { isActive: true },
+      orderBy: { priority: 'asc' },
+    });
+
+    await this.cache.set(cacheKey, tiers, CACHE_TTL.LONG); // Cache for a while
+    return tiers;
+  }
+
   // ==================== TICKET QUERIES ====================
+
+  /**
+   * Generate new tickets for Open Ticket booking (Ticket Tier)
+   */
+  async generateTicketsForBooking(bookingId: number, tierId: number, quantity: number) {
+    if (quantity <= 0) return;
+
+    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+    if (!booking) return;
+
+    // Generate tickets
+    const ticketsData = [];
+    for (let i = 0; i < quantity; i++) {
+      const ticketCode = `TK${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      ticketsData.push({
+        ticketCode,
+        ticketTierId: tierId,
+        bookingId,
+        status: TicketStatus.SOLD,
+        showId: null,
+        ticketClassId: null,
+      });
+    }
+
+    // Batch create
+    await this.prisma.ticket.createMany({ data: ticketsData });
+
+    this.logger.log(`Generated ${quantity} tickets for booking ${bookingId}, tier ${tierId}`);
+  }
 
   /**
    * Get all tickets for a booking
@@ -453,6 +505,15 @@ export class TicketsService {
             colorCode: true,
           },
         },
+        ticketTier: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            colorCode: true,
+            description: true,
+          }
+        },
         physicalSeat: {
           select: {
             id: true,
@@ -473,13 +534,14 @@ export class TicketsService {
       checkedInAt: ticket.checkedInAt,
       show: ticket.show,
       ticketClass: ticket.ticketClass,
+      ticketTier: ticket.ticketTier,
       seat: ticket.physicalSeat
         ? {
-            zone: ticket.physicalSeat.zoneName,
-            row: ticket.physicalSeat.rowName,
-            number: ticket.physicalSeat.seatNumber,
-            type: ticket.physicalSeat.type,
-          }
+          zone: ticket.physicalSeat.zoneName,
+          row: ticket.physicalSeat.rowName,
+          number: ticket.physicalSeat.seatNumber,
+          type: ticket.physicalSeat.type,
+        }
         : null,
     }));
   }
@@ -747,6 +809,13 @@ export class TicketsService {
     }
 
     // Verify show matches
+    if (!ticket.show || !ticket.showId) {
+      throw new BadRequestException({
+        code: ERROR_CODES.CHECKIN_006,
+        message: 'Vé này chưa được kích hoạt cho sự kiện nào. Vui lòng chọn sự kiện trước khi check-in.',
+      });
+    }
+
     if (ticket.showId !== payload.sh) {
       throw new BadRequestException({
         code: ERROR_CODES.CHECKIN_001,
@@ -888,7 +957,7 @@ export class TicketsService {
       const payload = JSON.parse(payloadStr) as QRPayload;
 
       // Validate required fields
-      if (!payload.tc || !payload.bk || !payload.sh || !payload.iat) {
+      if (!payload.tc || !payload.bk || !payload.iat) {
         throw new Error('Missing required fields');
       }
 

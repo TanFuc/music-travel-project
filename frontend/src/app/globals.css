@@ -10,13 +10,15 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 122 39% 49%; /* #4CAF50 Green */
+    --primary: 122 39% 49%;
+    /* #4CAF50 Green */
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 88 50% 53%; /* #8BC34A Lime */
+    --accent: 88 50% 53%;
+    /* #8BC34A Lime */
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -28,19 +30,22 @@
 
   /* Bright alternate theme - applied when .dark class is present (now bright instead of dark) */
   .dark {
-    --background: 120 60% 98%; /* Light green tint */
+    --background: 120 60% 98%;
+    /* Light green tint */
     --foreground: 122 39% 25%;
     --card: 120 60% 97%;
     --card-foreground: 122 39% 20%;
     --popover: 120 60% 97%;
     --popover-foreground: 122 39% 20%;
-    --primary: 122 39% 49%; /* #4CAF50 Green */
+    --primary: 122 39% 49%;
+    /* #4CAF50 Green */
     --primary-foreground: 0 0% 100%;
     --secondary: 120 30% 94%;
     --secondary-foreground: 122 39% 25%;
     --muted: 120 30% 94%;
     --muted-foreground: 122 20% 40%;
-    --accent: 88 50% 53%; /* #8BC34A Lime */
+    --accent: 88 50% 53%;
+    /* #8BC34A Lime */
     --accent-foreground: 0 0% 15%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -54,70 +59,86 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-white text-gray-900 antialiased;
-    background: linear-gradient(180deg, #FFFFFF 0%, #F0FFF4 50%, #E8F5E9 100%);
+    @apply bg-white text-gray-900 antialiased font-sans;
+    background: radial-gradient(circle at top left, #FFFFFF 0%, #F8FFF9 40%, #F2FFF5 100%);
     min-height: 100vh;
+    line-height: 1.7;
+    font-weight: 400;
   }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display text-gray-900 font-bold;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    @apply font-sans;
+  }
+
+  strong,
+  b {
+    @apply font-semibold;
+  }
+
   html {
     scroll-behavior: smooth;
   }
 }
 
 @layer components {
-  /* Glassmorphism header - Light theme */
+
+  /* Glassmorphism header - Ultra light & Premium */
   .glass-header {
     @apply fixed top-0 w-full z-50;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
   }
 
-  /* Glass card - Light theme */
+  /* Glass card - Modern & Light */
   .glass-card {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    @apply rounded-xl shadow-lg;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    @apply rounded-3xl shadow-xl shadow-brand-500/5;
   }
 
-  /* Neon glow button */
+  /* Neon glow button - More elegant */
   .btn-neon {
-    @apply relative px-8 py-4 font-semibold text-white rounded-xl overflow-hidden;
-    @apply bg-gradient-to-r from-brand-500 via-accent-500 to-brand-500;
+    @apply relative px-8 py-4 font-bold text-white rounded-2xl overflow-hidden;
+    @apply bg-gradient-to-r from-brand-500 via-brand-400 to-brand-500;
     background-size: 200% 100%;
     @apply transition-all duration-300;
-    @apply hover:shadow-neon;
-    animation: gradient-x 3s ease infinite;
-  }
-
-  .btn-neon::before {
-    content: '';
-    @apply absolute inset-0 rounded-xl;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.6s;
-  }
-
-  .btn-neon:hover::before {
-    transform: translateX(100%);
+    @apply hover:shadow-glow-lg hover:-translate-y-0.5;
+    animation: gradient-x 4s ease infinite;
   }
 
   /* Brand primary button */
   .btn-primary {
-    @apply bg-brand-500 hover:bg-brand-600 text-white;
-    @apply transition-all duration-200 shadow-lg shadow-brand-500/25;
-    @apply hover:shadow-brand-500/40 hover:scale-[1.02];
+    @apply bg-brand-600 hover:bg-brand-700 text-white font-bold;
+    @apply transition-all duration-300 shadow-lg shadow-brand-600/20;
+    @apply hover:shadow-brand-600/40 hover:-translate-y-0.5 rounded-xl;
   }
 
-  /* Ghost button - Light theme */
+  /* Ghost/Light button */
   .btn-ghost {
-    @apply bg-gray-100 hover:bg-gray-200 text-gray-700;
-    @apply border border-gray-200 hover:border-gray-300;
-    @apply transition-all duration-200;
+    @apply bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold;
+    @apply border border-brand-100;
+    @apply transition-all duration-300 rounded-xl;
   }
 
   /* Loading skeleton animation - Light theme */
@@ -129,12 +150,10 @@
   .skeleton::after {
     @apply absolute inset-0;
     content: '';
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.8),
-      transparent
-    );
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.8),
+        transparent);
     animation: shimmer 2s infinite;
   }
 
@@ -266,34 +285,6 @@
   background: rgba(76, 175, 80, 0.5);
 }
 
-/* Font imports */
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2')
-    format('woff2');
-}
-
-@font-face {
-  font-family: 'Outfit';
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('https://fonts.gstatic.com/s/outfit/v11/QGYvz_MVcBeNP4NJtEtqUYLknw.woff2')
-    format('woff2');
-}
-
-@font-face {
-  font-family: 'Space Grotesk';
-  font-style: normal;
-  font-weight: 300 700;
-  font-display: swap;
-  src: url('https://fonts.gstatic.com/s/spacegrotesk/v16/V8mDoQDjQSkFtoMM3T6r8E7mPb54C_k3HqUtEw.woff2')
-    format('woff2');
-}
-
 /* Particles background for hero */
 .particles-bg {
   position: absolute;
@@ -333,6 +324,7 @@
   0% {
     transform: scale(1);
   }
+
   100% {
     transform: scale(1.1);
   }
@@ -344,6 +336,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -355,8 +348,22 @@
 }
 
 /* Stagger animation delay classes */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+
+.stagger-4 {
+  animation-delay: 0.4s;
+}
+
+.stagger-5 {
+  animation-delay: 0.5s;
+}

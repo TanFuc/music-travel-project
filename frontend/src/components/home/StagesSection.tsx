@@ -11,7 +11,7 @@ interface HomeStage {
   title: string;
   imageUrl: string;
   description?: string;
-  location?: string;
+  location?: string | { name: string };
 }
 
 export function StagesSection() {
@@ -49,39 +49,44 @@ export function StagesSection() {
             {stages.map((stage, index) => (
               <div
                 key={stage.id}
-                className="group relative overflow-hidden rounded-2xl glass-card animate-fadeIn opacity-0"
+                className="group relative overflow-hidden rounded-[2.5rem] glass-card animate-fadeIn opacity-0 border-none shadow-2xl shadow-brand-500/5"
                 style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
               >
                 {/* Image */}
-                <div className="relative aspect-[16/9] overflow-hidden">
+                <div className="relative aspect-[16/10] overflow-hidden">
                   <Image
                     src={stage.imageUrl}
                     alt={stage.title}
                     fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="object-cover transition-transform duration-1000 group-hover:scale-110"
                   />
 
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                  {/* Gradient Overlay - Much lighter and more elegant */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-900/60 via-brand-900/20 to-transparent opacity-70" />
 
-                  {/* Content */}
-                  <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                    <h3 className="font-display font-bold text-2xl text-white mb-2">
+                  {/* Content - Glassy floating effect */}
+                  <div className="absolute inset-x-6 bottom-6 p-6 rounded-[2rem] bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
+                      <span className="text-[10px] font-black text-brand-200 uppercase tracking-[0.2em]">Sân khấu nổi bật</span>
+                    </div>
+
+                    <h3 className="font-display font-black text-2xl text-white mb-2 leading-tight">
                       {stage.title}
                     </h3>
 
-                    {stage.location && (
-                      <div className="flex items-center gap-2 text-white/90 text-sm mb-2">
-                        <MapPin className="w-4 h-4 text-brand-400" />
-                        <span>{stage.location}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between gap-4">
+                      {stage.location && (
+                        <div className="flex items-center gap-2 text-white/80 text-xs font-bold">
+                          <MapPin className="w-4 h-4 text-brand-400" />
+                          <span>{typeof stage.location === 'string' ? stage.location : stage.location.name}</span>
+                        </div>
+                      )}
 
-                    {stage.description && (
-                      <p className="text-white/80 text-sm line-clamp-2">
-                        {stage.description}
-                      </p>
-                    )}
+                      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-transform duration-500">
+                        <ArrowRight className="w-5 h-5" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

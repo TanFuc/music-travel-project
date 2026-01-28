@@ -106,9 +106,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'Inter', 'sans-serif'],
-        display: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
-        accent: ['var(--font-space-grotesk)', 'Space Grotesk', 'sans-serif'],
+        sans: ['var(--font-be-vietnam)', 'Inter', 'sans-serif'],
+        display: ['var(--font-be-vietnam)', 'Outfit', 'sans-serif'],
+        accent: ['var(--font-be-vietnam)', 'Space Grotesk', 'sans-serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',

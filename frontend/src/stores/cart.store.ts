@@ -20,9 +20,17 @@ interface TourItem {
   quantity: number;
 }
 
+interface TicketTierItem {
+  tierId: number;
+  tierName: string;
+  price: number;
+  quantity: number;
+}
+
 interface CartState {
   tickets: TicketItem[];
   tours: TourItem[];
+  ticketTiers: TicketTierItem[];
   voucherCode: string | null;
   discount: number;
 
@@ -37,6 +45,9 @@ interface CartState {
   addTour: (tour: TourItem) => void;
   removeTour: (scheduleId: number) => void;
   updateTourQuantity: (scheduleId: number, quantity: number) => void;
+  addTicketTier: (tier: TicketTierItem) => void;
+  removeTicketTier: (tierId: number) => void;
+  updateTicketTierQuantity: (tierId: number, quantity: number) => void;
   setVoucher: (code: string, discount: number) => void;
   clearVoucher: () => void;
   clearCart: () => void;
@@ -47,13 +58,15 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       tickets: [],
       tours: [],
+      ticketTiers: [],
       voucherCode: null,
       discount: 0,
 
       getSubtotal: () => {
         const ticketTotal = get().tickets.reduce((sum, t) => sum + Number(t.price), 0);
         const tourTotal = get().tours.reduce((sum, t) => sum + Number(t.price) * Number(t.quantity), 0);
-        return ticketTotal + tourTotal;
+        const tierTotal = get().ticketTiers.reduce((sum, t) => sum + Number(t.price) * Number(t.quantity), 0);
+        return ticketTotal + tourTotal + tierTotal;
       },
 
       getTotal: () => {
@@ -63,7 +76,8 @@ export const useCartStore = create<CartState>()(
       getItemCount: () => {
         const ticketCount = get().tickets.length;
         const tourCount = get().tours.reduce((sum, t) => sum + t.quantity, 0);
-        return ticketCount + tourCount;
+        const tierCount = get().ticketTiers.reduce((sum, t) => sum + t.quantity, 0);
+        return ticketCount + tourCount + tierCount;
       },
 
       addTicket: (ticket) =>
@@ -107,11 +121,39 @@ export const useCartStore = create<CartState>()(
               : state.tours.filter((t) => t.scheduleId !== scheduleId),
         })),
 
+      addTicketTier: (tier) =>
+        set((state) => {
+          const existing = state.ticketTiers.find((t) => t.tierId === tier.tierId);
+          if (existing) {
+            return {
+              ticketTiers: state.ticketTiers.map((t) =>
+                t.tierId === tier.tierId
+                  ? { ...t, quantity: t.quantity + tier.quantity }
+                  : t
+              ),
+            };
+          }
+          return { ticketTiers: [...state.ticketTiers, { ...tier, price: Number(tier.price) }] };
+        }),
+
+      removeTicketTier: (tierId) =>
+        set((state) => ({
+          ticketTiers: state.ticketTiers.filter((t) => t.tierId !== tierId),
+        })),
+
+      updateTicketTierQuantity: (tierId, quantity) =>
+        set((state) => ({
+          ticketTiers:
+            quantity > 0
+              ? state.ticketTiers.map((t) => (t.tierId === tierId ? { ...t, quantity } : t))
+              : state.ticketTiers.filter((t) => t.tierId !== tierId),
+        })),
+
       setVoucher: (code, discount) => set({ voucherCode: code, discount }),
 
       clearVoucher: () => set({ voucherCode: null, discount: 0 }),
 
-      clearCart: () => set({ tickets: [], tours: [], voucherCode: null, discount: 0 }),
+      clearCart: () => set({ tickets: [], tours: [], ticketTiers: [], voucherCode: null, discount: 0 }),
     }),
     {
       name: 'cart-storage',

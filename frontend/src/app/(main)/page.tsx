@@ -6,8 +6,6 @@ import { LocationFilter } from '@/components/home/LocationFilter';
 import { ShowsSection } from '@/components/home/ShowsSection';
 import { StagesSection } from '@/components/home/StagesSection';
 import { ToursSection } from '@/components/home/ToursSection';
-import { Footer } from '@/components/layout/Footer';
-
 export default function HomePage() {
   const [selectedLocation, setSelectedLocation] = useState<string | undefined>(undefined);
 
@@ -16,7 +14,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-brand-50/30 to-brand-100/50">
+    <div className="bg-gradient-to-b from-white via-brand-50/30 to-brand-100/50">
       {/* Hero Banner Carousel */}
       <HeroBanner />
 
@@ -36,9 +34,6 @@ export default function HomePage() {
 
       {/* Tours Section */}
       <ToursSection />
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

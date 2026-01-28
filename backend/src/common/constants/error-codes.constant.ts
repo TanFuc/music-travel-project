@@ -79,8 +79,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   USER_003: 'Email đã được sử dụng.',
 
   // Show & Ticket
-  SHOW_001: 'Không tìm thấy sự kiện.',
-  SHOW_002: 'Sự kiện đã kết thúc hoặc bị hủy.',
+  SHOW_001: 'Không tìm thấy show diễn.',
+  SHOW_002: 'Show diễn đã kết thúc hoặc bị hủy.',
   TICKET_001: 'Vé đã được bán hoặc đang giữ.',
   TICKET_002: 'Thời gian giữ vé đã hết. Vui lòng chọn lại.',
   TICKET_003: 'Không đủ vé cho yêu cầu của bạn.',

@@ -22,7 +22,8 @@ interface Location {
 }
 
 const navLinks = [
-  { href: '/shows', label: 'Shows' },
+  { href: '/tickets', label: 'Mua Vé' },
+  { href: '/shows', label: 'Lịch Diễn' },
   { href: '/tours', label: 'Tour Du Lịch' },
 ];
 

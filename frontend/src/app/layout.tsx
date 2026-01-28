@@ -1,24 +1,16 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Outfit, Space_Grotesk } from 'next/font/google';
+import { Be_Vietnam_Pro } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { Toaster as HotToaster } from 'react-hot-toast';
 import { WebVitals } from '@/components/common/WebVitals';
 
-const inter = Inter({
+const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
-  variable: '--font-inter',
-});
-
-const outfit = Outfit({
-  subsets: ['latin'],
-  variable: '--font-outfit',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-space-grotesk',
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+  variable: '--font-be-vietnam',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -85,7 +77,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="//maps.googleapis.com" />
       </head>
-      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} font-sans antialiased bg-white text-gray-900`}>
+      <body className={`${beVietnamPro.variable} font-sans antialiased bg-white text-gray-900`}>
         <Providers>
           <WebVitals />
           {children}

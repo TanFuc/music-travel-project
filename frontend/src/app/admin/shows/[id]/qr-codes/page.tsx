@@ -58,7 +58,7 @@ export default function ShowQRCodesPage({ params }: { params: { id: string } }) 
       queryClient.invalidateQueries({ queryKey: ['admin-show-qr', showId] });
     },
     onError: (error: any) => {
-        toast.error(error?.response?.data?.message || 'Có lỗi khi tạo mã QR');
+      toast.error(error?.response?.data?.message || 'Có lỗi khi tạo mã QR');
     }
   });
 
@@ -98,14 +98,14 @@ export default function ShowQRCodesPage({ params }: { params: { id: string } }) 
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 className="text-2xl font-bold">Mã QR Đăng Ký Biểu Diễn</h1>
-            <p className="text-neutral-600">Sự kiện: {show?.title}</p>
+          <h1 className="text-2xl font-bold">Mã QR Đăng Ký Biểu Diễn</h1>
+          <p className="text-neutral-600">Show diễn: {show?.title}</p>
         </div>
         <Link href={`/admin/shows/${showId}/registrations`}>
-            <Button variant="outline" className="gap-2">
-                <ListMusic className="h-4 w-4" />
-                Danh sách đăng ký
-            </Button>
+          <Button variant="outline" className="gap-2">
+            <ListMusic className="h-4 w-4" />
+            Danh sách đăng ký
+          </Button>
         </Link>
       </div>
 
@@ -175,28 +175,28 @@ export default function ShowQRCodesPage({ params }: { params: { id: string } }) 
                   In mã QR
                 </Button>
                 <a href={registrationLink} target="_blank" rel="noopener noreferrer">
-                    <Button>
+                  <Button>
                     <ExternalLink className="mr-2 h-4 w-4" />
                     Mở trang đăng ký
-                    </Button>
+                  </Button>
                 </a>
               </div>
 
               <div className="grid grid-cols-2 gap-4 w-full max-w-lg mt-6 pt-6 border-t print:hidden">
-                  <div className="bg-neutral-50 p-4 rounded-lg text-center">
-                      <p className="text-xs text-neutral-500 uppercase font-semibold">Lượt quét</p>
-                      <p className="text-2xl font-bold">{qrCode.scanCount}</p>
-                  </div>
-                  <div className="bg-neutral-50 p-4 rounded-lg text-center">
-                      <p className="text-xs text-neutral-500 uppercase font-semibold">Đăng ký thành công</p>
-                      <p className="text-2xl font-bold text-green-600">{qrCode.registrationCount}</p>
-                  </div>
+                <div className="bg-neutral-50 p-4 rounded-lg text-center">
+                  <p className="text-xs text-neutral-500 uppercase font-semibold">Lượt quét</p>
+                  <p className="text-2xl font-bold">{qrCode.scanCount}</p>
+                </div>
+                <div className="bg-neutral-50 p-4 rounded-lg text-center">
+                  <p className="text-xs text-neutral-500 uppercase font-semibold">Đăng ký thành công</p>
+                  <p className="text-2xl font-bold text-green-600">{qrCode.registrationCount}</p>
+                </div>
               </div>
             </>
           )}
         </CardContent>
       </Card>
-      
+
       {/* CSS for Print */}
       <style jsx global>{`
         @media print {

@@ -15,8 +15,8 @@ import { getCloudinaryUrl } from '@/lib/cloudinary';
 
 // Dynamic import for heavy modal - only loads when opened
 const ShowFormModal = dynamic(() => import('@/components/admin/ShowFormModal').then(mod => ({ default: mod.ShowFormModal })), {
-  loading: () => null,
-  ssr: false,
+    loading: () => null,
+    ssr: false,
 });
 
 interface Show {
@@ -57,18 +57,18 @@ export default function AdminShowsPage() {
         <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold">Quản lý sự kiện</h1>
-                    <p className="text-sm sm:text-base text-neutral-600 mt-1">{data?.meta?.total || 0} sự kiện</p>
+                    <h1 className="text-xl sm:text-2xl font-bold">Quản lý show diễn</h1>
+                    <p className="text-sm sm:text-base text-neutral-600 mt-1">{data?.meta?.total || 0} show diễn</p>
                 </div>
                 <Button className="gap-2 w-full sm:w-auto" onClick={() => setIsFormOpen(true)}>
                     <Plus className="h-4 w-4" />
-                    Tạo sự kiện mới
+                    Tạo show diễn mới
                 </Button>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Danh sách sự kiện</CardTitle>
+                    <CardTitle>Danh sách show diễn</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
@@ -76,7 +76,7 @@ export default function AdminShowsPage() {
                             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
                         </div>
                     ) : !data?.items?.length ? (
-                        <div className="text-center py-12 text-neutral-500">Chưa có sự kiện nào.</div>
+                        <div className="text-center py-12 text-neutral-500">Chưa có show diễn nào.</div>
                     ) : (
                         <>
                             <div className="space-y-4">
@@ -85,8 +85,8 @@ export default function AdminShowsPage() {
                                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 sm:gap-4">
                                             <div className="w-full lg:w-32 h-20 lg:h-32 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-100 border">
                                                 {show.properties?.thumbnailUrl ? (
-                                                    <img 
-                                                        src={getCloudinaryUrl(show.properties.thumbnailUrl, 'small')} 
+                                                    <img
+                                                        src={getCloudinaryUrl(show.properties.thumbnailUrl, 'small')}
                                                         alt={show.title}
                                                         className="w-full h-full object-cover"
                                                     />

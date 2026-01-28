@@ -55,31 +55,33 @@ export function LocationFilter({
     <div
       ref={containerRef}
       className={cn(
-        'sticky top-[72px] z-40 py-4 transition-all duration-300',
-        isSticky ? 'bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm' : ''
+        'sticky top-[72px] z-40 py-6 transition-all duration-500',
+        isSticky ? 'bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-xl shadow-brand-500/5' : ''
       )}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide pb-2">
-          <div className="flex items-center gap-2 text-gray-600 shrink-0">
-            <MapPin className="w-5 h-5" />
-            <span className="text-sm font-medium">Chọn chi nhánh:</span>
+        <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide pb-2">
+          <div className="flex items-center gap-3 text-brand-700 shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-600 shadow-sm shadow-brand-500/10">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <span className="text-sm font-black uppercase tracking-widest hidden sm:block">Khám phá theo địa điểm:</span>
           </div>
 
           {isLoading ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
-              <span className="text-gray-500 text-sm">Đang tải...</span>
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-brand-500" />
+              <span className="text-gray-400 text-sm font-bold uppercase tracking-tighter">Đang tìm địa điểm...</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => onLocationChange?.(null)}
                 className={cn(
-                  'px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap',
+                  'px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap',
                   !selectedLocation
-                    ? 'bg-brand-500 text-white shadow-glow'
-                    : 'bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-600'
+                    ? 'btn-primary'
+                    : 'bg-white text-gray-400 hover:bg-brand-50 hover:text-brand-600 border border-gray-100 shadow-sm'
                 )}
               >
                 Tất cả
@@ -90,20 +92,20 @@ export function LocationFilter({
                   key={location.id}
                   onClick={() => onLocationChange?.(location.slug)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap',
+                    'flex items-center gap-3 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap',
                     selectedLocation === location.slug
-                      ? 'bg-brand-500 text-white shadow-glow'
-                      : 'bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-600'
+                      ? 'btn-primary shadow-glow-lg scale-105'
+                      : 'bg-white text-gray-400 hover:bg-brand-50 hover:text-brand-600 border border-gray-100 shadow-sm'
                   )}
                 >
                   {location.name}
                   {location.showCount > 0 && (
                     <span
                       className={cn(
-                        'w-5 h-5 flex items-center justify-center text-xs rounded-full',
+                        'min-w-[20px] h-5 flex items-center justify-center text-[10px] font-black rounded-lg px-1.5',
                         selectedLocation === location.slug
-                          ? 'bg-white/20'
-                          : 'bg-brand-500/20 text-brand-400'
+                          ? 'bg-white/20 text-white'
+                          : 'bg-brand-50 text-brand-600'
                       )}
                     >
                       {location.showCount}
