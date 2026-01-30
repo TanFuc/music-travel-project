@@ -2,23 +2,34 @@
 
 ## ✅ Completed Pages
 
-### 1. Home Page (`app/page.tsx`)
+### 1. Home Page (`app/page.tsx` & components)
+
 - ✅ Added responsive padding: `px-4 sm:px-6 lg:px-8`
 - ✅ Wrapped LocationFilter with responsive container
+- ✅ **Refined HeroBanner**: Adjusted button size (`px-8 py-4` mobile vs `px-12 py-6` desktop) and font sizes
+- ✅ **Optimized Typography & Spacing (New)**:
+  - Reduced title sizes (`text-3xl` -> `text-2xl`, `text-lg` -> `text-sm/base`) across all sections
+  - Compacted `LocationFilter` (`py-3`, `w-8` icons, `text-xs`)
+  - Compacted `ShowsSection`, `StagesSection`, `ToursSection` grids and paddings (`gap-6`, `py-12`)
+  - Reduced `Footer` overall size (`text-xs` links, `py-8` padding)
+  - Improved mobile density and information hierarchy
 
 ### 2. Shows Page (`app/(main)/shows/page.tsx`)
+
 - ✅ Mobile-first padding: `px-4 sm:px-6 lg:px-8 py-6 sm:py-8`
 - ✅ Responsive typography: `text-2xl sm:text-3xl lg:text-4xl`
 - ✅ Improved grid: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
 - ✅ Responsive gaps: `gap-4 sm:gap-6`
 
 ### 3. Tours Page (`app/(main)/tours/page.tsx`)
+
 - ✅ Mobile-first padding: `px-4 sm:px-6 lg:px-8 py-6 sm:py-8`
 - ✅ Responsive typography: `text-2xl sm:text-3xl lg:text-4xl`
 - ✅ Improved grid: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
 - ✅ Responsive gaps: `gap-4 sm:gap-6`
 
 ### 4. Show Detail Page (`app/(main)/shows/[slug]/page.tsx`)
+
 - ✅ Mobile-first padding: `px-4 sm:px-6 lg:px-8 py-6 sm:py-8`
 - ✅ Responsive grid layout: `grid-cols-1 lg:grid-cols-3`
 - ✅ Responsive hero section: `p-6 sm:p-8 md:p-12`
@@ -27,6 +38,7 @@
 - ✅ Sticky sidebar only on large screens: `lg:sticky lg:top-24`
 
 ### 5. Cart Page (`app/(main)/cart/page.tsx`)
+
 - ✅ Mobile-first padding: `px-4 sm:px-6 lg:px-8 py-6 sm:py-8`
 - ✅ Responsive title: `text-2xl sm:text-3xl`
 - ✅ Responsive grid: `gap-6 sm:gap-8`
@@ -35,6 +47,7 @@
 - ✅ Sticky sidebar only on large screens: `lg:sticky lg:top-24`
 
 ### 6. Checkout Page (`app/(main)/checkout/page.tsx`)
+
 - ✅ Mobile-first padding: `px-4 sm:px-6 lg:px-8 py-6 sm:py-8`
 - ✅ Responsive title: `text-2xl sm:text-3xl`
 - ✅ Responsive payment method cards: `gap-3 sm:gap-4 p-3 sm:p-4`
@@ -43,6 +56,7 @@
 - ✅ Sticky sidebar only on large screens: `lg:sticky lg:top-24`
 
 ### 7. Admin Bookings Page (`app/admin/bookings/page.tsx`)
+
 - ✅ Responsive header: `flex-col sm:flex-row`
 - ✅ Responsive title: `text-xl sm:text-2xl`
 - ✅ Scrollable filter buttons: `overflow-x-auto`
@@ -53,14 +67,17 @@
 ## 📋 Remaining Pages to Update
 
 ### Auth Pages
+
 - [ ] `app/(auth)/login/page.tsx`
 - [ ] `app/(auth)/register/page.tsx`
 
 ### Main Pages
+
 - [ ] `app/(main)/profile/page.tsx`
 - [ ] `app/(main)/tours/[slug]/page.tsx`
 
 ### Admin Pages
+
 - [x] `app/admin/dashboard/page.tsx` ✅ (Already responsive)
 - [x] `app/admin/media/page.tsx` ✅
 - [ ] `app/admin/notifications/page.tsx`
@@ -78,64 +95,75 @@
 - [x] `app/admin/vouchers/page.tsx` ✅
 
 ### Other Pages
+
 - [ ] `app/register-performance/page.tsx`
 
 ## 🎨 Responsive Design Patterns Applied
 
 ### 1. Mobile-First Padding
+
 ```tsx
-className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
+className = 'px-4 sm:px-6 lg:px-8 py-6 sm:py-8';
 ```
 
 ### 2. Responsive Typography
+
 ```tsx
-className="text-2xl sm:text-3xl lg:text-4xl"
-className="text-sm sm:text-base"
-className="text-xs sm:text-sm"
+className = 'text-2xl sm:text-3xl lg:text-4xl';
+className = 'text-sm sm:text-base';
+className = 'text-xs sm:text-sm';
 ```
 
 ### 3. Responsive Grid Layout
+
 ```tsx
-className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6';
 ```
 
 ### 4. Responsive Flex Direction
+
 ```tsx
-className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+className = 'flex flex-col sm:flex-row gap-3 sm:gap-4';
 ```
 
 ### 5. Responsive Spacing
+
 ```tsx
-className="mb-4 sm:mb-6"
-className="gap-3 sm:gap-4"
-className="p-3 sm:p-4"
+className = 'mb-4 sm:mb-6';
+className = 'gap-3 sm:gap-4';
+className = 'p-3 sm:p-4';
 ```
 
 ### 6. Conditional Sticky
+
 ```tsx
-className="lg:sticky lg:top-24"  // Only sticky on large screens
+className = 'lg:sticky lg:top-24'; // Only sticky on large screens
 ```
 
 ### 7. Responsive Visibility
+
 ```tsx
-className="hidden sm:inline-flex"  // Hide on mobile
-className="sm:hidden"  // Show only on mobile
+className = 'hidden sm:inline-flex'; // Hide on mobile
+className = 'sm:hidden'; // Show only on mobile
 ```
 
 ### 8. Responsive Sizes
+
 ```tsx
-className="w-8 h-8 sm:w-10 sm:h-10"  // Icons
-className="h-4 w-4 sm:h-5 sm:w-5"  // Small icons
+className = 'w-8 h-8 sm:w-10 sm:h-10'; // Icons
+className = 'h-4 w-4 sm:h-5 sm:w-5'; // Small icons
 ```
 
 ### 9. Scrollable Containers (Mobile)
+
 ```tsx
-className="overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide"
+className = 'overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide';
 ```
 
 ### 10. Min-Width for Text Truncation
+
 ```tsx
-className="flex-1 min-w-0"  // Prevents flex items from overflowing
+className = 'flex-1 min-w-0'; // Prevents flex items from overflowing
 ```
 
 ## 📱 Breakpoints Used
@@ -188,6 +216,7 @@ className="flex-1 min-w-0"  // Prevents flex items from overflowing
 ## 🔧 Bug Fixes
 
 ### Missing Textarea Component
+
 - **Issue**: Build error - `Module not found: Can't resolve '@/components/ui/textarea'`
 - **Fix**: Created `src/components/ui/textarea.tsx` with proper styling and TypeScript types
 - **Impact**: Resolved compilation error in `ShowFormModal.tsx` and other components using Textarea
@@ -195,6 +224,7 @@ className="flex-1 min-w-0"  // Prevents flex items from overflowing
 ## 📊 Progress Summary
 
 ### Completed (15 pages)
+
 1. Home Page
 2. Shows Page
 3. Tours Page
@@ -212,6 +242,7 @@ className="flex-1 min-w-0"  // Prevents flex items from overflowing
 15. Admin Vouchers Page
 
 ### Remaining (~10 pages)
+
 - Auth pages (login, register)
 - Profile page
 - Tour detail page

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@/components/common/Link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Menu, ShoppingCart, User, LogOut, Search, ChevronDown, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,9 @@ const navLinks = [
 
 export function Header() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const locationSlug = searchParams.get('location');
+
   const { isAuthenticated, user, logout, hasHydrated } = useAuthStore();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -37,7 +40,7 @@ export function Header() {
   const [isMounted, setIsMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Use React Query for locations - only fetch when dropdown opens (lazy load)
+  // Use React Query for locations - only fetch when dropdown opens OR when locationSlug is present
   const { data: locations = [], isLoading: isLoadingLocations } = useQuery({
     queryKey: ['locations'],
     queryFn: async () => {
@@ -45,8 +48,10 @@ export function Header() {
       return Array.isArray(response) ? response : [];
     },
     staleTime: 10 * 60 * 1000, // 10 minutes cache
-    enabled: isLocationDropdownOpen || mobileMenuOpen, // Only fetch when needed
+    enabled: isLocationDropdownOpen || mobileMenuOpen || !!locationSlug,
   });
+
+  const selectedLocation = locations.find(loc => loc.slug === locationSlug);
 
   useEffect(() => {
     setIsMounted(true);
@@ -109,11 +114,12 @@ export function Header() {
                 onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
                 className={cn(
                   'flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                  'text-gray-600 hover:text-brand-600 hover:bg-brand-50'
+                  'text-gray-600 hover:text-brand-600 hover:bg-brand-50',
+                  locationSlug ? 'text-brand-600 bg-brand-50' : ''
                 )}
               >
                 <MapPin className="w-4 h-4" />
-                Chi Nhánh
+                {selectedLocation ? selectedLocation.name : 'Chi Nhánh'}
                 <ChevronDown
                   className={cn(
                     'w-4 h-4 transition-transform',
@@ -124,12 +130,25 @@ export function Header() {
 
               {isLocationDropdownOpen && (
                 <div className="absolute top-full left-0 mt-2 w-56 py-2 glass-card shadow-xl z-50">
+                   <Link
+                      href="/shows"
+                      onClick={() => setIsLocationDropdownOpen(false)}
+                      className={cn(
+                        "flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50",
+                        !locationSlug && "bg-brand-50 text-brand-600"
+                      )}
+                  >
+                     <span>Tất cả chi nhánh</span>
+                  </Link>
                   {locations.length > 0 ? (
                     locations.map((location) => (
                       <Link
                         key={location.id}
                         href={`/shows?location=${location.slug}`}
-                        className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50"
+                        className={cn(
+                          "flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50",
+                          locationSlug === location.slug && "bg-brand-50 text-brand-600"
+                        )}
                         onClick={() => setIsLocationDropdownOpen(false)}
                       >
                         <span>{location.name}</span>
@@ -142,7 +161,7 @@ export function Header() {
                     ))
                   ) : (
                     <div className="px-4 py-2 text-sm text-gray-500">
-                      Đang tải...
+                      {isLoadingLocations ? 'Đang tải...' : 'Không có dữ liệu'}
                     </div>
                   )}
                 </div>

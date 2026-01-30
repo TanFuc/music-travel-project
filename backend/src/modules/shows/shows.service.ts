@@ -32,6 +32,7 @@ export class ShowsService {
       search: filterDto.search,
       fromDate: filterDto.fromDate,
       toDate: filterDto.toDate,
+      location: filterDto.location,
     });
     const cacheKey = CacheKeys.showList(filterHash);
 
@@ -59,6 +60,13 @@ export class ShowsService {
       }),
       ...(filterDto.toDate && {
         performTime: { lte: new Date(filterDto.toDate) },
+      }),
+      ...(filterDto.location && {
+        stage: {
+          location: {
+            slug: filterDto.location,
+          },
+        },
       }),
     };
 

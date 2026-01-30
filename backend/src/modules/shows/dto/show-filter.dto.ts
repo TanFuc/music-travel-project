@@ -51,4 +51,9 @@ export class ShowFilterDto extends PaginationDto {
   @Type(() => Number)
   @IsInt()
   branchId?: number;
+
+  @ApiPropertyOptional({ example: 'da-lat', description: 'Filter by location slug' })
+  @IsOptional()
+  @IsString()
+  location?: string;
 }

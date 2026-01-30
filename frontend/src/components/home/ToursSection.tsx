@@ -45,15 +45,15 @@ export function ToursSection() {
   };
 
   return (
-    <section className="py-16">
+    <section className="py-12 md:py-16">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-10 text-center">
-          <h2 className="section-title flex items-center justify-center gap-3">
-            <span className="text-3xl">🌄</span>
-            TOUR DU LỊCH KẾT HỢP SHOW
+          <h2 className="section-title flex items-center justify-center gap-2">
+            <span className="text-xl md:text-2xl">🌄</span>
+            <span className="text-xl md:text-3xl font-bold">TOUR DU LỊCH KẾT HỢP SHOW</span>
           </h2>
-          <p className="mt-2 text-gray-600 max-w-2xl mx-auto">
+          <p className="mt-2 text-sm text-gray-600 max-w-2xl mx-auto">
             Đến Đà Lạt - Xem show - Trải nghiệm trọn vẹn. Combo tour + vé show tiết kiệm đến 30%
           </p>
         </div>
@@ -90,13 +90,13 @@ export function ToursSection() {
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 p-8 lg:p-10 flex flex-col justify-between">
+                  <div className="flex-1 p-6 lg:p-10 flex flex-col justify-between">
                     <div>
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-[10px] font-black uppercase tracking-widest mb-4">
                         <Clock className="w-3 h-3" />
                         {tour.duration}
                       </div>
-                      <h3 className="font-display font-black text-2xl lg:text-3xl text-gray-900 group-hover:text-brand-600 transition-colors mb-6 leading-tight">
+                      <h3 className="font-display font-black text-xl lg:text-2xl text-gray-900 group-hover:text-brand-600 transition-colors mb-4 leading-tight">
                         {tour.title}
                       </h3>
 
@@ -126,15 +126,15 @@ export function ToursSection() {
                       <div>
                         <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1 block">Giá từ</span>
                         <div className="flex items-baseline gap-1">
-                          <span className="font-display font-black text-3xl text-brand-600">
+                          <span className="font-display font-black text-2xl text-brand-600">
                             {tour.minPrice ? formatPrice(tour.minPrice) : 'Liên hệ'}
                           </span>
                           <span className="text-gray-900 font-bold text-xs">VND</span>
-                          <span className="text-gray-400 text-xs font-medium ml-1">/ người</span>
+                          <span className="text-gray-400 text-[10px] font-medium ml-1">/ người</span>
                         </div>
                       </div>
 
-                      <span className="px-8 py-4 rounded-2xl btn-primary inline-flex items-center gap-3 font-black text-xs uppercase tracking-widest shadow-2xl">
+                      <span className="px-6 py-3 rounded-xl btn-primary inline-flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest shadow-lg">
                         KHÁM PHÁ NGAY
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </span>
@@ -150,10 +150,10 @@ export function ToursSection() {
         <div className="mt-10 text-center">
           <Link
             href="/tours"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl btn-ghost text-gray-700 font-medium group"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl btn-ghost text-sm text-gray-700 font-medium group"
           >
             XEM TẤT CẢ TOUR
-            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
       </div>

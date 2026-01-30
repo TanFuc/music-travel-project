@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useSearchParams } from 'next/navigation';
 
 interface Show {
   id: number;
@@ -82,19 +83,24 @@ export default function ShowsPage() {
   const [searchInput, setSearchInput] = useState('');
   const limit = 12;
 
+  const searchParams = useSearchParams();
+  const locationSlug = searchParams.get('location');
+
   const { data: branches } = useQuery({
     queryKey: ['branches'],
     queryFn: () => branchService.getBranches(),
   });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['shows', page, branchId, search],
+    queryKey: ['shows', page, branchId, search, locationSlug],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('page', String(page));
       params.append('limit', String(limit));
       if (branchId !== 'all') params.append('branchId', branchId);
       if (search) params.append('search', search);
+      if (locationSlug) params.append('location', locationSlug);
+
       const response = await get<ShowsResponse>(`/shows?${params.toString()}`);
       return response;
     },
@@ -174,12 +180,16 @@ export default function ShowsPage() {
       </div>
 
       {/* Search Result Info */}
-      {search && !isLoading && data && (
+      {(search || locationSlug) && !isLoading && data && (
         <p className="mb-4 text-gray-600">
-          Tìm thấy <span className="font-semibold">{data.meta?.total || 0}</span> kết quả cho "{search}"
-          <button onClick={clearSearch} className="ml-2 text-brand-600 hover:underline">
-            Xóa bộ lọc
-          </button>
+          Tìm thấy <span className="font-semibold">{data.meta?.total || 0}</span> kết quả
+          {search && <span> cho "{search}"</span>}
+          {locationSlug && <span> tại <b>{locationSlug === 'da-lat' ? 'Đà Lạt' : locationSlug === 'tp-hcm' ? 'TP. Hồ Chí Minh' : locationSlug}</b></span>}
+          {(search || locationSlug) && (
+            <Link href="/shows" className="ml-2 text-brand-600 hover:underline">
+               Xóa bộ lọc
+            </Link>
+          )}
         </p>
       )}
 
@@ -209,7 +219,7 @@ export default function ShowsPage() {
 
       {data?.items?.length === 0 && (
         <div className="text-center py-12 text-neutral-500">
-          {search ? `Không tìm thấy sự kiện nào cho "${search}"` : 'Chưa có sự kiện nào. Vui lòng quay lại sau.'}
+          {(search || locationSlug) ? 'Không tìm thấy sự kiện nào phù hợp.' : 'Chưa có sự kiện nào. Vui lòng quay lại sau.'}
         </div>
       )}
 

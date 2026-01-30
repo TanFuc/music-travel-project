@@ -154,7 +154,7 @@ export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
             <div className="pt-8">
               <Link
                 href={currentBanner.actionLink}
-                className="btn-neon inline-flex items-center gap-3 text-xl px-12 py-6 rounded-3xl"
+                className="btn-neon inline-flex items-center gap-2 sm:gap-3 text-lg sm:text-xl px-8 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl"
               >
                 <span>💳</span>
                 <span>ĐẶT VÉ NGAY - Từ 350,000đ</span>

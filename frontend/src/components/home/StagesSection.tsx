@@ -22,15 +22,15 @@ export function StagesSection() {
   });
 
   return (
-    <section className="py-16 bg-brand-50/50">
+    <section className="py-12 md:py-16 bg-brand-50/50">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-10">
-          <h2 className="section-title flex items-center gap-3">
-            <span className="text-3xl">🏛️</span>
-            CÁC SÂN KHẤU
+          <h2 className="section-title flex items-center gap-2">
+            <span className="text-xl md:text-2xl">🏛️</span>
+            <span className="text-xl md:text-3xl font-bold">CÁC SÂN KHẤU</span>
           </h2>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-sm text-gray-600">
             Khám phá những địa điểm biểu diễn độc đáo trên khắp Việt Nam
           </p>
         </div>
@@ -49,7 +49,7 @@ export function StagesSection() {
             {stages.map((stage, index) => (
               <div
                 key={stage.id}
-                className="group relative overflow-hidden rounded-[2.5rem] glass-card animate-fadeIn opacity-0 border-none shadow-2xl shadow-brand-500/5"
+                className="group relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] glass-card animate-fadeIn opacity-0 border-none shadow-2xl shadow-brand-500/5"
                 style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
               >
                 {/* Image */}
@@ -65,13 +65,13 @@ export function StagesSection() {
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-900/60 via-brand-900/20 to-transparent opacity-70" />
 
                   {/* Content - Glassy floating effect */}
-                  <div className="absolute inset-x-6 bottom-6 p-6 rounded-[2rem] bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+                  <div className="absolute inset-x-4 bottom-4 p-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
                       <span className="text-[10px] font-black text-brand-200 uppercase tracking-[0.2em]">Sân khấu nổi bật</span>
                     </div>
 
-                    <h3 className="font-display font-black text-2xl text-white mb-2 leading-tight">
+                    <h3 className="font-display font-black text-lg md:text-xl text-white mb-2 leading-tight">
                       {stage.title}
                     </h3>
 

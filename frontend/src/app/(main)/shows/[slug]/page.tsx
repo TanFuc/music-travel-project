@@ -57,6 +57,7 @@ interface ShowDetail {
   description: string | null;
   performTime: string;
   checkInTime: string | null;
+  thumbnailUrl?: string | null;
   status: string;
   branch: { id: number; name: string } | null;
   seatSelectionEnabled: boolean; // false = General Admission mode
@@ -177,211 +178,239 @@ export default function ShowDetailPage() {
   const isBookable = show.status === 'UPCOMING' || show.status === 'ONGOING';
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Back Button */}
-      <Link href="/shows" prefetch={false} className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-4 sm:mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Quay lại danh sách
-      </Link>
+    <div className="bg-neutral-50 min-h-screen pb-20">
+      {/* 1. Hero Banner Background */}
+      <div className="relative h-[40vh] min-h-[300px] w-full overflow-hidden">
+        {show.properties?.bannerUrl || show.thumbnailUrl ? (
+          <img
+            src={(show.properties?.bannerUrl as string) || show.thumbnailUrl || ''}
+            alt={show.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-brand-100 to-brand-300" />
+        )}
+        {/* Gradient Overlay for text readability if needed, or just partial */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        
+        {/* Back Button (Absolute) */}
+        <div className="absolute top-6 left-4 sm:left-8 z-20">
+          <Link 
+            href="/shows" 
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/40 transition-all font-medium text-sm"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Quay lại
+          </Link>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Hero Section */}
-          <div className="relative rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 text-white p-6 sm:p-8 md:p-12">
-            <div className="relative z-10">
-              <Badge variant={statusColors[show.status]} className="mb-3 sm:mb-4">
-                {statusLabels[show.status]}
-              </Badge>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-3 sm:mb-4">{show.title}</h1>
-              <div className="flex flex-wrap gap-3 sm:gap-4 text-sm sm:text-base text-white/90">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  <span>{formatDateTime(show.performTime)}</span>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 -mt-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Column */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* 2. Header Card (Floating) */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-neutral-100 border border-neutral-100/50">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <Badge variant={statusColors[show.status]} className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                  {statusLabels[show.status]}
+                </Badge>
+                {show.branch && (
+                  <Badge variant="outline" className="text-neutral-500 border-neutral-200">
+                    {show.branch.name}
+                  </Badge>
+                )}
+              </div>
+              
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-black text-gray-900 leading-tight mb-6">
+                {show.title}
+              </h1>
+
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 pt-6 border-t border-neutral-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+                    <Calendar className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">Thời gian</p>
+                    <p className="font-semibold text-gray-900">{formatDateTime(show.performTime)}</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  <span>{show.stage.name}{show.branch ? ` - ${show.branch.name}` : ''}</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <MapPin className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">Địa điểm</p>
+                    <p className="font-semibold text-gray-900">{show.stage.name}</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Description */}
-          {show.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Giới thiệu</CardTitle>
-              </CardHeader>
-              <CardContent>
+            {/* Description Card */}
+            {show.description && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-neutral-100">
+                <h3 className="font-display font-bold text-xl mb-6 flex items-center gap-2">
+                  <span className="text-2xl">📝</span> Giới thiệu show
+                </h3>
                 <div
-                  className="prose prose-neutral max-w-none"
+                  className="prose prose-neutral prose-lg max-w-none text-neutral-600 leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: show.description }}
                 />
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            )}
 
-          {/* Artists */}
-          {show.artists.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Nghệ sĩ biểu diễn
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {/* Artists Grid */}
+            {show.artists.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-display font-bold text-xl px-2 flex items-center gap-2">
+                  <span className="text-2xl">🎤</span> Nghệ sĩ biểu diễn
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {show.artists.map((artist) => (
                     <div
                       key={artist.id}
-                      className="flex items-center gap-4 p-4 bg-neutral-50 rounded-lg"
+                      className="group flex items-center gap-4 p-4 rounded-2xl bg-white border border-neutral-100 hover:border-brand-200 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300"
                     >
-                      <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center">
-                        <Users className="h-6 w-6 text-brand-600" />
+                      <div className="w-16 h-16 rounded-full overflow-hidden bg-neutral-100 border-2 border-white shadow-md">
+                        {/* Placeholder or artist image if available */}
+                        <div className="w-full h-full flex items-center justify-center bg-brand-50 text-brand-500 font-bold text-xl">
+                          {artist.name.charAt(0)}
+                        </div>
                       </div>
                       <div>
-                        <h4 className="font-semibold">
+                        <h4 className="font-bold text-lg text-gray-900 group-hover:text-brand-600 transition-colors">
                           {artist.name}
                           {artist.isHeadline && (
-                            <Badge variant="secondary" className="ml-2">
-                              Headline
-                            </Badge>
+                            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-700">
+                              ★ HEADLINE
+                            </span>
                           )}
                         </h4>
                         {artist.bio && (
-                          <p className="text-sm text-neutral-600 line-clamp-2">{artist.bio}</p>
+                          <p className="text-sm text-neutral-500 line-clamp-1">{artist.bio}</p>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Venue Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Địa điểm tổ chức
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-semibold">{show.stage.name}</h4>
-                <p className="text-neutral-600">{show.stage.address}</p>
-                <p className="text-sm text-neutral-500">{show.stage.location.name}</p>
               </div>
+            )}
 
-              {/* Google Maps Integration */}
-              {(show.stage.latitude && show.stage.longitude) ? (
-                <LocationMap
-                  latitude={show.stage.latitude}
-                  longitude={show.stage.longitude}
-                  title={show.stage.name}
-                  address={show.stage.address || undefined}
-                  height="300px"
-                  className="mt-4"
-                />
-              ) : show.stage.mapLink ? (
-                <a
-                  href={show.stage.mapLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-brand-500 hover:text-brand-600"
-                >
-                  <Navigation className="mr-1 h-4 w-4" />
-                  Xem bản đồ
-                  <ExternalLink className="ml-1 h-4 w-4" />
-                </a>
-              ) : null}
-
-              {/* Directions Link */}
-              {show.stage.latitude && show.stage.longitude && (
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${show.stage.latitude},${show.stage.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-brand-500 hover:text-brand-600 mt-2"
-                >
-                  <Navigation className="h-4 w-4" />
-                  Chỉ đường đến địa điểm
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              )}
-
-              {show.checkInTime && (
-                <div className="flex items-center gap-2 text-sm text-neutral-600 mt-3">
-                  <Clock className="h-4 w-4" />
-                  <span>Mở cửa check-in: {formatDateTime(show.checkInTime)}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Seat Map / General Admission Section Removed - Replaced with Universal Ticket Note */}
-          <Card className="bg-brand-50 border-brand-100">
-            <CardContent className="p-6 text-center space-y-4">
-              <div className="mx-auto w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center text-brand-600">
-                <Ticket className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">Vui lòng mua vé để tham dự show diễn</h3>
-                <p className="text-neutral-600 max-w-md mx-auto mt-1">
-                  Chúng tôi hiện sử dụng hệ thống vé chung. Một tấm vé có thể tham dự bất kỳ show diễn nào trong hệ thống của Music Travel.
-                </p>
-              </div>
-              <Link href="/tickets" prefetch={false}>
-                <Button size="lg" className="px-8 py-6 text-lg font-bold rounded-xl shadow-lg shadow-brand-200">
-                  Mua vé ngay
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar Simplified */}
-        <div>
-          <Card className="lg:sticky lg:top-24 overflow-hidden border-2 border-brand-100">
-            <CardHeader className="bg-brand-50 border-b border-brand-100">
-              <CardTitle className="flex items-center gap-2 text-brand-700">
-                <Ticket className="h-5 w-5" />
-                Thông tin tham dự
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
+            {/* Venue Info Card */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-neutral-100">
+               <h3 className="font-display font-bold text-xl mb-6 flex items-center gap-2">
+                  <span className="text-2xl">📍</span> Thông tin địa điểm
+                </h3>
               <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mt-1" />
-                  <div>
-                    <p className="font-semibold text-sm">Vé không định danh</p>
-                    <p className="text-xs text-neutral-500">Sử dụng cho bất kỳ show diễn nào bạn yêu thích.</p>
-                  </div>
+                <div>
+                  <h4 className="text-lg font-bold text-gray-900">{show.stage.name}</h4>
+                  <p className="text-neutral-600">{show.stage.address}</p>
+                  <p className="text-sm text-neutral-500 mt-1">{show.stage.location.name}</p>
                 </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mt-1" />
-                  <div>
-                    <p className="font-semibold text-sm">Check-in linh hoạt</p>
-                    <p className="text-xs text-neutral-500">Chỉ cần mang theo mã vé đến điểm diễn để được hỗ trợ.</p>
-                  </div>
-                </div>
-              </div>
 
-              <div className="pt-4 border-t">
-                <Link href="/tickets" prefetch={false}>
-                  <Button className="w-full h-12 font-bold text-lg">
-                    Mua vé ngay
-                  </Button>
-                </Link>
-                <p className="text-[10px] text-center text-neutral-400 mt-3 uppercase tracking-wider">
-                  Áp dụng cho mọi show diễn trên toàn quốc
-                </p>
+                {/* Google Maps Integration */}
+                {(show.stage.latitude && show.stage.longitude) ? (
+                  <div className="rounded-2xl overflow-hidden border border-neutral-200 shadow-inner">
+                    <LocationMap
+                      latitude={show.stage.latitude}
+                      longitude={show.stage.longitude}
+                      title={show.stage.name}
+                      address={show.stage.address || undefined}
+                      height="300px"
+                    />
+                  </div>
+                ) : show.stage.mapLink ? (
+                  <a
+                    href={show.stage.mapLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-6 py-3 rounded-xl bg-brand-50 text-brand-700 font-bold hover:bg-brand-100 transition-colors"
+                  >
+                    <Navigation className="mr-2 h-4 w-4" />
+                    Xem bản đồ trên Google Maps
+                  </a>
+                ) : null}
+
+                {/* Directions Link */}
+                {show.stage.latitude && show.stage.longitude && (
+                  <div className="pt-2">
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${show.stage.latitude},${show.stage.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-bold text-brand-600 hover:text-brand-700 hover:underline"
+                    >
+                      <Navigation className="h-4 w-4" />
+                      Chỉ đường đến địa điểm
+                    </a>
+                  </div>
+                )}
+
+                {show.checkInTime && (
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 border border-neutral-100 mt-4">
+                    <Clock className="h-5 w-5 text-neutral-400" />
+                    <span className="text-sm font-medium text-neutral-600">Mở cửa check-in: <span className="text-gray-900 font-bold">{formatDateTime(show.checkInTime)}</span></span>
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          {/* Right Sidebar - Sticky */}
+          <div className="lg:col-span-1">
+            <div className="lg:sticky lg:top-24 space-y-6">
+              {/* Booking Card */}
+              <div className="bg-white rounded-3xl p-6 shadow-xl shadow-brand-500/10 border border-brand-100 overflow-hidden relative">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                
+                <div className="relative z-10 text-center space-y-6">
+                  <div>
+                    <h3 className="text-xl font-display font-bold text-gray-900">Đặt vé ngay</h3>
+                    <p className="text-neutral-500 text-sm mt-1">Số lượng vé có hạn cho show diễn này</p>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start gap-3 text-left p-3 rounded-xl bg-neutral-50">
+                      <CheckCircle2 className="h-5 w-5 text-brand-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-sm text-gray-900">Vé không định danh</p>
+                        <p className="text-xs text-neutral-500">Dễ dàng tặng hoặc nhượng lại</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 text-left p-3 rounded-xl bg-neutral-50">
+                      <CheckCircle2 className="h-5 w-5 text-brand-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-sm text-gray-900">Check-in QR Code</p>
+                        <p className="text-xs text-neutral-500">Quét mã vào cửa nhanh chóng</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link href="/tickets" prefetch={false} className="block">
+                    <Button className="w-full h-14 text-lg font-bold rounded-2xl shadow-lg shadow-brand-500/20 btn-neon">
+                      <Ticket className="mr-2 h-5 w-5" />
+                      MUA VÉ NGAY
+                    </Button>
+                  </Link>
+                  
+                  <p className="text-[10px] text-neutral-400 uppercase tracking-widest font-bold">
+                    Thanh toán an toàn • Hỗ trợ 24/7
+                  </p>
+                </div>
+              </div>
+              
+              {/* Need Help? */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-100 text-center">
+                 <p className="font-bold text-gray-900 mb-2">Bạn cần hỗ trợ?</p>
+                 <p className="text-sm text-neutral-500 mb-4">Liên hệ với chúng tôi để được tư vấn thêm về show diễn</p>
+                 <a href="tel:0912946549" className="text-brand-600 font-bold text-lg hover:underline">
+                   0912 946 549
+                 </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -82,7 +82,7 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
   const activeShows = categories[activeTab];
 
   return (
-    <section className="py-20 relative overflow-hidden">
+    <section className="py-12 md:py-20 relative overflow-hidden">
       {/* Decorative background elements */}
       <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-96 h-96 bg-brand-200/20 blur-[100px] rounded-full" />
       <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-96 h-96 bg-accent-200/20 blur-[100px] rounded-full" />
@@ -91,14 +91,14 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
         {/* Header Content */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-xs font-bold uppercase tracking-wider mb-4 animate-fadeIn">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-[10px] font-bold uppercase tracking-wider mb-3 animate-fadeIn">
               <Sparkles className="w-3 h-3" />
               Sân khấu âm nhạc đỉnh cao
             </div>
-            <h2 className="text-4xl md:text-5xl font-display font-extrabold text-gray-900 leading-tight">
+            <h2 className="text-2xl md:text-4xl font-display font-bold text-gray-900 leading-tight">
               Lịch trình <span className="text-brand-600">Show Diễn</span>
             </h2>
-            <p className="mt-4 text-lg text-gray-600 font-sans max-w-xl">
+            <p className="mt-3 text-sm md:text-base text-gray-600 font-sans max-w-lg">
               Chúng tôi mang đến những đêm nhạc đong đầy cảm xúc tại những không gian thơ mộng nhất Việt Nam.
             </p>
           </div>
@@ -111,7 +111,7 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
               placeholder="Bạn đang tìm nghệ sĩ hay show diễn nào?"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/80 backdrop-blur-md border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all shadow-sm"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/80 backdrop-blur-md border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-sm"
             />
           </div>
         </div>
@@ -127,7 +127,7 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
               className={cn(
-                "flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all duration-300",
+                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300",
                 activeTab === tab.id
                   ? "bg-brand-600 text-white shadow-lg shadow-brand-600/30 scale-105"
                   : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-100"
@@ -147,9 +147,9 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
 
         {/* Grid Display */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="glass-card rounded-2xl overflow-hidden animate-pulse">
+              <div key={i} className="glass-card rounded-xl overflow-hidden animate-pulse">
                 <div className="aspect-[3/4] bg-gray-200" />
                 <div className="p-6 space-y-4">
                   <div className="h-6 w-3/4 bg-gray-200 rounded" />
@@ -160,7 +160,7 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
             ))}
           </div>
         ) : activeShows.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {activeShows.map((show, index) => (
               <div
                 key={show.id}
@@ -176,7 +176,7 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 text-gray-400 mb-4">
               <Calendar className="w-8 h-8" />
             </div>
-            <p className="text-gray-500 text-xl font-medium">
+            <p className="text-gray-500 text-base font-medium">
               {searchQuery ? 'Không tìm thấy show nào phù hợp với từ khóa' : 'Hiện chưa có show diễn nào ở mục này'}
             </p>
             <button
@@ -192,10 +192,10 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
         <div className="mt-16 text-center">
           <Link
             href="/shows"
-            className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gray-900 text-white font-bold hover:bg-black transition-all hover:shadow-2xl hover:-translate-y-1 group"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-black transition-all hover:shadow-xl hover:-translate-y-1 group"
           >
             KHÁM PHÁ TOÀN BỘ SHOW DIỄN
-            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-2" />
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
       </div>

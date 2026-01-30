@@ -55,17 +55,17 @@ export function LocationFilter({
     <div
       ref={containerRef}
       className={cn(
-        'sticky top-[72px] z-40 py-6 transition-all duration-500',
+        'sticky top-[72px] z-40 py-3 transition-all duration-500',
         isSticky ? 'bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-xl shadow-brand-500/5' : ''
       )}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide pb-2">
           <div className="flex items-center gap-3 text-brand-700 shrink-0">
-            <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-600 shadow-sm shadow-brand-500/10">
-              <MapPin className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 shadow-sm shadow-brand-500/10">
+              <MapPin className="w-4 h-4" />
             </div>
-            <span className="text-sm font-black uppercase tracking-widest hidden sm:block">Khám phá theo địa điểm:</span>
+            <span className="text-xs font-bold uppercase tracking-wide hidden sm:block">Khám phá theo địa điểm:</span>
           </div>
 
           {isLoading ? (
@@ -78,7 +78,7 @@ export function LocationFilter({
               <button
                 onClick={() => onLocationChange?.(null)}
                 className={cn(
-                  'px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap',
+                  'px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap',
                   !selectedLocation
                     ? 'btn-primary'
                     : 'bg-white text-gray-400 hover:bg-brand-50 hover:text-brand-600 border border-gray-100 shadow-sm'
@@ -92,7 +92,7 @@ export function LocationFilter({
                   key={location.id}
                   onClick={() => onLocationChange?.(location.slug)}
                   className={cn(
-                    'flex items-center gap-3 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap',
+                    'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap',
                     selectedLocation === location.slug
                       ? 'btn-primary shadow-glow-lg scale-105'
                       : 'bg-white text-gray-400 hover:bg-brand-50 hover:text-brand-600 border border-gray-100 shadow-sm'
