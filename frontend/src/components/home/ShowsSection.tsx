@@ -116,18 +116,18 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
           </div>
         </div>
 
-        {/* Tab Selection */}
-        <div className="flex flex-wrap items-center gap-4 mb-10">
+        {/* Tab Selection - Horizontal scroll on mobile */}
+        <div className="flex items-center gap-3 mb-8 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
           {[
             { id: 'ongoing', label: 'Đang diễn ra', icon: <Clock className="w-4 h-4" /> },
-            { id: 'upcoming', label: 'Sắp diễn ra (7 ngày)', icon: <Calendar className="w-4 h-4" /> },
+            { id: 'upcoming', label: 'Sắp diễn ra', icon: <Calendar className="w-4 h-4" /> },
             { id: 'future', label: 'Chưa diễn ra', icon: <Calendar className="w-4 h-4" /> }
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300",
+                "flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0",
                 activeTab === tab.id
                   ? "bg-brand-600 text-white shadow-lg shadow-brand-600/30 scale-105"
                   : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-100"
@@ -136,7 +136,7 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
               {tab.icon}
               {tab.label}
               <span className={cn(
-                "ml-1 text-xs px-2 py-0.5 rounded-full",
+                "ml-1 text-[10px] px-2 py-0.5 rounded-full font-black",
                 activeTab === tab.id ? "bg-white/20" : "bg-gray-100"
               )}>
                 {categories[tab.id as TabType].length}
@@ -160,12 +160,15 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
             ))}
           </div>
         ) : activeShows.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
             {activeShows.map((show, index) => (
               <div
                 key={show.id}
                 className="animate-fadeIn opacity-0"
-                style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
+                style={{
+                  animationDelay: `${index * 0.05}s`,
+                  animationFillMode: 'forwards'
+                }}
               >
                 <ShowCard {...show} />
               </div>

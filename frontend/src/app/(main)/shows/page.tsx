@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@/components/common/Link';
 import { Calendar, MapPin, Users, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
@@ -10,7 +10,8 @@ import { ShowCard } from '@/components/shows/ShowCard';
 import { ShowCardSkeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
-import { branchService } from '@/services/branch.service';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { locationService } from '@/services/location.service';
 import {
   Select,
   SelectContent,
@@ -18,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useSearchParams } from 'next/navigation';
 
 interface Show {
   id: number;
@@ -77,29 +77,34 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function ShowsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [page, setPage] = useState(1);
-  const [branchId, setBranchId] = useState<string>('all');
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  const locationSlug = searchParams.get('location') || 'all';
+  const searchTerm = searchParams.get('search') || '';
+  const [searchInput, setSearchInput] = useState(searchTerm);
   const limit = 12;
 
-  const searchParams = useSearchParams();
-  const locationSlug = searchParams.get('location');
+  // Initialize search input from URL on mount or URL change
+  useEffect(() => {
+    setSearchInput(searchTerm);
+  }, [searchTerm]);
 
-  const { data: branches } = useQuery({
-    queryKey: ['branches'],
-    queryFn: () => branchService.getBranches(),
+  const { data: locations } = useQuery({
+    queryKey: ['locations'],
+    queryFn: () => locationService.getLocations(),
   });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['shows', page, branchId, search, locationSlug],
+    queryKey: ['shows', page, locationSlug, searchTerm],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('page', String(page));
       params.append('limit', String(limit));
-      if (branchId !== 'all') params.append('branchId', branchId);
-      if (search) params.append('search', search);
-      if (locationSlug) params.append('location', locationSlug);
+      if (locationSlug !== 'all') params.append('location', locationSlug);
+      if (searchTerm) params.append('search', searchTerm);
 
       const response = await get<ShowsResponse>(`/shows?${params.toString()}`);
       return response;
@@ -107,15 +112,34 @@ export default function ShowsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const updateFilters = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === 'all' || value === '') {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+    // Reset page on filter change
+    params.set('page', '1');
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearch(searchInput);
+    updateFilters({ search: searchInput });
     setPage(1);
   };
 
   const clearSearch = () => {
     setSearchInput('');
-    setSearch('');
+    updateFilters({ search: null });
+    setPage(1);
+  };
+
+  const handleLocationChange = (val: string) => {
+    updateFilters({ location: val });
     setPage(1);
   };
 
@@ -161,17 +185,17 @@ export default function ShowsPage() {
           </div>
         </form>
 
-        {/* Branch Filter */}
+        {/* Branch/Location Filter */}
         <div className="w-full sm:w-48">
-          <Select value={branchId} onValueChange={(val) => { setBranchId(val); setPage(1); }}>
+          <Select value={locationSlug} onValueChange={handleLocationChange}>
             <SelectTrigger className="h-10">
               <SelectValue placeholder="Chọn chi nhánh" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-              {branches?.map((branch) => (
-                <SelectItem key={branch.id} value={String(branch.id)}>
-                  {branch.name}
+              {locations?.map((location) => (
+                <SelectItem key={location.id} value={location.slug}>
+                  {location.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -180,12 +204,14 @@ export default function ShowsPage() {
       </div>
 
       {/* Search Result Info */}
-      {(search || locationSlug) && !isLoading && data && (
+      {(searchTerm || (locationSlug && locationSlug !== 'all')) && !isLoading && data && (
         <p className="mb-4 text-gray-600">
           Tìm thấy <span className="font-semibold">{data.meta?.total || 0}</span> kết quả
-          {search && <span> cho "{search}"</span>}
-          {locationSlug && <span> tại <b>{locationSlug === 'da-lat' ? 'Đà Lạt' : locationSlug === 'tp-hcm' ? 'TP. Hồ Chí Minh' : locationSlug}</b></span>}
-          {(search || locationSlug) && (
+          {searchTerm && <span> cho "{searchTerm}"</span>}
+          {locationSlug && locationSlug !== 'all' && (
+            <span> tại <b>{locations?.find(l => l.slug === locationSlug)?.name || locationSlug}</b></span>
+          )}
+          {(searchTerm || (locationSlug && locationSlug !== 'all')) && (
             <Link href="/shows" className="ml-2 text-brand-600 hover:underline">
                Xóa bộ lọc
             </Link>
@@ -219,7 +245,7 @@ export default function ShowsPage() {
 
       {data?.items?.length === 0 && (
         <div className="text-center py-12 text-neutral-500">
-          {(search || locationSlug) ? 'Không tìm thấy sự kiện nào phù hợp.' : 'Chưa có sự kiện nào. Vui lòng quay lại sau.'}
+          {(searchTerm || (locationSlug && locationSlug !== 'all')) ? 'Không tìm thấy sự kiện nào phù hợp.' : 'Chưa có sự kiện nào. Vui lòng quay lại sau.'}
         </div>
       )}
 

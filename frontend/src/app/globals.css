@@ -64,8 +64,10 @@
     @apply bg-white font-sans text-gray-900 antialiased;
     background: radial-gradient(circle at top left, #ffffff 0%, #f8fff9 40%, #f2fff5 100%);
     min-height: 100vh;
-    line-height: 1.7;
+    line-height: 1.6;
     font-weight: 400;
+    /* Prevent font size change on orientation change */
+    -webkit-text-size-adjust: 100%;
   }
 
   h1,
@@ -74,16 +76,30 @@
   h4,
   h5,
   h6 {
-    @apply font-display font-bold text-gray-900;
-    letter-spacing: -0.025em;
-    line-height: 1.25;
+    @apply font-display font-bold text-gray-900 tracking-tight;
+    line-height: 1.2;
+    /* Improved fluid typography approach */
+    text-wrap: balance;
   }
+
+  h1 { @apply text-3xl md:text-5xl lg:text-6xl; }
+  h2 { @apply text-2xl md:text-4xl lg:text-5xl; }
+  h3 { @apply text-xl md:text-3xl lg:text-4xl; }
+  h4 { @apply text-lg md:text-2xl lg:text-3xl; }
 
   button,
   input,
   select,
   textarea {
     @apply font-sans;
+    /* Prevents iOS zoom-in on focus (must be 16px or larger) */
+    font-size: 16px;
+  }
+
+  @media (min-width: 768px) {
+    button, input, select, textarea {
+      font-size: inherit;
+    }
   }
 
   strong,
@@ -128,16 +144,18 @@
 
   /* Brand primary button */
   .btn-primary {
-    @apply bg-brand-600 font-bold text-white hover:bg-brand-700;
-    @apply shadow-lg shadow-brand-600/20 transition-all duration-300;
+    @apply bg-brand-600 font-bold text-white hover:bg-brand-700 active:scale-95;
+    @apply shadow-lg shadow-brand-600/20 transition-all duration-200;
     @apply rounded-xl hover:-translate-y-0.5 hover:shadow-brand-600/40;
+    @apply flex items-center justify-center text-center;
   }
 
   /* Ghost/Light button */
   .btn-ghost {
-    @apply bg-brand-50 font-bold text-brand-700 hover:bg-brand-100;
+    @apply bg-brand-50 font-bold text-brand-700 hover:bg-brand-100 active:scale-95;
     @apply border border-brand-100;
-    @apply rounded-xl transition-all duration-300;
+    @apply rounded-xl transition-all duration-200;
+    @apply flex items-center justify-center text-center;
   }
 
   /* Loading skeleton animation - Light theme */
@@ -268,23 +286,27 @@
   }
 }
 
+::selection {
+  @apply bg-brand-200 text-brand-900;
+}
+
 /* Custom scrollbar - Light theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(76, 175, 80, 0.3);
-  border-radius: 4px;
+  background: rgba(76, 175, 80, 0.2);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(76, 175, 80, 0.5);
+  background: rgba(76, 175, 80, 0.4);
 }
 
 /* Particles background for hero */
@@ -305,9 +327,13 @@
     radial-gradient(circle at 50% 50%, rgba(76, 175, 80, 0.05) 0%, transparent 70%);
 }
 
-/* Ken Burns effect for hero images */
+/* Ken Burns effect for hero images - optimized for performance */
 .ken-burns {
   animation: ken-burns 20s ease-out forwards;
+}
+
+/* Only set will-change during animation, not persistently */
+.ken-burns:is(:hover, :focus-within, .is-animating) {
   will-change: transform;
 }
 

@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CheckoutDto } from './dto/checkout.dto';
+import { CreateRefundDto } from './dto/refund.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { Public } from '@/common/decorators/public.decorator';
@@ -65,5 +66,23 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: 'Payment return processed' })
   async webhookGet(@Param('gateway') gateway: string, @Query() params: Record<string, string>) {
     return this.paymentsService.handleWebhook(gateway, params as Record<string, unknown>);
+  }
+
+  @Post('refunds')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a refund for a booking' })
+  @ApiResponse({ status: 201, description: 'Refund created successfully' })
+  async createRefund(@CurrentUser() user: JwtPayload, @Body() refundDto: CreateRefundDto) {
+    return this.paymentsService.createRefund(user.sub, refundDto);
+  }
+
+  @Get('refunds/:bookingCode')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get refunds for a booking' })
+  @ApiResponse({ status: 200, description: 'Refunds retrieved successfully' })
+  async getRefunds(@CurrentUser() user: JwtPayload, @Param('bookingCode') bookingCode: string) {
+    return this.paymentsService.getRefundsByBooking(user.sub, bookingCode);
   }
 }

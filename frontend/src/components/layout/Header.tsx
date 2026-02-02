@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@/components/common/Link';
 import Image from 'next/image';
@@ -13,6 +13,7 @@ import { useCartStore } from '@/stores/cart.store';
 import { cn } from '@/lib/utils';
 import { get } from '@/lib/api';
 import { SearchModal } from '@/components/search';
+import { useThrottledScroll } from '@/hooks/usePerformance';
 
 interface Location {
   id: number;
@@ -33,7 +34,8 @@ export function Header() {
   const locationSlug = searchParams.get('location');
 
   const { isAuthenticated, user, logout, hasHydrated } = useAuthStore();
-  const itemCount = useCartStore((state) => state.getItemCount());
+  // Optimize cart selector to only re-render when count changes
+  const itemCount = useCartStore(useCallback((state) => state.getItemCount(), []));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
@@ -51,19 +53,46 @@ export function Header() {
     enabled: isLocationDropdownOpen || mobileMenuOpen || !!locationSlug,
   });
 
-  const selectedLocation = locations.find(loc => loc.slug === locationSlug);
+  // Memoize selectedLocation to prevent recalculation on every render
+  const selectedLocation = useMemo(
+    () => locations.find(loc => loc.slug === locationSlug),
+    [locations, locationSlug]
+  );
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+  // Throttled scroll handler for better performance
+  const handleScroll = useCallback(() => {
+    setIsScrolled(window.scrollY > 10);
+  }, []);
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+  useThrottledScroll(handleScroll, 100);
+
+  // Memoize event handlers to prevent unnecessary re-renders
+  const toggleLocationDropdown = useCallback(() => {
+    setIsLocationDropdownOpen(prev => !prev);
+  }, []);
+
+  const closeLocationDropdown = useCallback(() => {
+    setIsLocationDropdownOpen(false);
+  }, []);
+
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen(prev => !prev);
+  }, []);
+
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
+
+  const openSearch = useCallback(() => {
+    setIsSearchOpen(true);
+  }, []);
+
+  const closeSearch = useCallback(() => {
+    setIsSearchOpen(false);
   }, []);
 
   return (
@@ -111,7 +140,7 @@ export function Header() {
             {/* Location Dropdown */}
             <div className="relative">
               <button
-                onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
+                onClick={toggleLocationDropdown}
                 className={cn(
                   'flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all',
                   'text-gray-600 hover:text-brand-600 hover:bg-brand-50',
@@ -132,7 +161,7 @@ export function Header() {
                 <div className="absolute top-full left-0 mt-2 w-56 py-2 glass-card shadow-xl z-50">
                    <Link
                       href="/shows"
-                      onClick={() => setIsLocationDropdownOpen(false)}
+                      onClick={closeLocationDropdown}
                       className={cn(
                         "flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50",
                         !locationSlug && "bg-brand-50 text-brand-600"
@@ -149,7 +178,7 @@ export function Header() {
                           "flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50",
                           locationSlug === location.slug && "bg-brand-50 text-brand-600"
                         )}
-                        onClick={() => setIsLocationDropdownOpen(false)}
+                        onClick={closeLocationDropdown}
                       >
                         <span>{location.name}</span>
                         {location.showCount > 0 && (
@@ -176,7 +205,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               className="text-gray-600 hover:text-brand-600 hover:bg-brand-50"
-              onClick={() => setIsSearchOpen(true)}
+              onClick={openSearch}
             >
               <Search className="h-5 w-5" />
             </Button>
@@ -247,7 +276,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               className="md:hidden text-gray-600 hover:text-brand-600 hover:bg-brand-50"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={toggleMobileMenu}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
@@ -256,60 +285,88 @@ export function Header() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4 mt-4">
-            <nav className="flex flex-col gap-2">
+          <div className="md:hidden glass-card mt-4 border border-brand-100 overflow-hidden shadow-2xl animate-fadeIn">
+            <nav className="flex flex-col p-2 gap-1">
+              <p className="px-4 py-2 text-[10px] font-black text-brand-400 uppercase tracking-widest">Khám phá</p>
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    'px-4 py-3 text-sm font-medium rounded-lg transition-colors',
-                    pathname === link.href
-                      ? 'bg-brand-50 text-brand-600'
-                      : 'text-gray-600 hover:text-brand-600 hover:bg-brand-50'
+                    'flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition-all active:scale-[0.98]',
+                    pathname === link.href || pathname?.startsWith(link.href)
+                      ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/20'
+                      : 'text-gray-700 hover:bg-brand-50 hover:text-brand-600'
                   )}
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={closeMobileMenu}
                 >
                   {link.label}
                 </Link>
               ))}
 
               {/* Mobile Location List */}
-              <div className="mt-2 pt-2 border-t border-gray-200">
-                <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+              <div className="mt-4 pt-4 border-t border-brand-50">
+                <p className="px-4 py-2 text-[10px] font-black text-brand-400 uppercase tracking-widest">
                   Chi Nhánh
                 </p>
-                {locations.map((location) => (
-                  <Link
-                    key={location.id}
-                    href={`/shows?location=${location.slug}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-4 py-2 text-sm text-gray-600 hover:text-brand-600 hover:bg-brand-50 rounded-lg"
-                  >
-                    <span>{location.name}</span>
-                    {location.showCount > 0 && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-600">
-                        {location.showCount}
-                      </span>
-                    )}
-                  </Link>
-                ))}
+                <div className="grid grid-cols-1 gap-1">
+                  {locations.map((location) => (
+                    <Link
+                      key={location.id}
+                      href={`/shows?location=${location.slug}`}
+                      onClick={closeMobileMenu}
+                      className={cn(
+                        "flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-xl transition-all active:scale-[0.98]",
+                        locationSlug === location.slug 
+                          ? "bg-brand-50 text-brand-700 border border-brand-100" 
+                          : "text-gray-600 hover:bg-brand-50"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <MapPin className={cn("w-4 h-4", locationSlug === location.slug ? "text-brand-500" : "text-gray-400")} />
+                        <span>{location.name}</span>
+                      </div>
+                      {location.showCount > 0 && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500 text-white font-black">
+                          {location.showCount}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
               </div>
 
-              {/* Mobile Auth - Show skeleton while hydrating */}
+              {/* Mobile Auth */}
               {!hasHydrated ? (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="h-10 bg-neutral-200 animate-pulse rounded-lg"></div>
+                <div className="mt-4 p-4">
+                  <div className="h-12 bg-neutral-100 animate-pulse rounded-2xl"></div>
                 </div>
-              ) : !isAuthenticated && (
-                <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col gap-2">
-                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start text-gray-600">
+              ) : isAuthenticated ? (
+                <div className="mt-4 pt-4 border-t border-brand-50 flex flex-col gap-2 p-2">
+                  <Link href="/profile" onClick={closeMobileMenu} className="flex items-center gap-3 px-4 py-3.5 text-sm font-bold text-gray-700 bg-brand-50 rounded-xl">
+                    <User className="w-5 h-5 text-brand-500" />
+                    <span>Tài khoản: {user?.fullName}</span>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => { logout(); closeMobileMenu(); }}
+                    className="flex items-center justify-start gap-3 px-4 py-3.5 w-full h-auto text-sm font-bold text-error-600 hover:bg-error-50 rounded-xl transition-all active:scale-[0.98]"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Đăng xuất</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-4 pt-4 border-t border-brand-50 flex flex-col gap-3 p-2">
+                  <Link href="/login" onClick={closeMobileMenu} className="w-full">
+                    <Button variant="ghost" className="w-full py-6 text-sm font-bold text-gray-700 hover:bg-brand-50 rounded-2xl transition-all active:scale-[0.98]">
                       Đăng nhập
                     </Button>
                   </Link>
-                  <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full btn-primary">Đăng ký</Button>
+                  <Link href="/register" onClick={closeMobileMenu} className="w-full">
+                    <Button className="w-full py-6 btn-primary rounded-2xl text-sm font-bold shadow-xl shadow-brand-600/20 active:scale-[0.98]">
+                      Đăng ký ngay
+                    </Button>
                   </Link>
                 </div>
               )}
@@ -319,7 +376,7 @@ export function Header() {
       </div>
 
       {/* Search Modal */}
-      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <SearchModal isOpen={isSearchOpen} onClose={closeSearch} />
     </header>
   );
 }

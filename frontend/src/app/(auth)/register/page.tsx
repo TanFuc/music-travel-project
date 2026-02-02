@@ -103,7 +103,7 @@ export default function RegisterPage() {
           </div>
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
-              Email (tùy chọn)
+              Email (không bắt buộc)
             </label>
             <Input id="email" type="email" placeholder="email@example.com" {...register('email')} />
             {errors.email && <p className="text-sm text-error-500">{errors.email.message}</p>}

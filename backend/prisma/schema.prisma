@@ -86,6 +86,7 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+  MANUAL_REVIEW
 }
 
 enum PaymentStatus {
@@ -106,6 +107,7 @@ enum PaymentMethod {
   BANKING
   WALLET
   CASH
+  PAYOS
 }
 
 enum TransactionStatus {
@@ -113,6 +115,11 @@ enum TransactionStatus {
   SUCCESS
   FAILED
   REFUNDED
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
 }
 
 enum RefundMethod {
@@ -679,6 +686,8 @@ model Transaction {
   gatewayTransId     String?           @map("gateway_trans_id") @db.VarChar(100)
   amount             Decimal           @db.Decimal(15, 2)
   status             TransactionStatus @default(PENDING)
+  type               TransactionType   @default(PAYMENT)
+  externalStatus     String?           @map("external_status") @db.VarChar(50)
   gatewayResponseLog Json?             @map("gateway_response_log")
   extraData          Json?             @map("extra_data")
   payTime            DateTime?         @map("pay_time")
@@ -689,6 +698,7 @@ model Transaction {
   booking Booking  @relation(fields: [bookingId], references: [id])
   refunds Refund[]
 
+  @@index([status, type, createdAt])
   @@map("transactions")
 }
 

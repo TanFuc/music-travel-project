@@ -20,10 +20,9 @@ if (fs.existsSync(envPath)) {
 console.log(`> Starting frontend on port ${port}...`);
 
 // Determine the command to run
-// Original script was: "next dev --turbo"
-// We want: "next dev --turbo -p PORT"
+// Using standard Webpack bundler for stability
 const cmd = 'next';
-const args = ['dev', '--turbo', '-p', port];
+const args = ['dev', '-p', port];
 
 const child = spawn(cmd, args, {
   stdio: 'inherit',

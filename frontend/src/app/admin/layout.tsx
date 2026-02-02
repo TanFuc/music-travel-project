@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Link } from '@/components/common/Link';
+import { useDebouncedResize } from '@/hooks/usePerformance';
 import {
   LayoutDashboard,
   Users,
@@ -129,21 +130,21 @@ export default function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Auto-open sidebar on desktop, close on mobile
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
-      }
-    };
-
-    // Set initial state
-    handleResize();
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+  const handleResize = useCallback(() => {
+    if (window.innerWidth >= 1024) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(false);
+    }
   }, []);
+
+  // Set initial state
+  useEffect(() => {
+    handleResize();
+  }, [handleResize]);
+
+  // Debounced resize listener for better performance
+  useDebouncedResize(handleResize, 150);
 
   // Close sidebar on route change (mobile only)
   useEffect(() => {

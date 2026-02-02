@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -44,6 +45,9 @@ import cloudinaryConfig from './config/cloudinary.config';
         limit: 100,
       },
     ]),
+
+    // Scheduling (Cron jobs)
+    ScheduleModule.forRoot(),
 
     // Database
     PrismaModule,
