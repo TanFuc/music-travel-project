@@ -10,22 +10,20 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 122 39% 49%;
-    /* #4CAF50 Green */
+    --primary: 142 72% 29%; /* Deep Emerald #14532D */
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 88 50% 53%;
-    /* #8BC34A Lime */
-    --accent-foreground: 0 0% 9%;
+    --secondary: 142 72% 95%; /* Very light emerald */
+    --secondary-foreground: 142 72% 10%;
+    --muted: 156 30% 96%;
+    --muted-foreground: 156 10% 40%;
+    --accent: 142 72% 45%; /* Vibrant emerald */
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 122 39% 49%;
-    --radius: 0.5rem;
+    --border: 156 20% 90%;
+    --input: 156 20% 92%;
+    --ring: 142 72% 29%;
+    --radius: 1rem;
   }
 
   /* Bright alternate theme - applied when .dark class is present (now bright instead of dark) */
@@ -62,12 +60,24 @@
 
   body {
     @apply bg-white font-sans text-gray-900 antialiased;
-    background: radial-gradient(circle at top left, #ffffff 0%, #f8fff9 40%, #f2fff5 100%);
     min-height: 100vh;
     line-height: 1.6;
     font-weight: 400;
-    /* Prevent font size change on orientation change */
     -webkit-text-size-adjust: 100%;
+    /* Simplified background for maximum speed */
+    background: #ffffff;
+  }
+
+  /* Only use gradient on Large screens and with simple background-color for better mixing */
+  /* Simplified background - use a static gradient instead of fixed for better scroll performance */
+  @media (min-width: 1280px) {
+    body {
+      background: #ffffff;
+      background-image: 
+        radial-gradient(circle at 0% 0%, rgba(20, 83, 45, 0.02) 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(76, 175, 80, 0.02) 0%, transparent 40%);
+      background-attachment: scroll;
+    }
   }
 
   h1,
@@ -113,33 +123,41 @@
 }
 
 @layer components {
-  /* Glassmorphism header - Ultra light & Premium */
+  /* Glassmorphism header - Pure Speed */
   .glass-header {
     @apply fixed top-0 z-50 w-full;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    transition: background-color 0.2s ease;
   }
 
-  /* Glass card - Modern & Light */
-  .glass-card {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    @apply rounded-3xl shadow-xl shadow-brand-500/5;
+  @media (min-width: 1024px) {
+    .glass-header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+  }
+
+  /* Premium Search Bar */
+  .search-container-premium {
+    @apply relative flex items-center bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-1.5 transition-all duration-300;
+    @apply focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/30;
+  }
+
+  /* Glass card - Optimized for Performance (Removed backdrop-blur for grid items) */
+  .glass-card-premium {
+    @apply rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-lg shadow-gray-200/40;
+    @apply transition-all duration-300 hover:shadow-xl hover:shadow-brand-500/10 hover:-translate-y-1;
+    will-change: transform, box-shadow;
   }
 
   /* Neon glow button - More elegant */
   .btn-neon {
     @apply relative overflow-hidden rounded-2xl px-8 py-4 font-bold text-white;
-    @apply bg-gradient-to-r from-brand-500 via-brand-400 to-brand-500;
-    background-size: 200% 100%;
+    @apply bg-brand-600;
     @apply transition-all duration-300;
-    @apply hover:-translate-y-0.5 hover:shadow-glow-lg;
-    animation: gradient-x 4s ease infinite;
+    @apply hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-600/30;
   }
 
   /* Brand primary button */
@@ -171,13 +189,12 @@
     animation: shimmer 2s infinite;
   }
 
-  /* Card hover effect */
-  .card-hover {
-    transition-property: transform, box-shadow, border-color;
-    transition-duration: 300ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    @apply hover:shadow-lg hover:shadow-brand-500/20;
-    @apply hover:-translate-y-1 hover:border-brand-500/30;
+  /* Card hover effect - Removed for mobile, very subtle on desktop */
+  @media (min-width: 1024px) {
+    .card-hover {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      @apply hover:shadow-xl hover:shadow-brand-500/5 hover:-translate-y-1;
+    }
   }
 
   /* Gradient border - Light theme */
@@ -327,22 +344,20 @@
     radial-gradient(circle at 50% 50%, rgba(76, 175, 80, 0.05) 0%, transparent 70%);
 }
 
-/* Ken Burns effect for hero images - optimized for performance */
+/* Ken Burns effect - Removed as it causes high GPU usage on long pages */
 .ken-burns {
-  animation: ken-burns 20s ease-out forwards;
+  /* No animation on mobile, simple fade */
 }
 
-/* Only set will-change during animation, not persistently */
-.ken-burns:is(:hover, :focus-within, .is-animating) {
-  will-change: transform;
+@media (min-width: 1024px) {
+  .ken-burns {
+    animation: ken-burns 20s ease-out forwards;
+  }
 }
 
-
-
-/* Content visibility for off-screen content (improves initial render) */
+/* Content visibility - DEPRECATED as it causes laggy scroll jumping */
 .lazy-section {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 500px;
+  /* Removed to fix scroll delay */
 }
 
 @keyframes ken-burns {
@@ -355,7 +370,7 @@
   }
 }
 
-/* Smooth fade in animation */
+/* Smooth fade in animation - Optimized */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -369,7 +384,7 @@
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.6s ease-out forwards;
+  animation: fadeIn 0.5s ease-out forwards;
 }
 
 /* Stagger animation delay classes */

@@ -160,20 +160,20 @@ export function Header() {
               {isLocationDropdownOpen && (
                 <div className="absolute top-full left-0 mt-2 w-56 py-2 glass-card shadow-xl z-50">
                    <Link
-                      href="/shows"
+                      href={pathname?.startsWith('/tours') ? '/tours' : '/shows'}
                       onClick={closeLocationDropdown}
                       className={cn(
                         "flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50",
                         !locationSlug && "bg-brand-50 text-brand-600"
                       )}
                   >
-                     <span>Tất cả chi nhánh</span>
+                      <span>Tất cả chi nhánh</span>
                   </Link>
                   {locations.length > 0 ? (
                     locations.map((location) => (
                       <Link
                         key={location.id}
-                        href={`/shows?location=${location.slug}`}
+                        href={`${pathname?.startsWith('/tours') ? '/tours' : '/shows'}?location=${location.slug}`}
                         className={cn(
                           "flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50",
                           locationSlug === location.slug && "bg-brand-50 text-brand-600"
@@ -310,10 +310,25 @@ export function Header() {
                   Chi Nhánh
                 </p>
                 <div className="grid grid-cols-1 gap-1">
+                   <Link
+                      href={pathname?.startsWith('/tours') ? '/tours' : '/shows'}
+                      onClick={closeMobileMenu}
+                      className={cn(
+                        "flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-xl transition-all active:scale-[0.98]",
+                        !locationSlug 
+                          ? "bg-brand-50 text-brand-700 border border-brand-100" 
+                          : "text-gray-600 hover:bg-brand-50"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <MapPin className={cn("w-4 h-4", !locationSlug ? "text-brand-500" : "text-gray-400")} />
+                        <span>Tất cả chi nhánh</span>
+                      </div>
+                    </Link>
                   {locations.map((location) => (
                     <Link
                       key={location.id}
-                      href={`/shows?location=${location.slug}`}
+                      href={`${pathname?.startsWith('/tours') ? '/tours' : '/shows'}?location=${location.slug}`}
                       onClick={closeMobileMenu}
                       className={cn(
                         "flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-xl transition-all active:scale-[0.98]",

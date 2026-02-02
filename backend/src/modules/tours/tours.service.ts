@@ -29,6 +29,9 @@ export class ToursService {
       search: filterDto.search,
       destinationId: filterDto.destinationId,
       branchId: filterDto.branchId,
+      location: filterDto.location,
+      departure: filterDto.departure,
+      destination: filterDto.destination,
     });
     const cacheKey = CacheKeys.tourList(filterHash);
 
@@ -49,7 +52,21 @@ export class ToursService {
         ],
       }),
       ...(filterDto.destinationId && { destinationLocId: filterDto.destinationId }),
-      ...(filterDto.branchId && { branchId: filterDto.branchId }),
+      ...(filterDto.location && {
+        branch: {
+          slug: filterDto.location,
+        },
+      }),
+      ...(filterDto.departure && {
+        departureLoc: {
+          slug: filterDto.departure,
+        },
+      }),
+      ...(filterDto.destination && {
+        destinationLoc: {
+          slug: filterDto.destination,
+        },
+      }),
     };
 
     const [tours, total] = await Promise.all([
