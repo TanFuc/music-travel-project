@@ -98,8 +98,8 @@ export function Header() {
   return (
     <header
       className={cn(
-        'glass-header transition-all duration-300',
-        isScrolled ? 'py-2' : 'py-3'
+        'glass-header py-3',
+        isScrolled && 'header-scrolled'
       )}
     >
       <div className="container mx-auto px-4">

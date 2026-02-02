@@ -27,13 +27,19 @@ export default function HomePage() {
       </div>
 
       {/* Shows Section - Primary Sales Block */}
-      <ShowsSection locationFilter={selectedLocation} />
+      <div className="lazy-section">
+        <ShowsSection locationFilter={selectedLocation} />
+      </div>
 
       {/* Stages/Venues Section */}
-      <StagesSection />
+      <div className="lazy-section">
+        <StagesSection />
+      </div>
 
       {/* Tours Section */}
-      <ToursSection />
+      <div className="lazy-section">
+        <ToursSection />
+      </div>
     </div>
   );
 }
