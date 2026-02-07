@@ -89,22 +89,23 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Header Content */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-[10px] font-bold uppercase tracking-wider mb-3 animate-fadeIn">
-              <Sparkles className="w-3 h-3" />
-              Sân khấu âm nhạc đỉnh cao
-            </div>
-            <h2 className="text-2xl md:text-4xl font-display font-bold text-gray-900 leading-tight">
+        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs md:text-sm font-bold uppercase tracking-wider animate-fadeIn">
+            <Sparkles className="w-4 h-4" />
+            Sân khấu âm nhạc đỉnh cao
+          </div>
+          
+          <div className="space-y-4">
+            <h2 className="text-3xl md:text-5xl font-display font-bold text-gray-900 leading-tight">
               Lịch trình <span className="text-brand-600">Show Diễn</span>
             </h2>
-            <p className="mt-3 text-sm md:text-base text-gray-600 font-sans max-w-lg">
+            <p className="text-base md:text-lg text-gray-600 font-sans max-w-2xl mx-auto">
               Chúng tôi mang đến những đêm nhạc đong đầy cảm xúc tại những không gian thơ mộng nhất Việt Nam.
             </p>
           </div>
 
           {/* Search Box */}
-          <div className="relative w-full lg:w-96 group">
+          <div className="relative w-full max-w-md mx-auto group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-500 transition-colors" />
             <input
               type="text"
@@ -116,8 +117,8 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
           </div>
         </div>
 
-        {/* Tab Selection - Horizontal scroll on mobile */}
-        <div className="flex items-center gap-3 mb-8 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+        {/* Tab Selection */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
           {[
             { id: 'ongoing', label: 'Đang diễn ra', icon: <Clock className="w-4 h-4" /> },
             { id: 'upcoming', label: 'Sắp diễn ra', icon: <Calendar className="w-4 h-4" /> },

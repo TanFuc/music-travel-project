@@ -48,14 +48,17 @@ export function ToursSection() {
     <section className="py-12 md:py-16">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="mb-10 text-center">
-          <h2 className="section-title flex items-center justify-center gap-2">
-            <span className="text-xl md:text-2xl">🌄</span>
-            <span className="text-xl md:text-3xl font-bold">TOUR DU LỊCH KẾT HỢP SHOW</span>
-          </h2>
-          <p className="mt-2 text-sm text-gray-600 max-w-2xl mx-auto">
-            Đến Đà Lạt - Xem show - Trải nghiệm trọn vẹn. Combo tour + vé show tiết kiệm đến 30%
-          </p>
+        <div className="mb-12 text-center">
+            <div className="inline-flex items-center justify-center p-3 mb-4 rounded-2xl bg-orange-100 text-2xl animate-bounce-slow">
+              🌄
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display font-black text-gray-900 mb-4 tracking-tight">
+              TOUR DU LỊCH <span className="text-orange-500">KẾT HỢP SHOW</span>
+            </h2>
+            <p className="text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Trải nghiệm trọn vẹn: Du lịch khám phá kết hợp thưởng thức show diễn đỉnh cao. 
+              <span className="font-semibold text-orange-600 ml-1">Combo tiết kiệm đến 30%</span>
+            </p>
         </div>
 
         {/* Tours List */}
@@ -68,60 +71,69 @@ export function ToursSection() {
             <p className="text-gray-500 text-lg">Chưa có tour nào</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {tours.map((tour) => (
               <Link
                 key={tour.id}
                 href={`/tours/${tour.slug}`}
-                className="group block border border-gray-100 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300"
+                className="group flex flex-col h-full bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300"
               >
-                <div className="flex flex-col md:flex-row bg-white">
-                  {/* Image */}
-                  <div className="relative md:w-1/3 aspect-video md:aspect-auto min-h-[220px]">
-                    <Image
-                      src={tour.thumbnailUrl || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'}
-                      alt={tour.title}
-                      fill
-                      loading="lazy"
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
+                {/* Image Section */}
+                <div className="relative aspect-[16/9] overflow-hidden">
+                  <Image
+                    src={tour.thumbnailUrl || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'}
+                    alt={tour.title}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute top-4 left-4">
+                     <span className="px-3 py-1.5 rounded-lg bg-orange-500/90 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider shadow-lg">
+                        Combo Hot
+                     </span>
+                  </div>
+                  <div className="absolute bottom-4 right-4">
+                     <span className="px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-orange-400" />
+                        {tour.duration}
+                     </span>
+                  </div>
+                </div>
+
+                {/* Content Section */}
+                <div className="flex-1 p-6 md:p-8 flex flex-col">
+                  <h3 className="font-display font-bold text-xl text-gray-900 mb-3 group-hover:text-orange-600 transition-colors line-clamp-2">
+                    {tour.title}
+                  </h3>
+                  
+                  <div className="flex flex-col gap-2 mb-6">
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="w-6 h-6 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                         <MapPin className="w-3.5 h-3.5 text-orange-500" />
+                      </div>
+                      <span className="font-medium">Khởi hành:</span>
+                      <span className="text-gray-900">{tour.departureLoc.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="w-6 h-6 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                         <MapPin className="w-3.5 h-3.5 text-orange-600" />
+                      </div>
+                       <span className="font-medium">Điểm đến:</span>
+                       <span className="text-gray-900">{tour.destinationLoc.name}</span>
+                    </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="flex-1 p-6 lg:p-8 flex flex-col justify-between">
+                  <div className="mt-auto pt-6 border-t border-dashed border-gray-200 flex items-center justify-between">
                     <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="px-2 py-1 rounded-md bg-brand-50 text-brand-700 text-[10px] font-bold uppercase tracking-wider">
-                          {tour.duration}
-                        </span>
-                      </div>
-                      <h3 className="font-display font-bold text-xl lg:text-2xl text-gray-900 mb-4 leading-tight">
-                        {tour.title}
-                      </h3>
-                      
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-brand-500" />
-                          <span>Từ: {tour.departureLoc.name}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-brand-600" />
-                          <span>Đến: {tour.destinationLoc.name}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
+                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">Giá trọn gói từ</p>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-brand-600 font-bold text-xl">
+                        <span className="text-2xl font-black text-orange-600">
                           {tour.minPrice ? formatPrice(tour.minPrice) : 'Liên hệ'}
                         </span>
-                        <span className="text-gray-400 text-[10px] font-medium">VND / người</span>
+                        <span className="text-xs font-bold text-gray-400">₫</span>
                       </div>
-                      <div className="flex items-center gap-2 text-brand-600 font-bold text-xs uppercase tracking-wider group-hover:translate-x-1 transition-transform">
-                        Chi tiết <ArrowRight className="w-4 h-4" />
-                      </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-colors duration-300">
+                      <ArrowRight className="w-5 h-5" />
                     </div>
                   </div>
                 </div>

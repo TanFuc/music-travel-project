@@ -125,8 +125,21 @@ export default function CheckoutPage() {
   const bookingCode = searchParams.get('code');
 
   const { isAuthenticated } = useAuthStore();
-  const { tickets, tours, ticketTiers, getSubtotal, getTotal, discount, voucherCode, setVoucher, clearVoucher, clearCart } =
-    useCartStore();
+  const { 
+    tickets, 
+    tours, 
+    ticketTiers, 
+    getSubtotal, 
+    getTotal, 
+    discount, 
+    voucherCode, 
+    setVoucher, 
+    clearVoucher, 
+    clearCart,
+    removeTicket,
+    removeTour,
+    removeTicketTier 
+  } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
   const [voucherInput, setVoucherInput] = useState(voucherCode || '');
@@ -226,6 +239,18 @@ export default function CheckoutPage() {
         if (result.redirectUrl) {
           window.location.href = result.redirectUrl;
         } else {
+          // Identify and remove paid items from cart
+          booking.items.forEach(item => {
+            if (item.ticketTier) {
+              removeTicketTier(item.ticketTier.id);
+            } else if (item.tourSchedule) {
+              removeTour(item.tourSchedule.id);
+            } else if (item.ticket) {
+              // Note: cart uses ticketId, booking item has ticket.id (which should be the same)
+              removeTicket(item.ticket.id);
+            }
+          });
+
           toast.success('Thanh toán thành công!');
           router.push(`/profile?booking=${booking.bookingCode}`);
         }

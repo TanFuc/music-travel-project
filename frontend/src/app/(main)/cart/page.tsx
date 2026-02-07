@@ -96,10 +96,10 @@ export default function CartPage() {
       });
 
       if (booking) {
-        // Remove selected items from cart after successful booking
-        selectedTickets.forEach(id => removeTicket(id));
-        selectedTours.forEach(id => removeTour(id));
-        selectedTiers.forEach(id => removeTicketTier(id));
+        // Do not remove items here - wait for successful payment
+        // selectedTickets.forEach(id => removeTicket(id));
+        // selectedTours.forEach(id => removeTour(id));
+        // selectedTiers.forEach(id => removeTicketTier(id));
 
         toast.success('Đã tạo đơn hàng thành công!');
         router.push(`/checkout?code=${booking.bookingCode}`);

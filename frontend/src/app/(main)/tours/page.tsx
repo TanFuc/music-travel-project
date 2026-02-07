@@ -217,7 +217,7 @@ export default function ToursPage() {
                 <div className="flex-1 w-full group">
                   <div className="px-4 flex flex-col">
                     <label className="text-[10px] uppercase font-bold text-gray-400 mb-0.5 px-1">Điểm đến</label>
-                    <Select value={destinationSlug} onValueChange={(val) => updateFilters({ destination: val })}>
+                    <Select value={destinationSlug} onValueChange={(val) => updateFilters({ destination: val, location: val })}>
                       <SelectTrigger className="h-8 border-none bg-transparent p-1 focus:ring-0 text-base font-medium">
                         <div className="flex items-center gap-2">
                           <PlaneLanding className="w-4 h-4 text-brand-500" />
@@ -251,7 +251,7 @@ export default function ToursPage() {
                   key={city}
                   onClick={() => {
                     const slug = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/ /g, '-');
-                    updateFilters({ destination: slug });
+                    updateFilters({ destination: slug, location: slug });
                   }}
                   className="px-4 py-1.5 rounded-full bg-white border border-gray-100 text-xs font-medium text-gray-600 hover:border-brand-500 hover:text-brand-600 transition-colors whitespace-nowrap"
                 >

@@ -74,7 +74,9 @@ export default function TicketsPage() {
             }
         });
 
-        toast.success(`Đã thêm ${totalItems} vé vào giỏ hàng!`);
+        toast.success(`Đã thêm ${totalItems} vé vào giỏ hàng!`, {
+            duration: 800,
+        });
         // Reset quantities after adding to cart
         setQuantities({});
     };
@@ -193,20 +195,20 @@ export default function TicketsPage() {
 
             {/* Sticky Bottom Summary */}
             <div className="fixed bottom-0 left-0 right-0 border-t bg-white p-4 shadow-lg sm:px-6 lg:px-8 z-50">
-                <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-                    <div className="flex flex-col">
+                <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center justify-between sm:flex-col sm:items-start">
                         <span className="text-sm text-gray-500">Tổng cộng ({totalItems} vé):</span>
-                        <span className="text-2xl font-bold text-primary">
+                        <span className="text-xl sm:text-2xl font-bold text-primary">
                             {formatCurrency(totalPrice)}
                         </span>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex w-full gap-3 sm:w-auto">
                         <Button
                             size="lg"
                             variant="outline"
                             onClick={handleAddToCart}
                             disabled={totalItems === 0}
-                            className="min-w-[140px]"
+                            className="flex-1 sm:min-w-[140px] sm:flex-none"
                         >
                             <ShoppingCart className="mr-2 h-4 w-4" />
                             Thêm vào giỏ
@@ -215,7 +217,7 @@ export default function TicketsPage() {
                             size="lg"
                             onClick={handleBuyNow}
                             disabled={totalItems === 0 || bookingLoading}
-                            className="min-w-[140px]"
+                            className="flex-1 sm:min-w-[140px] sm:flex-none"
                         >
                             {bookingLoading ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -228,7 +230,7 @@ export default function TicketsPage() {
                 </div>
             </div>
             {/* Spacer for sticky footer */}
-            <div className="h-24"></div>
+            <div className="h-32 sm:h-24"></div>
         </div>
     );
 }
