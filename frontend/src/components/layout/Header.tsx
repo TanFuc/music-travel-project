@@ -43,15 +43,19 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
 
-  // Use React Query for locations - only fetch when dropdown opens OR when locationSlug is present
+  // Use React Query for locations
   const { data: locations = [], isLoading: isLoadingLocations } = useQuery({
     queryKey: ['locations'],
     queryFn: async () => {
-      const response = await get<Location[]>('/locations');
-      return Array.isArray(response) ? response : [];
+      try {
+        const response = await get<Location[]>('/locations');
+        return Array.isArray(response) ? response : [];
+      } catch (error) {
+        console.error('Failed to fetch locations:', error);
+        return [];
+      }
     },
     staleTime: 10 * 60 * 1000, // 10 minutes cache
-    enabled: isLocationDropdownOpen || mobileMenuOpen || !!locationSlug,
   });
 
   // Memoize selectedLocation to prevent recalculation on every render
@@ -61,16 +65,17 @@ export function Header() {
   );
 
   const filteredLocations = useMemo(() => {
+    if (!locations || locations.length === 0) return [];
     if (!locationSearch.trim()) return locations;
     
     const normalize = (str: string) => 
-      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
     
     const searchNormalized = normalize(locationSearch);
     
     return locations.filter(loc =>
-      normalize(loc.name).includes(searchNormalized) || 
-      loc.name.toLowerCase().includes(locationSearch.toLowerCase())
+      (loc.name && normalize(loc.name).includes(searchNormalized)) || 
+      (loc.name && loc.name.toLowerCase().includes(locationSearch.toLowerCase()))
     );
   }, [locations, locationSearch]);
 
