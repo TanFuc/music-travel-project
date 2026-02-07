@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard, Wallet, Building2, ShieldCheck, Tag, Banknote } from 'lucide-react';
+import { ArrowLeft, CreditCard, Wallet, Building2, ShieldCheck, Tag, Banknote, QrCode } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,9 +17,10 @@ import { useAuthStore } from '@/stores/auth.store';
 import { get, post } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import PaymentQRModal from '@/components/payment/PaymentQRModal';
 
 const checkoutSchema = z.object({
-  paymentMethod: z.enum(['WALLET', 'MOMO', 'VNPAY', 'BANKING', 'CASH']),
+  paymentMethod: z.enum(['WALLET', 'MOMO', 'VNPAY', 'BANKING', 'CASH', 'BANK_QR']),
   voucherCode: z.string().optional(),
   note: z.string().optional(),
 });
@@ -111,6 +112,12 @@ const paymentMethods = [
     icon: Building2,
   },
   {
+    id: 'BANK_QR',
+    name: 'QR Ngân hàng',
+    description: 'Thanh toán bằng mã QR',
+    icon: QrCode,
+  },
+  {
     id: 'CASH',
     name: 'Tiền mặt',
     description: 'Thanh toán tại quầy',
@@ -125,26 +132,27 @@ export default function CheckoutPage() {
   const bookingCode = searchParams.get('code');
 
   const { isAuthenticated } = useAuthStore();
-  const { 
-    tickets, 
-    tours, 
-    ticketTiers, 
-    getSubtotal, 
-    getTotal, 
-    discount, 
-    voucherCode, 
-    setVoucher, 
-    clearVoucher, 
+  const {
+    tickets,
+    tours,
+    ticketTiers,
+    getSubtotal,
+    getTotal,
+    discount,
+    voucherCode,
+    setVoucher,
+    clearVoucher,
     clearCart,
     removeTicket,
     removeTour,
-    removeTicketTier 
+    removeTicketTier
   } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
   const [voucherInput, setVoucherInput] = useState(voucherCode || '');
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isLoadingBooking, setIsLoadingBooking] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   // Check if we're in "Buy Now" mode (has booking code) or "Cart" mode
   const isBuyNowMode = !!bookingCode;
@@ -227,64 +235,78 @@ export default function CheckoutPage() {
   };
 
   const onSubmit = async (data: CheckoutForm) => {
+    console.log('data', data);
+    // Handle QR payment: open modal (booking will be created when user confirms in modal flow if needed)
+    if (data.paymentMethod === 'BANK_QR') {
+      setIsQRModalOpen(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       if (isBuyNowMode && booking) {
         // Buy Now mode: Process payment for existing booking
-        const result = await post<{ redirectUrl?: string }>(`/bookings/${booking.id}/payment`, {
+        const result = await post<{ paymentUrl?: string }>('/payments/checkout', {
+          bookingCode: booking.bookingCode,
           paymentMethod: data.paymentMethod,
-          note: data.note || undefined,
         });
 
-        if (result.redirectUrl) {
-          window.location.href = result.redirectUrl;
+        if (result.paymentUrl) {
+          window.location.href = result.paymentUrl;
         } else {
-          // Identify and remove paid items from cart
           booking.items.forEach(item => {
             if (item.ticketTier) {
               removeTicketTier(item.ticketTier.id);
             } else if (item.tourSchedule) {
               removeTour(item.tourSchedule.id);
             } else if (item.ticket) {
-              // Note: cart uses ticketId, booking item has ticket.id (which should be the same)
               removeTicket(item.ticket.id);
             }
           });
-
           toast.success('Thanh toán thành công!');
           router.push(`/profile?booking=${booking.bookingCode}`);
         }
       } else {
-        // Cart mode: Create new booking
-        const bookingData = {
-          items: [
-            ...tickets.map((t) => ({
-              type: 'SHOW_TICKET',
-              ticketId: t.ticketId,
-            })),
-            ...tours.map((t) => ({
-              type: 'TOUR',
-              scheduleId: t.scheduleId,
-              quantity: t.quantity,
-            })),
-          ],
-          paymentMethod: data.paymentMethod,
-          voucherCode: data.voucherCode || undefined,
-          note: data.note || undefined,
-        };
+        // Cart mode: Build payload that matches backend CreateBookingDto exactly (no "items", no "paymentMethod")
+        const bookingPayload: {
+          ticketsWithSeats?: Array<{ ticketId: number }>;
+          ticketTiers?: Array<{ tierId: number; quantity: number }>;
+          tourItems?: Array<{ scheduleId: number; quantity: number }>;
+          voucherCode?: string;
+          note?: string;
+        } = {};
 
-        const result = await post<{ bookingCode: string; redirectUrl?: string }>(
-          '/bookings',
-          bookingData
-        );
+        if (tickets.length) {
+          bookingPayload.ticketsWithSeats = tickets.map((t) => ({ ticketId: t.ticketId }));
+        }
+        if (ticketTiers.length) {
+          bookingPayload.ticketTiers = ticketTiers.map((t) => ({ tierId: t.tierId, quantity: t.quantity }));
+        }
+        if (tours.length) {
+          bookingPayload.tourItems = tours.map((t) => ({ scheduleId: t.scheduleId, quantity: t.quantity }));
+        }
+        if (data.voucherCode?.trim()) {
+          bookingPayload.voucherCode = data.voucherCode.trim();
+        }
+        if (data.note?.trim()) {
+          bookingPayload.note = data.note.trim();
+        }
+
+        const createResult = await post<{ bookingCode: string }>('/bookings', bookingPayload);
+
+        // Then process payment (checkout)
+        const checkoutResult = await post<{ paymentUrl?: string }>('/payments/checkout', {
+          bookingCode: createResult.bookingCode,
+          paymentMethod: data.paymentMethod,
+        });
 
         clearCart();
 
-        if (result.redirectUrl) {
-          window.location.href = result.redirectUrl;
+        if (checkoutResult.paymentUrl) {
+          window.location.href = checkoutResult.paymentUrl;
         } else {
           toast.success('Đặt hàng thành công!');
-          router.push(`/profile?booking=${result.bookingCode}`);
+          router.push(`/profile?booking=${createResult.bookingCode}`);
         }
       }
     } catch (error: unknown) {
@@ -653,7 +675,7 @@ export default function CheckoutPage() {
                   size="lg"
                   disabled={isProcessing || isLoadingBooking}
                 >
-                  {isProcessing ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+                  {isProcessing ? 'Đang xử lý...' : selectedMethod === 'BANK_QR' ? 'Tạo mã QR thanh toán' : 'Xác nhận thanh toán'}
                 </Button>
 
                 {/* Security Note */}
@@ -666,6 +688,23 @@ export default function CheckoutPage() {
           </div>
         </div>
       </form>
+
+      {/* QR Payment Modal */}
+      <PaymentQRModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+        defaultAmount={isBuyNowMode && booking ? booking.finalAmount : getTotal()}
+        defaultDescription={`Thanh toan don hang Music Travel - ${isBuyNowMode && booking ? booking.bookingCode : 'Cart'}`}
+        onSuccess={() => {
+          toast.success('Thanh toán QR thành công!');
+          if (isBuyNowMode && booking) {
+            router.push(`/profile?booking=${booking.bookingCode}`);
+          } else {
+            clearCart();
+            router.push('/profile');
+          }
+        }}
+      />
     </div>
   );
 }

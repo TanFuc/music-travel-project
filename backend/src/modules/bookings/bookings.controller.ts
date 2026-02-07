@@ -1,25 +1,67 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
+import { Public } from '@/common/decorators/public.decorator';
 
 @ApiTags('bookings')
 @Controller('bookings')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
+  @Get('ping')
+  @Public()
+  @ApiOperation({ summary: 'Health check for bookings API' })
+  @ApiResponse({ status: 200, description: 'OK' })
+  ping() {
+    return { ok: true, service: 'bookings' };
+  }
+
   @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new booking' })
   @ApiResponse({ status: 201, description: 'Booking created successfully' })
+  @ApiBody({
+    description:
+      'Booking payload. Either an object with tourItems/ticketTiers/ticketsWithSeats, or a raw array of tour items: [{ scheduleId, quantity }, ...]',
+    schema: {
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            tourItems: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: { scheduleId: { type: 'number' }, quantity: { type: 'number' } },
+              },
+            },
+            ticketTiers: { type: 'array', items: { type: 'object' } },
+            ticketsWithSeats: { type: 'array', items: { type: 'object' } },
+            voucherCode: { type: 'string' },
+            note: { type: 'string' },
+          },
+        },
+        {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { scheduleId: { type: 'number' }, quantity: { type: 'number' } },
+          },
+        },
+      ],
+    },
+  })
   async create(@CurrentUser() user: JwtPayload, @Body() createBookingDto: CreateBookingDto) {
     return this.bookingsService.create(user.sub, createBookingDto);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all bookings for current user' })
   @ApiResponse({ status: 200, description: 'Bookings retrieved successfully' })
   async findAll(@CurrentUser() user: JwtPayload) {
@@ -27,6 +69,8 @@ export class BookingsController {
   }
 
   @Get(':code')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get booking by code' })
   @ApiResponse({ status: 200, description: 'Booking retrieved successfully' })
   async findByCode(@CurrentUser() user: JwtPayload, @Param('code') code: string) {
@@ -34,9 +78,11 @@ export class BookingsController {
   }
 
   @Post(':id/cancel')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel booking' })
   @ApiResponse({ status: 200, description: 'Booking cancelled successfully' })
   async cancel(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    return this.bookingsService.cancel(parseInt(id), user.sub);
+    return this.bookingsService.cancel(parseInt(id, 10), user.sub);
   }
 }

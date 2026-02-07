@@ -15,25 +15,15 @@ export interface LockTicketsResponse {
   }>;
 }
 
+/** Payload for POST /bookings - must match backend CreateBookingDto (no "items", no "paymentMethod") */
 export interface CreateBookingRequest {
-  lockId?: string;
-  items?: Array<{
-    type: 'SHOW_TICKET' | 'TOUR_SLOT';
-    ticketIds?: number[];
-    tourScheduleId?: number;
-    quantity?: number;
-    passengers?: Array<{
-      fullName: string;
-      dateOfBirth?: string;
-      idNumber?: string;
-    }>;
-  }>;
-  ticketTiers?: Array<{
-    tierId: number;
-    quantity: number;
-  }>;
+  ticketIds?: number[];
+  ticketsWithSeats?: Array<{ ticketId: number; physicalSeatId?: number }>;
+  ticketTiers?: Array<{ tierId: number; quantity: number }>;
+  tourItems?: Array<{ scheduleId: number; quantity: number; passengerInfo?: Record<string, unknown>[] }>;
   voucherCode?: string;
   note?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface BookingsFilter {

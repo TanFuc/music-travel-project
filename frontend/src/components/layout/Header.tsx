@@ -26,6 +26,7 @@ const navLinks = [
   { href: '/tickets', label: 'Mua Vé' },
   { href: '/shows', label: 'Lịch Diễn' },
   { href: '/tours', label: 'Tour Du Lịch' },
+  // { href: '/payment-demo', label: '💳 QR Demo' },
 ];
 
 export function Header() {
@@ -67,14 +68,14 @@ export function Header() {
   const filteredLocations = useMemo(() => {
     if (!locations || locations.length === 0) return [];
     if (!locationSearch.trim()) return locations;
-    
-    const normalize = (str: string) => 
+
+    const normalize = (str: string) =>
       str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
-    
+
     const searchNormalized = normalize(locationSearch);
-    
+
     return locations.filter(loc =>
-      (loc.name && normalize(loc.name).includes(searchNormalized)) || 
+      (loc.name && normalize(loc.name).includes(searchNormalized)) ||
       (loc.name && loc.name.toLowerCase().includes(locationSearch.toLowerCase()))
     );
   }, [locations, locationSearch]);
@@ -180,33 +181,33 @@ export function Header() {
 
               {isLocationDropdownOpen && (
                 <div className="absolute top-full left-0 mt-2 w-64 py-2 bg-white rounded-xl shadow-xl z-50 border border-gray-100 overflow-hidden ring-1 ring-black/5">
-                   {/* Search Header */}
-                   <div className="px-3 pb-2 pt-1 border-b border-gray-50 mb-1">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Tìm chi nhánh..."
-                          value={locationSearch}
-                          onChange={(e) => setLocationSearch(e.target.value)}
-                          className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-brand-500 focus:bg-white transition-colors placeholder:text-gray-400"
-                          autoFocus
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                   </div>
+                  {/* Search Header */}
+                  <div className="px-3 pb-2 pt-1 border-b border-gray-50 mb-1">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Tìm chi nhánh..."
+                        value={locationSearch}
+                        onChange={(e) => setLocationSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-brand-500 focus:bg-white transition-colors placeholder:text-gray-400"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
 
-                   {/* Scrollable List */}
-                   <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                     <Link
-                        href={pathname?.startsWith('/tours') ? '/tours' : '/shows'}
-                        onClick={closeLocationDropdown}
-                        className={cn(
-                          "flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50 transition-colors",
-                          !locationSlug && "bg-brand-50 text-brand-600 font-medium"
-                        )}
+                  {/* Scrollable List */}
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                    <Link
+                      href={pathname?.startsWith('/tours') ? '/tours' : '/shows'}
+                      onClick={closeLocationDropdown}
+                      className={cn(
+                        "flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50 transition-colors",
+                        !locationSlug && "bg-brand-50 text-brand-600 font-medium"
+                      )}
                     >
-                        <span>Tất cả chi nhánh</span>
+                      <span>Tất cả chi nhánh</span>
                     </Link>
                     {filteredLocations.length > 0 ? (
                       filteredLocations.map((location) => (
@@ -351,21 +352,21 @@ export function Header() {
                   Chi Nhánh
                 </p>
                 <div className="grid grid-cols-1 gap-1">
-                   <Link
-                      href={pathname?.startsWith('/tours') ? '/tours' : '/shows'}
-                      onClick={closeMobileMenu}
-                      className={cn(
-                        "flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-xl transition-all active:scale-[0.98]",
-                        !locationSlug 
-                          ? "bg-brand-50 text-brand-700 border border-brand-100" 
-                          : "text-gray-600 hover:bg-brand-50"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <MapPin className={cn("w-4 h-4", !locationSlug ? "text-brand-500" : "text-gray-400")} />
-                        <span>Tất cả chi nhánh</span>
-                      </div>
-                    </Link>
+                  <Link
+                    href={pathname?.startsWith('/tours') ? '/tours' : '/shows'}
+                    onClick={closeMobileMenu}
+                    className={cn(
+                      "flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-xl transition-all active:scale-[0.98]",
+                      !locationSlug
+                        ? "bg-brand-50 text-brand-700 border border-brand-100"
+                        : "text-gray-600 hover:bg-brand-50"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <MapPin className={cn("w-4 h-4", !locationSlug ? "text-brand-500" : "text-gray-400")} />
+                      <span>Tất cả chi nhánh</span>
+                    </div>
+                  </Link>
                   {locations.map((location) => (
                     <Link
                       key={location.id}
@@ -373,8 +374,8 @@ export function Header() {
                       onClick={closeMobileMenu}
                       className={cn(
                         "flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-xl transition-all active:scale-[0.98]",
-                        locationSlug === location.slug 
-                          ? "bg-brand-50 text-brand-700 border border-brand-100" 
+                        locationSlug === location.slug
+                          ? "bg-brand-50 text-brand-700 border border-brand-100"
                           : "text-gray-600 hover:bg-brand-50"
                       )}
                     >
@@ -403,8 +404,8 @@ export function Header() {
                     <User className="w-5 h-5 text-brand-500" />
                     <span>Tài khoản: {user?.fullName}</span>
                   </Link>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     onClick={() => { logout(); closeMobileMenu(); }}
                     className="flex items-center justify-start gap-3 px-4 py-3.5 w-full h-auto text-sm font-bold text-error-600 hover:bg-error-50 rounded-xl transition-all active:scale-[0.98]"
                   >

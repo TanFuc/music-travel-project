@@ -21,6 +21,16 @@ export class BookingsService {
   ) { }
 
   async create(userId: number, createBookingDto: CreateBookingDto) {
+    const hasTickets = (createBookingDto.ticketsWithSeats?.length ?? 0) > 0 || (createBookingDto.ticketIds?.length ?? 0) > 0;
+    const hasTiers = (createBookingDto.ticketTiers?.length ?? 0) > 0;
+    const hasTours = (createBookingDto.tourItems?.length ?? 0) > 0;
+    if (!hasTickets && !hasTiers && !hasTours) {
+      throw new BadRequestException({
+        code: ERROR_CODES.VAL_001,
+        message: 'Đơn hàng phải có ít nhất một mục: vé (ticketsWithSeats/ticketIds), loại vé (ticketTiers), hoặc tour (tourItems).',
+      });
+    }
+
     const bookingCode = this.generateBookingCode();
     let totalAmount = new Decimal(0);
 
