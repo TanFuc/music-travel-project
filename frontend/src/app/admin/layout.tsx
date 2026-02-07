@@ -20,12 +20,12 @@ import {
   Menu,
   ChevronRight,
   Theater,
+  Tags,
 } from 'lucide-react';
 import { Logo } from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 
 // Admin page loading skeleton
 function AdminPageSkeleton() {
@@ -80,6 +80,11 @@ const sidebarItems = [
     title: 'Vé',
     href: '/admin/tickets',
     icon: Ticket,
+  },
+  {
+    title: 'Loại vé bán',
+    href: '/admin/ticket-tiers',
+    icon: Tags,
   },
   {
     title: 'Đơn hàng',
@@ -215,32 +220,46 @@ export default function AdminLayout({
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-4 border-b">
-            <div className={cn("transition-opacity duration-200", !sidebarOpen && "lg:opacity-0 lg:hidden")}>
-              <Logo size="sm" />
+          <div className="relative flex items-center h-16 px-4 border-b">
+            {/* Full logo with text - visible when sidebar is open */}
+            <div className={cn(
+              "flex items-center overflow-hidden transition-all duration-300 ease-in-out",
+              sidebarOpen ? "max-w-full opacity-100" : "max-w-0 opacity-0"
+            )}>
+              <div className="flex-shrink-0">
+                <Logo size="sm" />
+              </div>
             </div>
-            {/* Show icon only logo when collapsed on desktop */}
-            <div className={cn("absolute left-0 w-full flex justify-center transition-opacity duration-200", sidebarOpen ? "opacity-0 hidden" : "opacity-100 hidden lg:flex")}>
+            
+            {/* Icon only logo - visible when sidebar is collapsed on desktop */}
+            <div className={cn(
+              "absolute left-1/2 -translate-x-1/2 transition-all duration-300 ease-in-out",
+              sidebarOpen ? "opacity-0 invisible lg:opacity-0 lg:invisible" : "opacity-100 visible hidden lg:block"
+            )}>
               <Logo size="sm" showText={false} />
             </div>
 
+            {/* Toggle Button - Desktop */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="hidden lg:flex ml-auto"
+              className={cn(
+                "hidden lg:flex flex-shrink-0 ml-auto",
+                !sidebarOpen && "absolute right-4"
+              )}
             >
               <ChevronRight
-                className={cn('h-4 w-4 transition-transform', !sidebarOpen && 'rotate-180')}
+                className={cn('h-4 w-4 transition-transform duration-300', !sidebarOpen && 'rotate-180')}
               />
             </Button>
 
-            {/* Mobile Close Button */}
+            {/* Close Button - Mobile */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden ml-auto"
+              className="lg:hidden ml-auto flex-shrink-0"
             >
               <ChevronRight className="h-4 w-4 rotate-180" />
             </Button>

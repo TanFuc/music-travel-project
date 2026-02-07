@@ -11,8 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useCartStore } from '@/stores/cart.store';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export default function TicketsPage() {
+    usePageTitle();
     const router = useRouter();
     const addTicketTier = useCartStore((state) => state.addTicketTier);
     const [tiers, setTiers] = useState<TicketTier[]>([]);

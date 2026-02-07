@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/auth.store';
 import { post } from '@/lib/api';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 const loginSchema = z.object({
   phoneNumber: z
@@ -36,6 +37,7 @@ interface LoginResponse {
 }
 
 export default function LoginPage() {
+  usePageTitle();
   const router = useRouter();
   const { login } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);

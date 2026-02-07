@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatDate, formatCurrency, cn } from '@/lib/utils';
 import { getCloudinaryUrl } from '@/lib/cloudinary';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 // Dynamic import for heavy modal - only loads when opened
 const ShowFormModal = dynamic(() => import('@/components/admin/ShowFormModal').then(mod => ({ default: mod.ShowFormModal })), {
@@ -43,6 +44,7 @@ const statusColors: Record<string, 'default' | 'success' | 'warning' | 'destruct
 };
 
 export default function AdminShowsPage() {
+    usePageTitle();
     const [page, setPage] = useState(1);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const queryClient = useQueryClient();

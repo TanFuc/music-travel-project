@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { stageService, Stage } from '@/services/stage.service';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 // Dynamic import for heavy modal - only loads when opened
 const StageFormModal = dynamic(() => import('@/components/admin/StageFormModal').then(mod => ({ default: mod.StageFormModal })), {
@@ -18,6 +19,7 @@ const StageFormModal = dynamic(() => import('@/components/admin/StageFormModal')
 });
 
 export default function AdminStagesPage() {
+  usePageTitle();
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStageId, setSelectedStageId] = useState<number | undefined>();

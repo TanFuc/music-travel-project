@@ -33,6 +33,7 @@ import { searchService, SearchType } from '@/services/search.service';
 import { branchService } from '@/services/branch.service';
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'success' | 'warning'> = {
   UPCOMING: 'success',
@@ -49,6 +50,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function SearchPage() {
+  usePageTitle();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const initialType = (searchParams.get('type') as SearchType) || 'all';

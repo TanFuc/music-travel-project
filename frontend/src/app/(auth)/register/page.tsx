@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/auth.store';
 import { post } from '@/lib/api';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
@@ -42,6 +43,7 @@ interface RegisterResponse {
 }
 
 export default function RegisterPage() {
+  usePageTitle();
   const router = useRouter();
   const { login } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);

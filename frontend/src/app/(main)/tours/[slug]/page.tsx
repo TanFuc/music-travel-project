@@ -13,6 +13,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { useCartStore } from '@/stores/cart.store';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface TourSchedule {
   id: number;
@@ -68,6 +69,9 @@ export default function TourDetailPage() {
     queryFn: () => get<TourDetail>(`/tours/${slug}`),
     enabled: !!slug,
   });
+
+  // Dynamic page title based on tour data
+  usePageTitle(tour?.title, isLoading);
 
   const handleAddToCart = (schedule: TourSchedule) => {
     if (!tour) return;

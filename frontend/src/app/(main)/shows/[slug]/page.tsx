@@ -15,6 +15,7 @@ import { useCartStore } from '@/stores/cart.store';
 import { toast } from 'sonner';
 import { useState, useCallback } from 'react';
 import { GeneralAdmissionView } from '@/components/shows/GeneralAdmissionView';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 // Dynamic imports for heavy components - improves initial page load
 const SeatMap = dynamic(() => import('@/components/shows/SeatMap').then(mod => ({ default: mod.SeatMap })), {
@@ -110,6 +111,9 @@ export default function ShowDetailPage() {
     queryFn: () => get<ShowDetail>(`/shows/${slug}`),
     enabled: !!slug,
   });
+
+  // Dynamic page title based on show data
+  usePageTitle(show?.title, isLoading);
 
   const handleSeatsSelected = useCallback((ticketIds: number[], totalPrice: number) => {
     // Seats selected but not yet locked

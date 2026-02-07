@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard, Wallet, Building2, ShieldCheck, Tag } from 'lucide-react';
+import { ArrowLeft, CreditCard, Wallet, Building2, ShieldCheck, Tag, Banknote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,9 +16,10 @@ import { useCartStore } from '@/stores/cart.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { get, post } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 const checkoutSchema = z.object({
-  paymentMethod: z.enum(['WALLET', 'MOMO', 'VNPAY', 'BANKING']),
+  paymentMethod: z.enum(['WALLET', 'MOMO', 'VNPAY', 'BANKING', 'CASH']),
   voucherCode: z.string().optional(),
   note: z.string().optional(),
 });
@@ -33,19 +34,54 @@ interface VoucherValidation {
 
 interface BookingItem {
   id: number;
+  itemType: 'SHOW_TICKET' | 'TOUR_SLOT';
+  quantity: number;
+  originalPrice: number;
+  ticket?: {
+    id: number;
+    ticketCode: string;
+    show?: {
+      id: number;
+      title: string;
+      performTime: string;
+    };
+    ticketClass?: {
+      id: number;
+      name: string;
+      price: number;
+    };
+    physicalSeat?: {
+      id: number;
+      zoneName: string;
+      rowName: string;
+      seatNumber: string;
+    };
+  };
+  tourSchedule?: {
+    id: number;
+    startDate: string;
+    price: number;
+    tour?: {
+      id: number;
+      title: string;
+    };
+  };
   ticketTier?: {
     id: number;
     name: string;
     price: number;
+    description?: string;
   };
-  quantity: number;
 }
 
 interface Booking {
   id: number;
   bookingCode: string;
   totalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
   status: string;
+  paymentStatus: string;
   items: BookingItem[];
 }
 
@@ -74,9 +110,16 @@ const paymentMethods = [
     description: 'Chuyển khoản ngân hàng',
     icon: Building2,
   },
+  {
+    id: 'CASH',
+    name: 'Tiền mặt',
+    description: 'Thanh toán tại quầy',
+    icon: Banknote,
+  },
 ];
 
 export default function CheckoutPage() {
+  usePageTitle();
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingCode = searchParams.get('code');
@@ -362,58 +405,172 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Items */}
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-3 max-h-80 overflow-y-auto">
                   {isBuyNowMode && booking ? (
-                    // Buy Now mode: Show booking items
-                    booking.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex justify-between text-sm py-2 border-b"
-                      >
-                        <div>
-                          <p className="font-medium">{item.ticketTier?.name || 'Vé'}</p>
-                          <p className="text-neutral-500">Số lượng: {item.quantity}</p>
-                        </div>
-                        <span>{formatCurrency((item.ticketTier?.price || 0) * item.quantity)}</span>
-                      </div>
-                    ))
-                  ) : (
-                    // Cart mode: Show cart items
+                    // Buy Now mode: Show detailed booking items
                     <>
-                      {ticketTiers.map((tier) => (
-                        <div
-                          key={tier.tierId}
-                          className="flex justify-between text-sm py-2 border-b"
-                        >
-                          <div>
-                            <p className="font-medium">{tier.tierName}</p>
-                            <p className="text-neutral-500">Số lượng: {tier.quantity}</p>
+                      {booking.items.map((item, index) => {
+                        const isTicket = item.itemType === 'SHOW_TICKET';
+                        const isTour = item.itemType === 'TOUR_SLOT';
+
+                        // Get item details
+                        const showTitle = item.ticket?.show?.title;
+                        const ticketTierName = item.ticketTier?.name;
+                        const ticketClassName = item.ticket?.ticketClass?.name;
+                        const tourTitle = item.tourSchedule?.tour?.title;
+                        const seatInfo = item.ticket?.physicalSeat
+                          ? `${item.ticket.physicalSeat.zoneName || ''} - Hàng ${item.ticket.physicalSeat.rowName}, Ghế ${item.ticket.physicalSeat.seatNumber}`
+                          : null;
+
+                        const unitPrice = item.originalPrice;
+                        const totalPrice = unitPrice * item.quantity;
+
+                        return (
+                          <div key={item.id} className="bg-neutral-50 rounded-lg p-3 space-y-2">
+                            {/* Item Header */}
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm text-neutral-900 truncate">
+                                  {isTicket ? (showTitle || 'Vé xem show') : (tourTitle || 'Tour du lịch')}
+                                </p>
+                                {/* Item Type Badge */}
+                                <Badge variant="outline" className="mt-1 text-xs">
+                                  {isTicket ? 'Vé xem show' : 'Tour'}
+                                </Badge>
+                              </div>
+                              <span className="text-xs text-neutral-500">#{index + 1}</span>
+                            </div>
+
+                            {/* Item Details */}
+                            <div className="space-y-1 text-sm">
+                              {/* Ticket Tier or Class */}
+                              {(ticketTierName || ticketClassName) && (
+                                <div className="flex justify-between">
+                                  <span className="text-neutral-600">Loại vé:</span>
+                                  <span className="font-medium">{ticketTierName || ticketClassName}</span>
+                                </div>
+                              )}
+
+                              {/* Seat Info */}
+                              {seatInfo && (
+                                <div className="flex justify-between">
+                                  <span className="text-neutral-600">Vị trí:</span>
+                                  <span className="font-medium">{seatInfo}</span>
+                                </div>
+                              )}
+
+                              {/* Tour Schedule */}
+                              {isTour && item.tourSchedule?.startDate && (
+                                <div className="flex justify-between">
+                                  <span className="text-neutral-600">Ngày khởi hành:</span>
+                                  <span className="font-medium">
+                                    {new Date(item.tourSchedule.startDate).toLocaleDateString('vi-VN')}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Quantity */}
+                              <div className="flex justify-between">
+                                <span className="text-neutral-600">Số lượng:</span>
+                                <span className="font-medium">{item.quantity}</span>
+                              </div>
+
+                              {/* Unit Price */}
+                              <div className="flex justify-between">
+                                <span className="text-neutral-600">Đơn giá:</span>
+                                <span className="font-medium">{formatCurrency(unitPrice)}</span>
+                              </div>
+                            </div>
+
+                            {/* Item Total */}
+                            <div className="flex justify-between pt-2 border-t border-neutral-200">
+                              <span className="text-sm font-medium text-neutral-700">Thành tiền:</span>
+                              <span className="font-bold text-brand-600">{formatCurrency(totalPrice)}</span>
+                            </div>
                           </div>
-                          <span>{formatCurrency(tier.price * tier.quantity)}</span>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    // Cart mode: Show cart items with detailed breakdown
+                    <>
+                      {ticketTiers.map((tier, index) => (
+                        <div key={tier.tierId} className="bg-neutral-50 rounded-lg p-3 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-neutral-900 truncate">{tier.tierName}</p>
+                              <Badge variant="outline" className="mt-1 text-xs">Vé xem show</Badge>
+                            </div>
+                            <span className="text-xs text-neutral-500">#{index + 1}</span>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Số lượng:</span>
+                              <span className="font-medium">{tier.quantity}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Đơn giá:</span>
+                              <span className="font-medium">{formatCurrency(tier.price)}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-neutral-200">
+                            <span className="text-sm font-medium text-neutral-700">Thành tiền:</span>
+                            <span className="font-bold text-brand-600">{formatCurrency(tier.price * tier.quantity)}</span>
+                          </div>
                         </div>
                       ))}
-                      {tickets.map((ticket) => (
-                        <div
-                          key={ticket.ticketId}
-                          className="flex justify-between text-sm py-2 border-b"
-                        >
-                          <div>
-                            <p className="font-medium">{ticket.showTitle}</p>
-                            <p className="text-neutral-500">{ticket.ticketClassName}</p>
+                      {tickets.map((ticket, index) => (
+                        <div key={ticket.ticketId} className="bg-neutral-50 rounded-lg p-3 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-neutral-900 truncate">{ticket.showTitle}</p>
+                              <Badge variant="outline" className="mt-1 text-xs">Vé xem show</Badge>
+                            </div>
+                            <span className="text-xs text-neutral-500">#{ticketTiers.length + index + 1}</span>
                           </div>
-                          <span>{formatCurrency(ticket.price)}</span>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Loại vé:</span>
+                              <span className="font-medium">{ticket.ticketClassName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Số lượng:</span>
+                              <span className="font-medium">1</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Đơn giá:</span>
+                              <span className="font-medium">{formatCurrency(ticket.price)}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-neutral-200">
+                            <span className="text-sm font-medium text-neutral-700">Thành tiền:</span>
+                            <span className="font-bold text-brand-600">{formatCurrency(ticket.price)}</span>
+                          </div>
                         </div>
                       ))}
-                      {tours.map((tour) => (
-                        <div
-                          key={tour.scheduleId}
-                          className="flex justify-between text-sm py-2 border-b"
-                        >
-                          <div>
-                            <p className="font-medium">{tour.tourTitle}</p>
-                            <p className="text-neutral-500">{tour.quantity} người</p>
+                      {tours.map((tour, index) => (
+                        <div key={tour.scheduleId} className="bg-neutral-50 rounded-lg p-3 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-neutral-900 truncate">{tour.tourTitle}</p>
+                              <Badge variant="outline" className="mt-1 text-xs">Tour</Badge>
+                            </div>
+                            <span className="text-xs text-neutral-500">#{ticketTiers.length + tickets.length + index + 1}</span>
                           </div>
-                          <span>{formatCurrency(tour.price * tour.quantity)}</span>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Số người:</span>
+                              <span className="font-medium">{tour.quantity}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Đơn giá/người:</span>
+                              <span className="font-medium">{formatCurrency(tour.price)}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-neutral-200">
+                            <span className="text-sm font-medium text-neutral-700">Thành tiền:</span>
+                            <span className="font-bold text-brand-600">{formatCurrency(tour.price * tour.quantity)}</span>
+                          </div>
                         </div>
                       ))}
                     </>
@@ -421,21 +578,45 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Summary */}
-                <div className="space-y-2 pt-2">
+                <div className="bg-white border rounded-lg p-4 space-y-3">
+                  {/* Item Count */}
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-600">Tạm tính</span>
-                    <span>{formatCurrency(isBuyNowMode && booking ? booking.totalAmount : getSubtotal())}</span>
+                    <span className="text-neutral-600">Số sản phẩm:</span>
+                    <span className="font-medium">
+                      {isBuyNowMode && booking
+                        ? booking.items.reduce((sum, item) => sum + item.quantity, 0)
+                        : ticketTiers.reduce((sum, t) => sum + t.quantity, 0) + tickets.length + tours.reduce((sum, t) => sum + t.quantity, 0)
+                      } mục
+                    </span>
                   </div>
+
+                  {/* Subtotal */}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-neutral-600">Tạm tính:</span>
+                    <span className="font-medium">{formatCurrency(isBuyNowMode && booking ? booking.totalAmount : getSubtotal())}</span>
+                  </div>
+
+                  {/* Discount */}
+                  {isBuyNowMode && booking && booking.discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-success-600">
+                      <span>Giảm giá:</span>
+                      <span>-{formatCurrency(booking.discountAmount)}</span>
+                    </div>
+                  )}
                   {!isBuyNowMode && discount > 0 && (
                     <div className="flex justify-between text-sm text-success-600">
-                      <span>Giảm giá</span>
+                      <span>Giảm giá:</span>
                       <span>-{formatCurrency(discount)}</span>
                     </div>
                   )}
-                  <div className="border-t pt-2">
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Tổng cộng</span>
-                      <span className="text-brand-600">{formatCurrency(isBuyNowMode && booking ? booking.totalAmount : getTotal())}</span>
+
+                  {/* Total */}
+                  <div className="border-t pt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-lg">Tổng cộng:</span>
+                      <span className="font-bold text-xl text-brand-600">
+                        {formatCurrency(isBuyNowMode && booking ? booking.finalAmount : getTotal())}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -445,7 +626,7 @@ export default function CheckoutPage() {
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={isProcessing}
+                  disabled={isProcessing || isLoadingBooking}
                 >
                   {isProcessing ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
                 </Button>

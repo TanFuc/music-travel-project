@@ -13,6 +13,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { get, post, patch, del } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 // Dynamic import for heavy modal - only loads when opened
 const UserFormModal = dynamic(() => import('@/components/admin/UserFormModal').then(mod => ({ default: mod.UserFormModal })), {
@@ -48,6 +49,7 @@ const roleColors: Record<string, 'default' | 'secondary' | 'destructive' | 'succ
 };
 
 export default function AdminUsersPage() {
+    usePageTitle();
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');

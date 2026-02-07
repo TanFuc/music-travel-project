@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatDate, formatCurrency } from '@/lib/utils';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface Tour {
     id: number;
@@ -20,6 +21,7 @@ interface Tour {
 }
 
 export default function AdminToursPage() {
+    usePageTitle();
     const [page, setPage] = useState(1);
 
     const { data, isLoading } = useQuery({

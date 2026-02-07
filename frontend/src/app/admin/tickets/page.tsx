@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { TicketVerificationModal } from '@/components/admin/TicketVerificationModal';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface Ticket {
     id: number;
@@ -32,6 +33,7 @@ const statusColors: Record<string, 'default' | 'success' | 'warning' | 'destruct
 };
 
 export default function AdminTicketsPage() {
+    usePageTitle();
     const [page, setPage] = useState(1);
     const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 

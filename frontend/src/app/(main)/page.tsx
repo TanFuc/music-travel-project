@@ -6,7 +6,10 @@ import { LocationFilter } from '@/components/home/LocationFilter';
 import { ShowsSection } from '@/components/home/ShowsSection';
 import { StagesSection } from '@/components/home/StagesSection';
 import { ToursSection } from '@/components/home/ToursSection';
+import { usePageTitle } from '@/hooks/usePageTitle';
+
 export default function HomePage() {
+  usePageTitle();
   const [selectedLocation, setSelectedLocation] = useState<string | undefined>(undefined);
 
   const handleLocationChange = (slug: string | null) => {

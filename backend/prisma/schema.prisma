@@ -186,6 +186,21 @@ enum RegistrationStatus {
   PERFORMED
 }
 
+enum ShowActivityType {
+  REGISTRATION
+  CANCELLATION
+  STATUS_CHANGE
+  TICKET_VERIFICATION
+  ADMIN_ACTION
+  QUEUE_REORDER
+  CHECK_IN
+}
+
+enum VerificationMethod {
+  QR_SCAN
+  MANUAL_ENTRY
+}
+
 // =============================================================================
 // MODULE 1: AUTHENTICATION & USERS
 // =============================================================================
@@ -205,12 +220,15 @@ model User {
   deletedAt    DateTime? @map("deleted_at")
 
   // Relations
-  wallet        UserWallet?
-  bookings      Booking[]
-  reviews       Review[]
-  notifications Notification[]
-  carts         Cart[]
-  wishlists     Wishlist[]
+  wallet                    UserWallet?
+  bookings                  Booking[]
+  reviews                   Review[]
+  notifications             Notification[]
+  carts                     Cart[]
+  wishlists                 Wishlist[]
+  activityLogs              ShowActivityLog[]      @relation("ActivityActor")
+  ticketVerificationsHolder TicketVerification[]   @relation("TicketHolder")
+  ticketVerificationsStaff  TicketVerification[]   @relation("VerifiedByStaff")
 
   @@index([phoneNumber])
   @@index([email])
@@ -375,24 +393,29 @@ model PhysicalSeat {
 }
 
 model Show {
-  id                   Int        @id @default(autoincrement())
-  stageId              Int        @map("stage_id")
-  title                String     @db.VarChar(200)
-  slug                 String?    @db.VarChar(200)
-  description          String?    @db.Text
-  performTime          DateTime   @map("perform_time")
-  checkInTime          DateTime?  @map("check_in_time")
-  status               ShowStatus @default(UPCOMING)
-  seatSelectionEnabled Boolean    @default(true) @map("seat_selection_enabled") // false = General Admission mode
-  properties           Json?
-  metaTitle            String?    @map("meta_title") @db.VarChar(255)
-  metaDescription      String?    @map("meta_description") @db.VarChar(500)
-  metaKeywords         String?    @map("meta_keywords") @db.VarChar(255)
-  createdAt            DateTime   @default(now()) @map("created_at")
-  updatedAt            DateTime   @updatedAt @map("updated_at")
-  deletedAt            DateTime?  @map("deleted_at")
-  createdBy            Int?       @map("created_by")
-  updatedBy            Int?       @map("updated_by")
+  id                              Int        @id @default(autoincrement())
+  stageId                         Int        @map("stage_id")
+  title                           String     @db.VarChar(200)
+  slug                            String?    @db.VarChar(200)
+  description                     String?    @db.Text
+  performTime                     DateTime   @map("perform_time")
+  checkInTime                     DateTime?  @map("check_in_time")
+  status                          ShowStatus @default(UPCOMING)
+  seatSelectionEnabled            Boolean    @default(true) @map("seat_selection_enabled") // false = General Admission mode
+  properties                      Json?
+  metaTitle                       String?    @map("meta_title") @db.VarChar(255)
+  metaDescription                 String?    @map("meta_description") @db.VarChar(500)
+  metaKeywords                    String?    @map("meta_keywords") @db.VarChar(255)
+  // Performance Registration & Capacity fields
+  maxCapacity                     Int?       @map("max_capacity")
+  currentAttendance               Int        @default(0) @map("current_attendance")
+  performanceRegistrationEnabled  Boolean    @default(true) @map("performance_registration_enabled")
+  registrationDeadline            DateTime?  @map("registration_deadline")
+  createdAt                       DateTime   @default(now()) @map("created_at")
+  updatedAt                       DateTime   @updatedAt @map("updated_at")
+  deletedAt                       DateTime?  @map("deleted_at")
+  createdBy                       Int?       @map("created_by")
+  updatedBy                       Int?       @map("updated_by")
 
   // Relations
   stage                    Stage                     @relation(fields: [stageId], references: [id])
@@ -403,6 +426,8 @@ model Show {
   performanceQRCodes       PerformanceQRCode[]
   performanceRegistrations PerformanceRegistration[]
   performanceSlots         PerformanceSlot[]
+  activityLogs             ShowActivityLog[]
+  ticketVerifications      TicketVerification[]
   branch                   Branch?                   @relation(fields: [branchId], references: [id])
   branchId                 Int?                      @map("branch_id")
 
@@ -467,8 +492,9 @@ model Ticket {
   redeemedShowId Int?  @map("redeemed_show_id")
   redeemedShow   Show? @relation("RedeemedTickets", fields: [redeemedShowId], references: [id])
 
-  bookingItems BookingItem[]
-  cartItems    CartItem[]
+  bookingItems        BookingItem[]
+  cartItems           CartItem[]
+  ticketVerifications TicketVerification[]
 
   @@index([showId, status, ticketClassId])
   @@map("tickets")
@@ -477,15 +503,22 @@ model Ticket {
 model TicketTier {
   id              Int      @id @default(autoincrement())
   name            String   @db.VarChar(100)
+  nameEn          String?  @map("name_en") @db.VarChar(100)
   price           Decimal  @db.Decimal(15, 2)
   description     String?  @db.Text
   benefits        String?  @db.Text // Store structured benefits or simple text
+  targetAudience  String?  @map("target_audience") @db.VarChar(255) // Who is this ticket for
   colorCode       String?  @map("color_code") @db.VarChar(10)
   priority        Int      @default(0) // For sorting: 1, 2, 3, 4, 5
-  userMaxQuantity Int      @default(10) @map("user_max_quantity")
+  groupSize       Int      @default(1) @map("group_size") // Number of people per ticket
+  totalQuantity   Int      @default(0) @map("total_quantity") // Total tickets available
+  soldCount       Int      @default(0) @map("sold_count") // Number of tickets sold
+  maxPerOrder     Int      @default(10) @map("max_per_order") // Max tickets per order
   isActive        Boolean  @default(true) @map("is_active")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  createdBy       Int?     @map("created_by")
+  updatedBy       Int?     @map("updated_by")
 
   // Relations
   tickets      Ticket[]
@@ -891,6 +924,7 @@ model PerformanceRegistration {
   stageId         Int                @map("stage_id")
   qrCodeId        Int                @map("qr_code_id")
   userId          Int?               @map("user_id")
+  queueNumber     Int?               @map("queue_number") // Auto-assigned position in queue
   guestName       String?            @map("guest_name") @db.VarChar(100)
   guestEmail      String?            @map("guest_email") @db.VarChar(100)
   guestPhone      String?            @map("guest_phone") @db.VarChar(20)
@@ -903,6 +937,8 @@ model PerformanceRegistration {
   videoUrl        String?            @map("video_url") @db.VarChar(500)
   status          RegistrationStatus @default(PENDING)
   registeredAt    DateTime           @default(now()) @map("registered_at")
+  performedAt     DateTime?          @map("performed_at") // When performance started
+  cancelledAt     DateTime?          @map("cancelled_at") // When cancelled
   reviewedBy      Int?               @map("reviewed_by")
   reviewedAt      DateTime?          @map("reviewed_at")
   reviewNote      String?            @map("review_note") @db.Text
@@ -915,6 +951,7 @@ model PerformanceRegistration {
   qrCode PerformanceQRCode @relation(fields: [qrCodeId], references: [id])
   slot   PerformanceSlot?
 
+  @@unique([showId, queueNumber]) // Queue number must be unique per show
   @@index([showId, stageId])
   @@index([status])
   @@index([qrCodeId])
@@ -958,4 +995,58 @@ model HomeStage {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("home_stages")
+}
+
+// =============================================================================
+// MODULE 10: SHOW ACTIVITY LOGGING & TICKET VERIFICATION
+// =============================================================================
+
+model ShowActivityLog {
+  id           BigInt           @id @default(autoincrement())
+  showId       Int              @map("show_id")
+  activityType ShowActivityType @map("activity_type")
+  actorId      Int?             @map("actor_id") // User or admin who performed action
+  targetId     Int?             @map("target_id") // Target registration, ticket, or user ID
+  targetType   String?          @map("target_type") @db.VarChar(50) // REGISTRATION, TICKET, USER
+  description  String           @db.Text
+  metadata     Json? // Additional data (old values, new values, etc.)
+  ipAddress    String?          @map("ip_address") @db.VarChar(45)
+  userAgent    String?          @map("user_agent") @db.VarChar(500)
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  show  Show  @relation(fields: [showId], references: [id])
+  actor User? @relation("ActivityActor", fields: [actorId], references: [id])
+
+  @@index([showId, createdAt])
+  @@index([activityType])
+  @@index([actorId])
+  @@map("show_activity_logs")
+}
+
+model TicketVerification {
+  id                 Int                @id @default(autoincrement())
+  showId             Int                @map("show_id")
+  ticketId           Int                @map("ticket_id")
+  userId             Int                @map("user_id") // Ticket holder
+  verifiedBy         Int                @map("verified_by") // Staff member who verified
+  verificationMethod VerificationMethod @map("verification_method")
+  isReEntry          Boolean            @default(false) @map("is_re_entry")
+  verifiedAt         DateTime           @default(now()) @map("verified_at")
+  deviceInfo         String?            @map("device_info") @db.VarChar(255)
+  notes              String?            @db.Text
+  isSuccessful       Boolean            @default(true) @map("is_successful")
+  failureReason      String?            @map("failure_reason") @db.VarChar(255)
+
+  // Relations
+  show     Show   @relation(fields: [showId], references: [id])
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+  user     User   @relation("TicketHolder", fields: [userId], references: [id])
+  verifier User   @relation("VerifiedByStaff", fields: [verifiedBy], references: [id])
+
+  @@unique([ticketId, showId]) // One successful verification per ticket per show
+  @@index([showId, verifiedAt])
+  @@index([ticketId])
+  @@index([userId])
+  @@map("ticket_verifications")
 }

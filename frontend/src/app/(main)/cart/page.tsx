@@ -12,8 +12,10 @@ import { useAuthStore } from '@/stores/auth.store';
 import { formatCurrency } from '@/lib/utils';
 import { bookingService } from '@/services/booking.service';
 import { toast } from 'sonner';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export default function CartPage() {
+  usePageTitle();
   const router = useRouter();
   const {
     tickets,

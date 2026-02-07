@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { PerformanceService } from './performance.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
@@ -25,10 +25,22 @@ export class PerformanceController {
 
   @Post('qr-codes/scan')
   @Public()
-  @ApiOperation({ summary: 'Scan QR code and get registration info' })
+  @ApiOperation({ summary: 'Scan QR code and get registration info (POST)' })
   @ApiResponse({ status: 200, description: 'QR code info retrieved' })
-  async scanQRCode(@Body() dto: ScanQRCodeDto) {
+  async scanQRCodePost(@Body() dto: ScanQRCodeDto) {
     return this.performanceService.scanQRCode(dto.code);
+  }
+
+  @Get('qr-codes/scan')
+  @Public()
+  @ApiOperation({ summary: 'Scan QR code and get registration info (GET)' })
+  @ApiQuery({ name: 'code', required: true, type: String, description: 'QR code to scan' })
+  @ApiResponse({ status: 200, description: 'QR code info retrieved' })
+  async scanQRCodeGet(@Query('code') code: string) {
+    if (!code) {
+      throw new BadRequestException('QR code is required');
+    }
+    return this.performanceService.scanQRCode(code);
   }
 
   @Post('registrations')
@@ -59,6 +71,27 @@ export class PerformanceController {
     @CurrentUser() user: any,
   ) {
     return this.performanceService.cancelRegistration(id, user.id);
+  }
+
+  // ============================================================================
+  // PUBLIC QUEUE DISPLAY
+  // ============================================================================
+  @Get('shows/:showId/queue')
+  @Public()
+  @ApiOperation({ summary: 'Get public performance queue for a show' })
+  @ApiResponse({ status: 200, description: 'Queue retrieved successfully' })
+  async getPublicQueue(@Param('showId', ParseIntPipe) showId: number) {
+    return this.performanceService.getPublicQueue(showId);
+  }
+
+  @Get('shows/:showId/queue/position/:registrationId')
+  @Public()
+  @ApiOperation({ summary: 'Get queue position for a specific registration' })
+  async getQueuePosition(
+    @Param('showId', ParseIntPipe) showId: number,
+    @Param('registrationId', ParseIntPipe) registrationId: number,
+  ) {
+    return this.performanceService.getQueuePosition(showId, registrationId);
   }
 }
 
@@ -172,5 +205,51 @@ export class AdminPerformanceController {
       showId,
       stageId ? parseInt(stageId) : undefined,
     );
+  }
+
+  // ============================================================================
+  // QUEUE MANAGEMENT
+  // ============================================================================
+  @Get('shows/:showId/queue')
+  @ApiOperation({ summary: 'Get performance queue for admin' })
+  async getAdminQueue(@Param('showId', ParseIntPipe) showId: number) {
+    return this.performanceService.getPublicQueue(showId);
+  }
+
+  @Patch('registrations/:id/status')
+  @ApiOperation({ summary: 'Update registration status' })
+  async updatePerformanceStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'PERFORMED',
+    @CurrentUser() user: any,
+  ) {
+    return this.performanceService.updatePerformanceStatus(id, status, user.sub);
+  }
+
+  @Post('shows/:showId/call-next')
+  @ApiOperation({ summary: 'Call next performer in queue' })
+  async callNextPerformer(
+    @Param('showId', ParseIntPipe) showId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.performanceService.callNextPerformer(showId, user.sub);
+  }
+
+  @Post('registrations/:id/no-show')
+  @ApiOperation({ summary: 'Mark registration as no-show' })
+  async markNoShow(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.performanceService.markNoShow(id, user.sub);
+  }
+
+  @Post('shows/:showId/reorder')
+  @ApiOperation({ summary: 'Reorder performance queue' })
+  async reorderQueue(
+    @Param('showId', ParseIntPipe) showId: number,
+    @Body('registrationIds') registrationIds: number[],
+  ) {
+    return this.performanceService.reorderQueue(showId, registrationIds);
   }
 }

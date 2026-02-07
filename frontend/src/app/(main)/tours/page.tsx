@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@/components/common/Link';
-import { 
-  Clock, 
-  MapPin, 
-  Calendar, 
-  ChevronLeft, 
-  ChevronRight, 
-  Search, 
-  X, 
+import {
+  Clock,
+  MapPin,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
   ArrowRight,
   PlaneTakeoff,
   PlaneLanding,
@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import Image from 'next/image';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface Tour {
   id: number;
@@ -64,6 +65,7 @@ interface ToursResponse {
 }
 
 export default function ToursPage() {
+  usePageTitle();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();

@@ -24,6 +24,9 @@ import { PerformanceModule } from './modules/performance/performance.module';
 import { BranchesModule } from './modules/branches/branches.module';
 import { SearchModule } from './modules/search/search.module';
 import { HomeStagesModule } from './modules/home-stages/home-stages.module';
+import { TicketTiersModule } from './modules/ticket-tiers/ticket-tiers.module';
+import { TicketVerificationModule } from './modules/ticket-verification/ticket-verification.module';
+import { ShowActivityModule } from './modules/show-activity/show-activity.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
@@ -76,6 +79,9 @@ import cloudinaryConfig from './config/cloudinary.config';
     BranchesModule,
     SearchModule,
     HomeStagesModule,
+    TicketTiersModule,
+    TicketVerificationModule,
+    ShowActivityModule,
   ],
 })
 export class AppModule { }

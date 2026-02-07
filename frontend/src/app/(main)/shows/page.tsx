@@ -3,17 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@/components/common/Link';
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  ChevronLeft, 
-  ChevronRight, 
-  Search, 
-  X, 
-  Music, 
-  Mic2, 
-  Ticket, 
+import {
+  Calendar,
+  MapPin,
+  Users,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+  Music,
+  Mic2,
+  Ticket,
   Sparkles,
   ArrowRight,
   Filter
@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface Show {
   id: number;
@@ -81,6 +82,7 @@ interface ShowsResponse {
 }
 
 export default function ShowsPage() {
+  usePageTitle();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
