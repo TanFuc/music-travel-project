@@ -41,6 +41,7 @@ export function Header() {
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [locationSearch, setLocationSearch] = useState('');
 
   // Use React Query for locations - only fetch when dropdown opens OR when locationSlug is present
   const { data: locations = [], isLoading: isLoadingLocations } = useQuery({
@@ -58,6 +59,20 @@ export function Header() {
     () => locations.find(loc => loc.slug === locationSlug),
     [locations, locationSlug]
   );
+
+  const filteredLocations = useMemo(() => {
+    if (!locationSearch.trim()) return locations;
+    
+    const normalize = (str: string) => 
+      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    
+    const searchNormalized = normalize(locationSearch);
+    
+    return locations.filter(loc =>
+      normalize(loc.name).includes(searchNormalized) || 
+      loc.name.toLowerCase().includes(locationSearch.toLowerCase())
+    );
+  }, [locations, locationSearch]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -77,6 +92,7 @@ export function Header() {
 
   const closeLocationDropdown = useCallback(() => {
     setIsLocationDropdownOpen(false);
+    setLocationSearch('');
   }, []);
 
   const toggleMobileMenu = useCallback(() => {
@@ -158,41 +174,61 @@ export function Header() {
               </button>
 
               {isLocationDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-56 py-2 glass-card shadow-xl z-50">
-                   <Link
-                      href={pathname?.startsWith('/tours') ? '/tours' : '/shows'}
-                      onClick={closeLocationDropdown}
-                      className={cn(
-                        "flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50",
-                        !locationSlug && "bg-brand-50 text-brand-600"
-                      )}
-                  >
-                      <span>Tất cả chi nhánh</span>
-                  </Link>
-                  {locations.length > 0 ? (
-                    locations.map((location) => (
-                      <Link
-                        key={location.id}
-                        href={`${pathname?.startsWith('/tours') ? '/tours' : '/shows'}?location=${location.slug}`}
-                        className={cn(
-                          "flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50",
-                          locationSlug === location.slug && "bg-brand-50 text-brand-600"
-                        )}
+                <div className="absolute top-full left-0 mt-2 w-64 py-2 bg-white rounded-xl shadow-xl z-50 border border-gray-100 overflow-hidden ring-1 ring-black/5">
+                   {/* Search Header */}
+                   <div className="px-3 pb-2 pt-1 border-b border-gray-50 mb-1">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Tìm chi nhánh..."
+                          value={locationSearch}
+                          onChange={(e) => setLocationSearch(e.target.value)}
+                          className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-brand-500 focus:bg-white transition-colors placeholder:text-gray-400"
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                   </div>
+
+                   {/* Scrollable List */}
+                   <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                     <Link
+                        href={pathname?.startsWith('/tours') ? '/tours' : '/shows'}
                         onClick={closeLocationDropdown}
-                      >
-                        <span>{location.name}</span>
-                        {location.showCount > 0 && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400">
-                            {location.showCount}
-                          </span>
+                        className={cn(
+                          "flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50 transition-colors",
+                          !locationSlug && "bg-brand-50 text-brand-600 font-medium"
                         )}
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="px-4 py-2 text-sm text-gray-500">
-                      {isLoadingLocations ? 'Đang tải...' : 'Không có dữ liệu'}
-                    </div>
-                  )}
+                    >
+                        <span>Tất cả chi nhánh</span>
+                    </Link>
+                    {filteredLocations.length > 0 ? (
+                      filteredLocations.map((location) => (
+                        <Link
+                          key={location.id}
+                          href={`${pathname?.startsWith('/tours') ? '/tours' : '/shows'}?location=${location.slug}`}
+                          className={cn(
+                            "flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:text-brand-600 hover:bg-brand-50 transition-colors",
+                            locationSlug === location.slug && "bg-brand-50 text-brand-600 font-medium"
+                          )}
+                          onClick={closeLocationDropdown}
+                        >
+                          <span>{location.name}</span>
+                          {location.showCount > 0 && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-brand-100 text-brand-600 font-medium">
+                              {location.showCount}
+                            </span>
+                          )}
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="px-4 py-8 text-sm text-gray-500 text-center flex flex-col items-center">
+                        <MapPin className="h-8 w-8 text-gray-300 mb-2" />
+                        <p>{isLoadingLocations ? 'Đang tải...' : 'Không tìm thấy kết quả'}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
