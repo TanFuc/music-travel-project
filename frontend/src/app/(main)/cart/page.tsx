@@ -85,15 +85,40 @@ export default function CartPage() {
 
     setIsCheckingOut(true);
     try {
-      // Build booking request with only selected items
-      const selectedTicketTiers = ticketTiers
-        .filter(t => selectedTiers.has(t.tierId))
-        .map(t => ({ tierId: t.tierId, quantity: t.quantity }));
+      // Body must match backend CreateBookingDto exactly: ticketIds | ticketsWithSeats | ticketTiers | tourItems + optional voucherCode, note, metadata
+      const selectedTicketsList = tickets.filter(t => selectedTickets.has(t.ticketId));
+      const selectedToursList = tours.filter(t => selectedTours.has(t.scheduleId));
+      const selectedTiersList = ticketTiers.filter(t => selectedTiers.has(t.tierId));
 
-      const booking = await bookingService.createBooking({
-        ticketTiers: selectedTicketTiers.length > 0 ? selectedTicketTiers : undefined,
-        voucherCode: voucherCode || undefined,
-      });
+      const body: {
+        ticketsWithSeats?: Array<{ ticketId: number; physicalSeatId?: number }>;
+        ticketTiers?: Array<{ tierId: number; quantity: number }>;
+        tourItems?: Array<{ scheduleId: number; quantity: number }>;
+        voucherCode?: string;
+        note?: string;
+      } = {};
+
+      if (selectedTicketsList.length) {
+        body.ticketsWithSeats = selectedTicketsList.map((t) => ({
+          ticketId: Number(t.ticketId),
+        }));
+      }
+      if (selectedTiersList.length) {
+        body.ticketTiers = selectedTiersList.map((t) => ({
+          tierId: Number(t.tierId),
+          quantity: Number(t.quantity),
+        }));
+      }
+      if (selectedToursList.length) {
+        body.tourItems = selectedToursList.map((t) => ({
+          scheduleId: Number(t.scheduleId),
+          quantity: Number(t.quantity),
+        }));
+      }
+      const vCode = voucherCode?.trim();
+      if (vCode) body.voucherCode = vCode;
+
+      const booking = await bookingService.createBooking(body);
 
       if (booking) {
         // Do not remove items here - wait for successful payment
