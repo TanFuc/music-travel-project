@@ -362,13 +362,14 @@ export default function ProfilePage() {
                     <History className="h-4 w-4" />
                     Lịch sử đơn hàng
                  </TabsTrigger>
-                 <TabsTrigger 
+                 {/* Wallet Tab - Commented out */}
+                 {/* <TabsTrigger 
                     value="wallet" 
                     className="rounded-none border-b-2 border-transparent px-0 py-3 data-[state=active]:border-brand-600 data-[state=active]:bg-transparent data-[state=active]:text-brand-600 data-[state=active]:shadow-none text-slate-500 font-medium hover:text-slate-800 transition-colors gap-2"
                  >
                     <Wallet className="h-4 w-4" />
                     Ví của tôi
-                 </TabsTrigger>
+                 </TabsTrigger> */}
                  <TabsTrigger 
                     value="singer-registrations" 
                     className="rounded-none border-b-2 border-transparent px-0 py-3 data-[state=active]:border-brand-600 data-[state=active]:bg-transparent data-[state=active]:text-brand-600 data-[state=active]:shadow-none text-slate-500 font-medium hover:text-slate-800 transition-colors gap-2"
@@ -390,8 +391,8 @@ export default function ProfilePage() {
         {/* Tab Content Area */}
         <div className="px-4 md:px-8 py-6 md:py-8 w-full max-w-[1920px] mx-auto min-h-[500px]">
            <TabsContent value="overview" className="space-y-6 mt-0">
-              {/* Wallet Banner */}
-              <div className="rounded-2xl bg-gradient-to-br from-green-500 via-emerald-500 to-teal-400 p-6 sm:p-8 text-white shadow-xl relative overflow-hidden group">
+              {/* Wallet Banner - Commented out */}
+              {/* <div className="rounded-2xl bg-gradient-to-br from-green-500 via-emerald-500 to-teal-400 p-6 sm:p-8 text-white shadow-xl relative overflow-hidden group">
                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                        <p className="text-emerald-50 font-medium mb-2 flex items-center gap-2 text-sm uppercase tracking-wider opacity-90">
@@ -412,10 +413,9 @@ export default function ProfilePage() {
                     </div>
                  </div>
                  
-                 {/* Decorative background */}
                  <div className="absolute -top-1/2 -right-1/2 w-[500px] h-[500px] bg-gradient-to-b from-white/20 to-transparent rounded-full blur-3xl mix-blend-overlay opacity-50" />
                  <div className="absolute -bottom-1/2 -left-1/2 w-[500px] h-[500px] bg-gradient-to-t from-emerald-900/40 to-transparent rounded-full blur-3xl opacity-50" />
-              </div>
+              </div> */}
 
                {/* Stats Grid */}
                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -588,7 +588,8 @@ export default function ProfilePage() {
                )}
            </TabsContent>
            
-           <TabsContent value="wallet" className="mt-0 space-y-6">
+           {/* Wallet Tab Content - Commented out */}
+           {/* <TabsContent value="wallet" className="mt-0 space-y-6">
                 <div className="max-w-3xl">
                    <h2 className="text-xl font-bold text-slate-900 mb-6">Thông tin ví</h2>
                    <Card className="border shadow-sm border-slate-200">
@@ -621,7 +622,7 @@ export default function ProfilePage() {
                      </CardContent>
                    </Card>
                 </div>
-           </TabsContent>
+           </TabsContent> */}
 
            <TabsContent value="settings" className="mt-0">
                <div className="max-w-2xl">

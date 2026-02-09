@@ -21,10 +21,13 @@ export default function CartPage() {
     tickets,
     tours,
     ticketTiers,
+    singerPackages,
     removeTicket,
     removeTour,
     removeTicketTier,
+    removeSingerPackage,
     updateTicketTierQuantity,
+    updateSingerPackageQuantity,
     discount,
     voucherCode,
   } = useCartStore();
@@ -34,9 +37,10 @@ export default function CartPage() {
   const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set(tickets.map(t => t.ticketId)));
   const [selectedTours, setSelectedTours] = useState<Set<number>>(new Set(tours.map(t => t.scheduleId)));
   const [selectedTiers, setSelectedTiers] = useState<Set<number>>(new Set(ticketTiers.map(t => t.tierId)));
+  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set(singerPackages.map(p => p.packageId)));
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
-  const isEmpty = tickets.length === 0 && tours.length === 0 && ticketTiers.length === 0;
+  const isEmpty = tickets.length === 0 && tours.length === 0 && ticketTiers.length === 0 && singerPackages.length === 0;
 
   // Calculate subtotal based on selected items only
   const getSelectedSubtotal = () => {
@@ -49,12 +53,15 @@ export default function CartPage() {
     const tierTotal = ticketTiers
       .filter(t => selectedTiers.has(t.tierId))
       .reduce((sum, t) => sum + Number(t.price) * Number(t.quantity), 0);
-    return ticketTotal + tourTotal + tierTotal;
+    const packageTotal = singerPackages
+      .filter(p => selectedPackages.has(p.packageId))
+      .reduce((sum, p) => sum + Number(p.price) * Number(p.quantity), 0);
+    return ticketTotal + tourTotal + tierTotal + packageTotal;
   };
 
   const selectedSubtotal = getSelectedSubtotal();
   const selectedTotal = selectedSubtotal - discount;
-  const selectedCount = selectedTickets.size + selectedTours.size + selectedTiers.size;
+  const selectedCount = selectedTickets.size + selectedTours.size + selectedTiers.size + selectedPackages.size;
 
   const toggleTicket = (id: number) => {
     const newSet = new Set(selectedTickets);
@@ -77,6 +84,13 @@ export default function CartPage() {
     setSelectedTiers(newSet);
   };
 
+  const togglePackage = (id: string) => {
+    const newSet = new Set(selectedPackages);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedPackages(newSet);
+  };
+
   const handleCheckout = async () => {
     if (selectedCount === 0) {
       toast.error('Vui lòng chọn ít nhất 1 sản phẩm để thanh toán');
@@ -89,11 +103,13 @@ export default function CartPage() {
       const selectedTicketsList = tickets.filter(t => selectedTickets.has(t.ticketId));
       const selectedToursList = tours.filter(t => selectedTours.has(t.scheduleId));
       const selectedTiersList = ticketTiers.filter(t => selectedTiers.has(t.tierId));
+      const selectedPackagesList = singerPackages.filter(p => selectedPackages.has(p.packageId));
 
       const body: {
         ticketsWithSeats?: Array<{ ticketId: number; physicalSeatId?: number }>;
         ticketTiers?: Array<{ tierId: number; quantity: number }>;
         tourItems?: Array<{ scheduleId: number; quantity: number }>;
+        singerPackages?: Array<{ packageId: string; quantity: number }>;
         voucherCode?: string;
         note?: string;
       } = {};
@@ -113,6 +129,12 @@ export default function CartPage() {
         body.tourItems = selectedToursList.map((t) => ({
           scheduleId: Number(t.scheduleId),
           quantity: Number(t.quantity),
+        }));
+      }
+      if (selectedPackagesList.length) {
+        body.singerPackages = selectedPackagesList.map((p) => ({
+          packageId: p.packageId,
+          quantity: Number(p.quantity),
         }));
       }
       const vCode = voucherCode?.trim();
@@ -168,6 +190,92 @@ export default function CartPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Singer Packages */}
+          {singerPackages.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Gói Ca Sĩ ({singerPackages.length})</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {singerPackages.map((pkg) => (
+                  <div
+                    key={pkg.packageId}
+                    className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={selectedPackages.has(pkg.packageId)}
+                        onCheckedChange={() => togglePackage(pkg.packageId)}
+                        className="mt-1"
+                      />
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <h4 className="font-bold text-base text-green-800">{pkg.packageName}</h4>
+                          {pkg.description && (
+                            <p className="text-sm text-neutral-600 mt-1 leading-relaxed">{pkg.description}</p>
+                          )}
+                        </div>
+
+                        {/* Benefits */}
+                        {pkg.benefits && pkg.benefits.length > 0 && (
+                          <div className="bg-white/50 rounded-lg p-3 border border-green-100">
+                            <p className="text-sm font-semibold text-green-800 mb-2">Quyền lợi:</p>
+                            <ul className="space-y-1.5">
+                              {pkg.benefits.map((benefit, idx) => (
+                                <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700">
+                                  <span className="text-green-600 mt-0.5 font-bold">✓</span>
+                                  <span className="flex-1">{benefit}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Price and Quantity */}
+                        <div className="flex items-center justify-between pt-2 border-t border-green-200">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-neutral-600">Số lượng:</span>
+                            <div className="flex items-center gap-2 bg-white rounded-lg px-2 py-1 border border-green-200">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 hover:bg-green-100"
+                                onClick={() => updateSingerPackageQuantity(pkg.packageId, pkg.quantity - 1)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="text-sm font-bold w-8 text-center">{pkg.quantity}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 hover:bg-green-100"
+                                onClick={() => updateSingerPackageQuantity(pkg.packageId, pkg.quantity + 1)}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-neutral-600">Đơn giá: {formatCurrency(pkg.price)}</p>
+                            <p className="font-bold text-green-700 text-lg">{formatCurrency(pkg.price * pkg.quantity)}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-error-500 hover:text-error-600 hover:bg-error-50 h-8 w-8 flex-shrink-0"
+                        onClick={() => removeSingerPackage(pkg.packageId)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Ticket Tiers */}
           {ticketTiers.length > 0 && (
             <Card>
