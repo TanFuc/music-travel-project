@@ -29,6 +29,7 @@ model User {
   ticketVerificationsStaff  TicketVerification[] @relation("VerifiedByStaff")
   wallet                    UserWallet?
   wishlists                 Wishlist[]
+  singerRegistrations       SingerRegistration[]
 
   @@index([phoneNumber])
   @@index([email])
@@ -934,6 +935,78 @@ enum ShowActivityType {
 enum VerificationMethod {
   QR_SCAN
   MANUAL_ENTRY
+}
+
+enum SingingExperience {
+  NONE
+  HOBBY
+  SEMI_PROFESSIONAL
+  PROFESSIONAL
+}
+
+enum SingerPackage {
+  BM_V1
+  BM_V2
+}
+
+enum SingerRegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+
+model SingerPackageTemplate {
+  id                String                    @id @default(uuid())
+  name              String                    @db.VarChar(100)
+  nameEn            String?                   @map("name_en") @db.VarChar(100)
+  price             Decimal                   @db.Decimal(15, 2)
+  description       String?                   @db.Text
+  benefits          Json?                     // Array of benefit strings
+  colorCode         String?                   @map("color_code") @db.VarChar(10)
+  icon              String?                   @db.VarChar(50)
+  displayOrder      Int                       @default(0) @map("display_order")
+  isActive          Boolean                   @default(true) @map("is_active")
+  maxRegistrations  Int?                      @map("max_registrations")
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  createdBy         Int?                      @map("created_by")
+  updatedBy         Int?                      @map("updated_by")
+  registrations     SingerRegistration[]
+
+  @@map("singer_package_templates")
+}
+
+model SingerRegistration {
+  id                String                    @id @default(uuid())
+  fullName          String                    @map("full_name") @db.VarChar(100)
+  phoneNumber       String                    @map("phone_number") @db.VarChar(15)
+  email             String                    @db.VarChar(100)
+  age               Int
+  gender            String                    @db.VarChar(10)
+  address           String                    @db.VarChar(255)
+  singingExperience SingingExperience         @map("singing_experience")
+  favoriteGenre     String                    @map("favorite_genre") @db.VarChar(100)
+  package           SingerPackage?            // Keep for backward compatibility
+  packageTemplateId String?                   @map("package_template_id")
+  introduction      String?                   @db.Text
+  voiceSampleUrl    String?                   @map("voice_sample_url") @db.VarChar(500)
+  status            SingerRegistrationStatus  @default(PENDING)
+  adminNotes        String?                   @map("admin_notes") @db.Text
+  userId            Int?                      @map("user_id") // Link to user who registered
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  packageTemplate   SingerPackageTemplate?    @relation(fields: [packageTemplateId], references: [id])
+  user              User?                     @relation(fields: [userId], references: [id])
+
+  @@index([phoneNumber])
+  @@index([email])
+  @@index([status])
+  @@index([package])
+  @@index([packageTemplateId])
+  @@index([userId])
+  @@map("singer_registrations")
 }
 
 model BankQRConfig {

@@ -5,7 +5,29 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding Ticket Tiers...');
 
+  // 1. Reset: bỏ liên kết FK rồi xóa hết ticket_tiers
+  console.log('Resetting ticket_tiers (unlink and delete)...');
+  await prisma.bookingItem.updateMany({ data: { ticketTierId: null } });
+  await prisma.cartItem.updateMany({ data: { ticketTierId: null } });
+  await prisma.ticket.updateMany({ data: { ticketTierId: null } });
+  await prisma.ticketTier.deleteMany({});
+  console.log('Ticket tiers table cleared.');
+
+  // 2. Seed lại toàn bộ
   const tiers = [
+    {
+      name: 'Vé Test 2K',
+      nameEn: 'Test 2K',
+      price: 2000,
+      description: 'Vé giá 2.000đ dùng cho test thanh toán.',
+      targetAudience: 'Test',
+      benefits: 'Vé test.',
+      colorCode: '#9E9E9E',
+      priority: 0,
+      groupSize: 1,
+      totalQuantity: 999,
+      maxPerOrder: 10,
+    },
     {
       name: 'Vé Hạt Xanh - Green Solo',
       nameEn: 'Green Solo',
@@ -74,30 +96,13 @@ async function main() {
   ];
 
   for (const tier of tiers) {
-    // Check if exists
-    const existing = await prisma.ticketTier.findFirst({ where: { name: tier.name } });
-    if (!existing) {
-      await prisma.ticketTier.create({
-        data: {
-          ...tier,
-          isActive: true,
-        },
-      });
-      console.log(`Created ${tier.name}`);
-    } else {
-      // Update existing tier with new fields
-      await prisma.ticketTier.update({
-        where: { id: existing.id },
-        data: {
-          nameEn: tier.nameEn,
-          targetAudience: tier.targetAudience,
-          groupSize: tier.groupSize,
-          totalQuantity: tier.totalQuantity,
-          maxPerOrder: tier.maxPerOrder,
-        },
-      });
-      console.log(`Updated ${tier.name}`);
-    }
+    await prisma.ticketTier.create({
+      data: {
+        ...tier,
+        isActive: true,
+      },
+    });
+    console.log(`Created ${tier.name}`);
   }
 
   console.log('Ticket Tiers seeding completed!');

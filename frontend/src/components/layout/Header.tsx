@@ -26,6 +26,8 @@ const navLinks = [
   { href: '/tickets', label: 'Mua Vé' },
   { href: '/shows', label: 'Lịch Diễn' },
   { href: '/tours', label: 'Tour Du Lịch' },
+  { href: '/register-singer', label: 'Đăng ký làm ca sĩ' },
+  { href: '/about', label: 'Giới thiệu' },
   // { href: '/payment-demo', label: '💳 QR Demo' },
 ];
 

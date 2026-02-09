@@ -30,6 +30,7 @@ import {
   Settings,
   History,
   Save,
+  Mic,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { useAuthStore } from '@/stores/auth.store';
 import { get, patch } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { singerService } from '@/services/singer.service';
 import { ImageUpload } from '@/components/common/ImageUpload';
 import { getCloudinaryUrl } from '@/lib/cloudinary';
 import { Link } from '@/components/common/Link';
@@ -216,6 +218,13 @@ export default function ProfilePage() {
     staleTime: 2 * 60 * 1000,
   });
 
+  const { data: singerRegistrations } = useQuery({
+    queryKey: ['my-singer-registrations'],
+    queryFn: singerService.getMyRegistrations,
+    enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
+  });
+
   const {
     register,
     handleSubmit,
@@ -361,6 +370,13 @@ export default function ProfilePage() {
                     Ví của tôi
                  </TabsTrigger>
                  <TabsTrigger 
+                    value="singer-registrations" 
+                    className="rounded-none border-b-2 border-transparent px-0 py-3 data-[state=active]:border-brand-600 data-[state=active]:bg-transparent data-[state=active]:text-brand-600 data-[state=active]:shadow-none text-slate-500 font-medium hover:text-slate-800 transition-colors gap-2"
+                 >
+                    <Mic className="h-4 w-4" />
+                    Đăng ký ca sĩ
+                 </TabsTrigger>
+                 <TabsTrigger 
                     value="settings" 
                     className="rounded-none border-b-2 border-transparent px-0 py-3 data-[state=active]:border-brand-600 data-[state=active]:bg-transparent data-[state=active]:text-brand-600 data-[state=active]:shadow-none text-slate-500 font-medium hover:text-slate-800 transition-colors gap-2"
                  >
@@ -486,6 +502,87 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                      {bookings.items.map((booking) => (
                         <BookingCard key={booking.id} booking={booking} />
+                     ))}
+                  </div>
+               )}
+           </TabsContent>
+
+           <TabsContent value="singer-registrations" className="mt-0">
+               <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-slate-900">Đăng ký ca sĩ</h2>
+                  <Badge variant="outline" className="px-3 py-1 text-slate-600">
+                    Tổng: {singerRegistrations?.length || 0}
+                  </Badge>
+               </div>
+
+               {!singerRegistrations || singerRegistrations.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center shadow-sm mb-4">
+                       <Mic className="h-10 w-10 text-slate-300" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900">Chưa có đăng ký ca sĩ</h3>
+                    <p className="text-slate-500 max-w-sm text-center mt-2 mb-6">
+                      Bạn chưa đăng ký tham gia chương trình ca sĩ nào. Hãy khám phá và đăng ký ngay!
+                    </p>
+                    <Link href="/register-singer">
+                       <Button size="lg" className="bg-brand-600 hover:bg-brand-700">Đăng ký ngay</Button>
+                    </Link>
+                  </div>
+               ) : (
+                  <div className="space-y-4">
+                     {singerRegistrations.map((registration) => (
+                        <Card key={registration.id} className="border border-slate-200">
+                          <CardContent className="p-6">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-mono text-sm font-semibold text-slate-900 bg-slate-100 px-2 py-1 rounded">
+                                    #{registration.id.slice(-8)}
+                                  </span>
+                                  <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border ${
+                                    registration.status === 'PENDING' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                                    registration.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                    registration.status === 'REJECTED' ? 'bg-red-100 text-red-700 border-red-200' :
+                                    'bg-slate-100 text-slate-600 border-slate-200'
+                                  }`}>
+                                    {registration.status === 'PENDING' && <Clock className="h-3 w-3" />}
+                                    {registration.status === 'APPROVED' && <CheckCircle className="h-3 w-3" />}
+                                    {registration.status === 'REJECTED' && <XCircle className="h-3 w-3" />}
+                                    {registration.status === 'PENDING' ? 'Chờ duyệt' :
+                                     registration.status === 'APPROVED' ? 'Đã duyệt' :
+                                     registration.status === 'REJECTED' ? 'Từ chối' : registration.status}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-slate-500">
+                                   <span className="flex items-center gap-1.5">
+                                      <History className="h-4 w-4" />
+                                      {formatDate(registration.createdAt)}
+                                   </span>
+                                   <span className="hidden sm:inline w-1 h-1 bg-slate-300 rounded-full" />
+                                   <span className="flex items-center gap-1.5">
+                                      <Package className="h-4 w-4" />
+                                      {registration.package || 'Gói tùy chỉnh'}
+                                   </span>
+                                </div>
+                                <div className="text-sm">
+                                  <p><strong>Tên:</strong> {registration.fullName}</p>
+                                  <p><strong>Email:</strong> {registration.email}</p>
+                                  <p><strong>SĐT:</strong> {registration.phoneNumber}</p>
+                                  {registration.favoriteGenre && (
+                                    <p><strong>Thể loại yêu thích:</strong> {registration.favoriteGenre}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            {registration.adminNotes && (
+                              <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+                                <p className="text-sm text-slate-600">
+                                  <strong>Ghi chú từ admin:</strong> {registration.adminNotes}
+                                </p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
                      ))}
                   </div>
                )}

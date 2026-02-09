@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Theater,
   Tags,
+  Mic,
 } from 'lucide-react';
 import { Logo } from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,16 @@ const sidebarItems = [
     title: 'Show diễn',
     href: '/admin/shows',
     icon: Music,
+  },
+  {
+    title: 'Đăng ký ca sĩ',
+    href: '/admin/singer-registrations',
+    icon: Mic,
+  },
+  {
+    title: 'Gói ca sĩ',
+    href: '/admin/singer-packages',
+    icon: Tag,
   },
   {
     title: 'Tour',

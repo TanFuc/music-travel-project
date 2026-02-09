@@ -1,5 +1,6 @@
 import { PrismaClient, UserRole, ShowStatus, TicketStatus, TourScheduleStatus, VoucherDiscountType, BannerPosition, MediaType, MediaTargetType, SeatType, BookingStatus, PaymentStatus, BookingItemType, WalletTransactionType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { seedSingerPackages } from './seed-singer-packages';
 
 const prisma = new PrismaClient();
 
@@ -33,6 +34,8 @@ async function main() {
   await prisma.tourSchedule.deleteMany();
   await prisma.tour.deleteMany();
   await prisma.ticketTier.deleteMany(); // Added
+  await prisma.singerRegistration.deleteMany(); // Added
+  await prisma.singerPackageTemplate.deleteMany(); // Added
   await prisma.artist.deleteMany();
   await prisma.media.deleteMany();
   await prisma.banner.deleteMany();
@@ -578,6 +581,16 @@ async function main() {
   // ============================================================================
   console.log('🎫 Creating global ticket tiers...');
   await Promise.all([
+    prisma.ticketTier.create({
+      data: {
+        name: 'Vé Test 2K',
+        price: 2000,
+        description: 'Vé giá 2.000đ dùng cho test thanh toán.',
+        benefits: 'Vé test.',
+        colorCode: '#9E9E9E',
+        priority: 1,
+      },
+    }),
     prisma.ticketTier.create({
       data: {
         name: 'Vé Hạt Xanh - Green Solo',
@@ -1187,6 +1200,11 @@ async function main() {
       },
     }),
   ]);
+
+  // ============================================================================
+  // 14. SEED SINGER PACKAGES
+  // ============================================================================
+  await seedSingerPackages();
 
   // ============================================================================
   // SUMMARY
