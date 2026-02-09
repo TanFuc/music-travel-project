@@ -24,10 +24,11 @@ export class BookingsService {
     const hasTickets = (createBookingDto.ticketsWithSeats?.length ?? 0) > 0 || (createBookingDto.ticketIds?.length ?? 0) > 0;
     const hasTiers = (createBookingDto.ticketTiers?.length ?? 0) > 0;
     const hasTours = (createBookingDto.tourItems?.length ?? 0) > 0;
-    if (!hasTickets && !hasTiers && !hasTours) {
+    const hasSingerPackages = (createBookingDto.singerPackages?.length ?? 0) > 0;
+    if (!hasTickets && !hasTiers && !hasTours && !hasSingerPackages) {
       throw new BadRequestException({
         code: ERROR_CODES.VAL_001,
-        message: 'Đơn hàng phải có ít nhất một mục: vé (ticketsWithSeats/ticketIds), loại vé (ticketTiers), hoặc tour (tourItems).',
+        message: 'Đơn hàng phải có ít nhất một mục: vé (ticketsWithSeats/ticketIds), loại vé (ticketTiers), tour (tourItems), hoặc gói ca sĩ (singerPackages).',
       });
     }
 
@@ -180,6 +181,35 @@ export class BookingsService {
       }
     }
 
+    // Validate and calculate singer packages
+    const singerPackageItems: { packageId: string; quantity: number; price: Decimal }[] = [];
+    if (createBookingDto.singerPackages?.length) {
+      const packageIds = createBookingDto.singerPackages.map(p => p.packageId);
+      const packages = await this.prisma.singerPackageTemplate.findMany({
+        where: { id: { in: packageIds }, isActive: true },
+      });
+
+      if (packages.length !== packageIds.length) {
+        throw new BadRequestException({
+          code: ERROR_CODES.VAL_001,
+          message: 'Một số gói ca sĩ không tồn tại hoặc ngừng hoạt động.',
+        });
+      }
+
+      for (const item of createBookingDto.singerPackages) {
+        const pkg = packages.find(p => p.id === item.packageId);
+        if (pkg) {
+          const itemTotal = pkg.price.mul(item.quantity);
+          singerPackageItems.push({
+            packageId: item.packageId,
+            quantity: item.quantity,
+            price: pkg.price
+          });
+          totalAmount = totalAmount.plus(itemTotal);
+        }
+      }
+    }
+
     // Calculate discount
     let discountAmount = new Decimal(0);
     if (createBookingDto.voucherCode) {
@@ -278,6 +308,19 @@ export class BookingsService {
         });
       }
 
+      // Create singer package booking items
+      for (const item of singerPackageItems) {
+        await tx.bookingItem.create({
+          data: {
+            bookingId: newBooking.id,
+            itemType: BookingItemType.SINGER_PACKAGE,
+            singerPackageId: item.packageId,
+            quantity: item.quantity,
+            originalPrice: item.price,
+          }
+        });
+      }
+
       return newBooking;
     });
 
@@ -313,6 +356,7 @@ export class BookingsService {
             ticket: { include: { show: true, ticketClass: true } },
             tourSchedule: { include: { tour: true } },
             ticketTier: true,
+            singerPackage: true,
           },
         },
       },
@@ -347,6 +391,7 @@ export class BookingsService {
             ticket: { include: { show: true, ticketClass: true, physicalSeat: true } },
             tourSchedule: { include: { tour: true } },
             ticketTier: true,
+            singerPackage: true,
           },
         },
         transactions: true,

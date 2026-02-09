@@ -841,8 +841,7 @@ export default function CheckoutPage() {
         isOpen={isQRModalOpen}
         onClose={() => setIsQRModalOpen(false)}
         defaultAmount={isBuyNowMode && booking ? booking.finalAmount : getTotal()}
-        defaultDescription={`Thanh toan don hang Music Travel - ${isBuyNowMode && booking ? booking.bookingCode : 'Cart'}`}
-        onSuccess={() => {createdBookingCode || (isBuyNowMode && booking ? booking.bookingCode : 'Cart')}`}
+        defaultDescription={`Thanh toan don hang Music Travel - ${createdBookingCode || (isBuyNowMode && booking ? booking.bookingCode : 'Cart')}`}
         onSuccess={() => {
           toast.success('Xác nhận thanh toán thành công!');
           clearCart();
@@ -850,7 +849,8 @@ export default function CheckoutPage() {
           if (code) {
              router.push(`/profile?booking=${code}`);
           } else {
-           }
+             router.push('/profile');
+          }
         }}
       />
     </div>
