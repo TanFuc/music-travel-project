@@ -8,7 +8,7 @@ export async function seedSingerPackages() {
   const packages = [
     {
       id: '550e8400-e29b-41d4-a716-446655440001',
-      name: 'GÓI Bm-V1 – KHỞI ĐẦU HÀNH TRÌNH CA SĨ',
+      name: 'Gói V1 - Khởi Đầu Hành Trình Ca Sĩ',
       nameEn: 'BM-V1 - Singer Journey Starter Package',
       price: 1500000, // 1.5M VND
       description: 'Phù hợp với người mới bắt đầu hoặc muốn đánh thức lại đam mê ca hát trong môi trường chuyên nghiệp, an toàn và truyền cảm hứng.',
@@ -28,7 +28,7 @@ export async function seedSingerPackages() {
     },
     {
       id: '550e8400-e29b-41d4-a716-446655440002',
-      name: 'GÓI Bm-V2 – PHÁT TRIỂN & TỎA SÁNG',
+      name: 'Gói V2 - Phát Triển & Tỏa Sáng',
       nameEn: 'BM-V2 - Development & Shine Package',
       price: 3500000, // 3.5M VND
       description: 'Dành cho những ai muốn "đi xa hơn" chuyên nghiệp, làm chủ sân khấu và xây dựng hình ảnh cá nhân thông qua âm nhạc.',
@@ -47,7 +47,7 @@ export async function seedSingerPackages() {
     },
     {
       id: '550e8400-e29b-41d4-a716-446655440003',
-      name: 'GÓI Bm-V3 – CHUYÊN NGHIỆP & THÀNH CÔNG',
+      name: 'Gói V3 - Chuyên Nghiệp & Thành Công',
       nameEn: 'BM-V3 - Professional & Success Package',
       price: 5500000, // 5.5M VND
       description: 'Dành cho những ai muốn trở thành ca sĩ chuyên nghiệp với đầy đủ kỹ năng và cơ hội phát triển sự nghiệp.',
@@ -84,4 +84,15 @@ export async function cleanupSingerPackages() {
   console.log('🧹 Cleaning up singer packages...');
   await prisma.singerPackageTemplate.deleteMany();
   console.log('✅ Singer packages cleaned up');
+}
+
+if (require.main === module) {
+  seedSingerPackages()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
 }

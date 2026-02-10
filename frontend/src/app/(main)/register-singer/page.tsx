@@ -3,35 +3,23 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
-import { post } from '@/lib/api';
-import {
-  SingerPackage,
-  SingingExperience,
-  getPackageLabel,
-  getPackagePrice,
-  getSingingExperienceLabel,
-  singerRegistrationSchema,
-  type SingerRegistrationFormData
-} from '@/lib/validations/singer-registration.schema';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { CheckCircle, Heart, Loader2, Mic, Music, Star, Upload, Users, Video, Crown } from 'lucide-react';
+import { CheckCircle, Heart, Mic, Music, Star, Users, Video, Crown, ShoppingCart, Plus, Minus } from 'lucide-react';
 import { singerPackageService } from '@/services/singer-packages.service';
-import { useCallback, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useCartStore } from '@/stores/cart.store';
+import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth.store';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export default function RegisterSingerPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [voiceFile, setVoiceFile] = useState<File | null>(null);
-  const [uploadingVoice, setUploadingVoice] = useState(false);
+  usePageTitle();
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+  const { singerPackages: cartItems, addSingerPackage, removeSingerPackage } = useCartStore();
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   // Fetch active packages
   const { data: packages, isLoading: packagesLoading, error: packagesError } = useQuery({
@@ -40,132 +28,58 @@ export default function RegisterSingerPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const form = useForm<SingerRegistrationFormData>({
-    resolver: zodResolver(singerRegistrationSchema),
-    defaultValues: {
-      fullName: '',
-      phoneNumber: '',
-      email: '',
-      age: 18,
-      gender: 'Nam',
-      address: '',
-      singingExperience: SingingExperience.NONE,
-      favoriteGenre: '',
-      packageTemplateId: '',
-      introduction: '',
-      // voiceSampleUrl: '',
-      agreeToTerms: false
+  // Handle quantity change
+  const handleQuantityChange = (packageId: string, increment: boolean) => {
+    setQuantities(prev => {
+      const currentQty = prev[packageId] || 1;
+      const newQty = increment ? Math.min(currentQty + 1, 10) : Math.max(currentQty - 1, 1);
+      return { ...prev, [packageId]: newQty };
+    });
+  };
+
+  // Check if package is in cart
+  const getPackageInCart = (packageId: string) => {
+    return cartItems.find(item => item.packageId === packageId);
+  };
+
+  // Handle add to cart
+  const handleAddToCart = (pkg: any) => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng');
+      router.push('/login?redirect=/register-singer');
+      return;
     }
-  });
 
-  const submitMutation = useMutation({
-    mutationFn: async (data: Omit<SingerRegistrationFormData, 'agreeToTerms'>) => {
-      // Remove the package field if packageTemplateId is provided
-      const submitData = { ...data };
-      if (submitData.packageTemplateId) {
-        delete submitData.package;
-      }
-      return post('/singers/register', submitData);
-    },
-    onSuccess: () => {
-      toast.success('Đăng ký thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.');
-      form.reset();
-      setVoiceFile(null);
-      setShowForm(false);
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đăng ký');
-    }
-  });
-
-  const uploadVoiceSample = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch('/api/v1/singers/upload-voice-sample', {
-      method: 'POST',
-      body: formData
+    const quantity = quantities[pkg.id] || 1;
+    addSingerPackage({
+      packageId: pkg.id,
+      packageName: pkg.name,
+      price: pkg.price,
+      quantity,
+      description: pkg.description,
+      benefits: pkg.benefits,
     });
 
-    if (!response.ok) {
-      throw new Error('Upload failed');
-    }
-
-    const result = await response.json();
-    return result.url;
+    toast.success(`Đã thêm ${quantity} gói "${pkg.name}" vào giỏ hàng`);
+    
+    // Reset quantity to 1 after adding
+    setQuantities(prev => ({ ...prev, [pkg.id]: 1 }));
   };
 
-  const handleVoiceFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/m4a'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Chỉ chấp nhận file âm thanh (MP3, WAV, M4A)');
-      return;
-    }
-
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File không được vượt quá 10MB');
-      return;
-    }
-
-    setVoiceFile(file);
-    setUploadingVoice(true);
-
-    try {
-      const url = await uploadVoiceSample(file);
-      // form.setValue('voiceSampleUrl', url);
-      toast.success('Tải file âm thanh thành công');
-    } catch (error) {
-      toast.error('Lỗi khi tải file âm thanh');
-      setVoiceFile(null);
-    } finally {
-      setUploadingVoice(false);
-    }
+  // Calculate total cart amount
+  const getTotalCartAmount = () => {
+    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
-  const onSubmit = async (data: SingerRegistrationFormData) => {
-    setIsSubmitting(true);
-    try {
-      const { agreeToTerms, ...submitData } = data;
-      await submitMutation.mutateAsync(submitData);
-    } finally {
-      setIsSubmitting(false);
-    }
+  // Calculate total cart items
+  const getTotalCartItems = () => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
-  const scrollToForm = useCallback(() => {
-    setShowForm(true);
-    setTimeout(() => {
-      const formElement = document.getElementById('registration-form');
-      formElement?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  }, []);
-
-  // Memoize expensive operations
-  const packageOptions = useMemo(() => {
-    if (!packages) return [];
-    return packages.map(pkg => ({
-      key: pkg.id,
-      value: pkg.id,
-      label: pkg.name,
-      price: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.price),
-      isAvailable: !pkg.maxRegistrations || !pkg._count || (pkg._count.registrations < pkg.maxRegistrations)
-    }));
-  }, [packages]);
-
-  const experienceOptions = useMemo(() =>
-    Object.entries(SingingExperience).map(([key, value]) => ({
-      key,
-      value,
-      label: getSingingExperienceLabel(key as keyof typeof SingingExperience)
-    })), []
-  );
+  // Handle checkout
+  const handleCheckout = () => {
+    router.push('/checkout');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
@@ -278,42 +192,101 @@ export default function RegisterSingerPage() {
                 
                 const Icon = getIconByIndex(index);
                 const colors = getColorByIndex(index);
+                const inCart = getPackageInCart(pkg.id);
+                const currentQty = quantities[pkg.id] || 1;
                 
                 return (
-                  <Card key={pkg.id} className={`${colors.border} shadow-lg hover:shadow-xl transition-shadow`}>
-                    <CardHeader className={`${colors.bg} rounded-t-lg`}>
-                      <CardTitle className={`flex items-center gap-2 ${colors.text}`}>
-                        <Icon className="w-6 h-6" />
-                        {pkg.name}
+                  <Card key={pkg.id} className={`${colors.border} border-2 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col h-full`}>
+                    <CardHeader className={`${colors.bg} rounded-t-lg pb-4`}>
+                      <CardTitle className={`flex items-start gap-3 ${colors.text}`}>
+                        <Icon className="w-6 h-6 mt-1 flex-shrink-0" />
+                        <span className="leading-tight text-lg">{pkg.name}</span>
                       </CardTitle>
-                      <Badge variant="secondary" className={`w-fit ${colors.badge}`}>
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.price)}
+                      <Badge variant="secondary" className={`w-fit ${colors.badge} font-bold text-lg mt-3 px-3 py-1`}>
+                        {formatCurrency(pkg.price)}
                       </Badge>
                       {pkg.maxRegistrations && pkg._count && (
-                        <div className="text-xs text-gray-600">
+                        <div className="text-sm text-gray-600 mt-2 font-medium">
                           Còn lại: {pkg.maxRegistrations - pkg._count.registrations}/{pkg.maxRegistrations} chỗ
                         </div>
                       )}
                     </CardHeader>
-                    <CardContent className="p-4 md:p-6">
-                      {pkg.description && (
-                        <p className="text-gray-600 mb-4 text-sm md:text-base">
-                          {pkg.description}
-                        </p>
-                      )}
-                      {pkg.benefits && pkg.benefits.length > 0 && (
-                        <>
-                          <h4 className="font-semibold mb-3">Bạn nhận được gì?</h4>
-                          <ul className="space-y-2 text-xs md:text-sm">
-                            {pkg.benefits.map((benefit, benefitIndex) => (
-                              <li key={benefitIndex} className="flex items-start gap-2">
-                                <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                {benefit}
-                              </li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
+                    <CardContent className="p-5 md:p-6 flex flex-col flex-1">
+                      {/* Content area - grows to fill space */}
+                      <div className="flex-1 space-y-4 mb-5">
+                        {pkg.description && (
+                          <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+                            {pkg.description}
+                          </p>
+                        )}
+                        {pkg.benefits && pkg.benefits.length > 0 && (
+                          <>
+                            <h4 className="font-semibold text-gray-800 mb-3 mt-4">Bạn nhận được gì?</h4>
+                            <ul className="space-y-3 text-sm md:text-base min-h-[220px]">
+                              {pkg.benefits.map((benefit, benefitIndex) => (
+                                <li key={benefitIndex} className="flex items-start gap-3">
+                                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                  <span className="leading-relaxed flex-1">{benefit}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Quantity Selector - always at bottom */}
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-200 mt-auto">
+                        <span className="text-sm font-semibold text-gray-700">Số lượng:</span>
+                        <div className="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded-lg">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleQuantityChange(pkg.id, false)}
+                            disabled={currentQty === 1}
+                            className="h-8 w-8 p-0 hover:bg-gray-200"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="text-lg font-bold w-10 text-center">{currentQty}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleQuantityChange(pkg.id, true)}
+                            disabled={currentQty >= 10}
+                            className="h-8 w-8 p-0 hover:bg-gray-200"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Add to Cart Button */}
+                      <div className="mt-4">
+                        {inCart ? (
+                          <div className="flex items-center justify-between p-4 bg-green-50 border-2 border-green-300 rounded-lg">
+                            <div className="flex items-center gap-2 text-green-700">
+                              <CheckCircle className="w-5 h-5" />
+                              <span className="font-semibold">Trong giỏ ({inCart.quantity})</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeSingerPackage(pkg.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 font-medium"
+                            >
+                              Xóa
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={() => handleAddToCart(pkg)}
+                            className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-6 text-base shadow-md hover:shadow-lg transition-all"
+                          >
+                            <ShoppingCart className="w-5 h-5 mr-2" />
+                            Thêm vào giỏ hàng
+                          </Button>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -366,303 +339,25 @@ export default function RegisterSingerPage() {
             <p className="text-sm text-gray-600 mb-6 md:mb-8">
               Số lượng học viên & suất biểu diễn có giới hạn cho mỗi đêm nhạc.
             </p>
-
-            {!showForm && (
-              <Button
-                onClick={scrollToForm}
-                size="lg"
-                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 md:px-12 py-3 md:py-4 text-lg md:text-xl font-bold rounded-full shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all w-full sm:w-auto"
-              >
-                ĐĂNG KÝ NGAY
-              </Button>
-            )}
           </div>
         </div>
       </section>
 
-      {/* Registration Form */}
-      {showForm && (
-        <section id="registration-form" className="py-20 px-4 bg-white">
-          <div className="container mx-auto max-w-2xl">
-            <Card className="shadow-2xl border-green-200">
-              <CardHeader className="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-t-lg">
-                <CardTitle className="text-center text-2xl">
-                  ĐĂNG KỲ THAM GIA CHƯƠNG TRÌNH
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-8">
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Personal Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-                      Thông tin cá nhân
-                    </h3>
-
-                    <div>
-                      <Label htmlFor="fullName">Họ và tên *</Label>
-                      <Input
-                        id="fullName"
-                        {...form.register('fullName')}
-                        placeholder="Nhập họ và tên đầy đủ"
-                        className={form.formState.errors.fullName ? 'border-red-500' : ''}
-                        aria-describedby={form.formState.errors.fullName ? 'fullName-error' : undefined}
-                        aria-invalid={!!form.formState.errors.fullName}
-                      />
-                      {form.formState.errors.fullName && (
-                        <p id="fullName-error" className="text-red-500 text-sm mt-1" role="alert">
-                          {form.formState.errors.fullName.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="phoneNumber">Số điện thoại *</Label>
-                        <Input
-                          id="phoneNumber"
-                          {...form.register('phoneNumber')}
-                          placeholder="Nhập số điện thoại"
-                          className={form.formState.errors.phoneNumber ? 'border-red-500' : ''}
-                        />
-                        {form.formState.errors.phoneNumber && (
-                          <p className="text-red-500 text-sm mt-1">{form.formState.errors.phoneNumber.message}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          {...form.register('email')}
-                          placeholder="Nhập địa chỉ email"
-                          className={form.formState.errors.email ? 'border-red-500' : ''}
-                        />
-                        {form.formState.errors.email && (
-                          <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="age">Tuổi *</Label>
-                        <Input
-                          id="age"
-                          type="number"
-                          {...form.register('age', { valueAsNumber: true })}
-                          min="16"
-                          max="80"
-                          className={form.formState.errors.age ? 'border-red-500' : ''}
-                        />
-                        {form.formState.errors.age && (
-                          <p className="text-red-500 text-sm mt-1">{form.formState.errors.age.message}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <Label htmlFor="gender">Giới tính *</Label>
-                        <Select
-                          value={form.watch('gender')}
-                          onValueChange={(value) => form.setValue('gender', value as any)}
-                        >
-                          <SelectTrigger className={form.formState.errors.gender ? 'border-red-500' : ''}>
-                            <SelectValue placeholder="Chọn giới tính" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Nam">Nam</SelectItem>
-                            <SelectItem value="Nữ">Nữ</SelectItem>
-                            <SelectItem value="Khác">Khác</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {form.formState.errors.gender && (
-                          <p className="text-red-500 text-sm mt-1">{form.formState.errors.gender.message}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="address">Địa chỉ *</Label>
-                      <Textarea
-                        id="address"
-                        {...form.register('address')}
-                        placeholder="Nhập địa chỉ hiện tại"
-                        rows={3}
-                        className={form.formState.errors.address ? 'border-red-500' : ''}
-                      />
-                      {form.formState.errors.address && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.address.message}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Musical Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-                      Thông tin âm nhạc
-                    </h3>
-
-                    <div>
-                      <Label htmlFor="singingExperience">Kinh nghiệm ca hát *</Label>
-                      <Select
-                        value={form.watch('singingExperience')}
-                        onValueChange={(value) => form.setValue('singingExperience', value as any)}
-                      >
-                        <SelectTrigger className={form.formState.errors.singingExperience ? 'border-red-500' : ''}>
-                          <SelectValue placeholder="Chọn mức độ kinh nghiệm" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {experienceOptions.map(({ key, value, label }) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {form.formState.errors.singingExperience && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.singingExperience.message}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="favoriteGenre">Thể loại nhạc yêu thích *</Label>
-                      <Input
-                        id="favoriteGenre"
-                        {...form.register('favoriteGenre')}
-                        placeholder="Ví dụ: Ballad, Pop, Rock, Dân ca..."
-                        className={form.formState.errors.favoriteGenre ? 'border-red-500' : ''}
-                      />
-                      {form.formState.errors.favoriteGenre && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.favoriteGenre.message}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="packageTemplateId">Chọn gói đăng ký *</Label>
-                      <Select
-                        value={form.watch('packageTemplateId') || ''}
-                        onValueChange={(value) => form.setValue('packageTemplateId', value)}
-                      >
-                        <SelectTrigger className={form.formState.errors.packageTemplateId ? 'border-red-500' : ''}>
-                          <SelectValue placeholder="Chọn gói phù hợp" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {packageOptions.map(({ key, value, label, price, isAvailable }) => (
-                            <SelectItem 
-                              key={value} 
-                              value={value}
-                              disabled={!isAvailable}
-                            >
-                              <div className="flex items-center justify-between w-full">
-                                <span>{label}</span>
-                                <span className="text-sm text-gray-500 ml-2">{price}</span>
-                                {!isAvailable && <span className="text-xs text-red-500 ml-2">(Hết chỗ)</span>}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {form.formState.errors.packageTemplateId && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.packageTemplateId.message}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="introduction">Giới thiệu bản thân (tùy chọn)</Label>
-                      <Textarea
-                        id="introduction"
-                        {...form.register('introduction')}
-                        placeholder="Hãy chia sẻ về bản thân, đam mê âm nhạc và mong muốn của bạn..."
-                        rows={4}
-                        className={form.formState.errors.introduction ? 'border-red-500' : ''}
-                      />
-                      {form.formState.errors.introduction && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.introduction.message}</p>
-                      )}
-                    </div>
-
-                    {/* <div>
-                      <Label htmlFor="voiceSample">File mẫu giọng hát (tùy chọn)</Label>
-                      <div className="mt-2">
-                        <input
-                          type="file"
-                          id="voiceSample"
-                          accept="audio/*"
-                          onChange={handleVoiceFileChange}
-                          className="hidden"
-                          aria-describedby="voiceSample-help"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById('voiceSample')?.click()}
-                          disabled={uploadingVoice}
-                          className="w-full"
-                        >
-                          {uploadingVoice ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Đang tải lên...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4 mr-2" />
-                              {voiceFile ? voiceFile.name : 'Chọn file âm thanh (MP3, WAV, M4A)'}
-                            </>
-                          )}
-                        </Button>
-                        <p id="voiceSample-help" className="text-sm text-gray-500 mt-1">
-                          File không quá 10MB. Giúp chúng tôi hiểu rõ hơn về giọng hát của bạn.
-                        </p>
-                      </div>
-                    </div> */}
-                  </div>
-
-                  <Separator />
-
-                  {/* Terms and Submit */}
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="agreeToTerms"
-                        checked={form.watch('agreeToTerms')}
-                        onCheckedChange={(checked) => form.setValue('agreeToTerms', checked as boolean)}
-                        aria-describedby={form.formState.errors.agreeToTerms ? 'agreeToTerms-error' : undefined}
-                        aria-invalid={!!form.formState.errors.agreeToTerms}
-                      />
-                      <Label htmlFor="agreeToTerms" className="text-sm leading-relaxed cursor-pointer">
-                        Tôi đồng ý với các điều khoản và điều kiện của chương trình. Tôi hiểu rằng
-                        thông tin đã cung cấp sẽ được sử dụng để đánh giá và liên hệ về việc tham gia chương trình.
-                      </Label>
-                    </div>
-                    {form.formState.errors.agreeToTerms && (
-                      <p id="agreeToTerms-error" className="text-red-500 text-sm" role="alert">
-                        {form.formState.errors.agreeToTerms.message}
-                      </p>
-                    )}
-
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting || !form.watch('agreeToTerms')}
-                      className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-6 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Đang gửi đăng ký...
-                        </>
-                      ) : (
-                        'GỬI ĐĂNG KÝ THAM GIA'
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+      {/* Floating Checkout Button */}
+      {getTotalCartItems() > 0 && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            onClick={handleCheckout}
+            size="lg"
+            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-6 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all flex items-center gap-3"
+          >
+            <ShoppingCart className="w-6 h-6" />
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-medium">Giỏ hàng ({getTotalCartItems()})</span>
+              <span className="text-lg font-bold">{formatCurrency(getTotalCartAmount())}</span>
+            </div>
+          </Button>
+        </div>
       )}
     </div>
   );

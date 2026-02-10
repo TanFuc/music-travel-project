@@ -1,19 +1,29 @@
+/**
+ * About Page - SSG (Static Site Generation)
+ * Fully static page with no dynamic data
+ *
+ * Features:
+ * - Pre-rendered at build time
+ * - Zero client-side JavaScript for content
+ * - Maximum performance and SEO
+ */
+
 import { Metadata } from 'next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Music, 
-  Heart, 
-  Leaf, 
-  Users, 
-  Globe, 
-  TreePine, 
-  Waves, 
+import {
+  Music,
+  Heart,
+  Leaf,
+  Users,
+  Globe,
+  TreePine,
+  Waves,
   Mountain,
   Star,
   Target,
   Award,
-  Lightbulb
+  Lightbulb,
 } from 'lucide-react';
 
 export const metadata: Metadata = {

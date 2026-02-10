@@ -35,7 +35,7 @@ interface VoucherValidation {
 
 interface BookingItem {
   id: number;
-  itemType: 'SHOW_TICKET' | 'TOUR_SLOT';
+  itemType: 'SHOW_TICKET' | 'TOUR_SLOT' | 'SINGER_PACKAGE';
   quantity: number;
   originalPrice: number;
   ticket?: {
@@ -73,6 +73,13 @@ interface BookingItem {
     price: number;
     description?: string;
   };
+  singerPackage?: {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    benefits?: string[];
+  };
 }
 
 interface Booking {
@@ -88,10 +95,10 @@ interface Booking {
 
 const paymentMethods = [
   {
-    id: 'WALLET',
-    name: 'Ví của tôi',
-    description: 'Thanh toán bằng số dư ví',
-    icon: Wallet,
+    id: 'BANK_QR',
+    name: 'QR Ngân hàng',
+    description: 'Thanh toán bằng mã QR',
+    icon: QrCode,
   },
   {
     id: 'MOMO',
@@ -100,29 +107,29 @@ const paymentMethods = [
     icon: CreditCard,
   },
   {
-    id: 'VNPAY',
-    name: 'VNPAY',
-    description: 'Cổng thanh toán VNPAY',
-    icon: CreditCard,
-  },
-  {
-    id: 'BANKING',
-    name: 'Chuyển khoản',
-    description: 'Chuyển khoản ngân hàng',
-    icon: Building2,
-  },
-  {
-    id: 'BANK_QR',
-    name: 'QR Ngân hàng',
-    description: 'Thanh toán bằng mã QR',
-    icon: QrCode,
-  },
-  {
     id: 'CASH',
     name: 'Tiền mặt',
     description: 'Thanh toán tại quầy',
     icon: Banknote,
   },
+  // {
+  //   id: 'WALLET',
+  //   name: 'Ví của tôi',
+  //   description: 'Thanh toán bằng số dư ví',
+  //   icon: Wallet,
+  // },
+  // {
+  //   id: 'VNPAY',
+  //   name: 'VNPAY',
+  //   description: 'Cổng thanh toán VNPAY',
+  //   icon: CreditCard,
+  // },
+  // {
+  //   id: 'BANKING',
+  //   name: 'Chuyển khoản',
+  //   description: 'Chuyển khoản ngân hàng',
+  //   icon: Building2,
+  // },
 ];
 
 export default function CheckoutPage() {
@@ -136,6 +143,7 @@ export default function CheckoutPage() {
     tickets,
     tours,
     ticketTiers,
+    singerPackages,
     getSubtotal,
     getTotal,
     discount,
@@ -145,12 +153,14 @@ export default function CheckoutPage() {
     clearCart,
     removeTicket,
     removeTour,
-    removeTicketTier
+    removeTicketTier,
+    removeSingerPackage
   } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
   const [voucherInput, setVoucherInput] = useState(voucherCode || '');
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [createdBookingCode, setCreatedBookingCode] = useState<string | null>(null);
   const [isLoadingBooking, setIsLoadingBooking] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
@@ -197,7 +207,7 @@ export default function CheckoutPage() {
   } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      paymentMethod: 'WALLET',
+      paymentMethod: 'BANK_QR',
       voucherCode: voucherCode || '',
       note: '',
     },
@@ -236,9 +246,60 @@ export default function CheckoutPage() {
 
   const onSubmit = async (data: CheckoutForm) => {
     console.log('data', data);
-    // Handle QR payment: open modal (booking will be created when user confirms in modal flow if needed)
-    if (data.paymentMethod === 'BANK_QR') {
-      setIsQRModalOpen(true);
+    
+    // Handle QR payment (Bank QR or Momo): Create booking first (if needed), then show modal
+    if (['BANK_QR', 'MOMO'].includes(data.paymentMethod)) {
+      setIsProcessing(true);
+      try {
+        let currentBookingCode = bookingCode;
+        if (booking) {
+          currentBookingCode = booking.bookingCode;
+        }
+
+        if (!isBuyNowMode) {
+          // Create booking first
+          const bookingPayload: {
+            ticketsWithSeats?: Array<{ ticketId: number }>;
+            ticketTiers?: Array<{ tierId: number; quantity: number }>;
+            tourItems?: Array<{ scheduleId: number; quantity: number }>;
+            singerPackages?: Array<{ packageId: string; quantity: number }>;
+            voucherCode?: string;
+            note?: string;
+          } = {};
+
+          if (tickets.length) {
+            bookingPayload.ticketsWithSeats = tickets.map((t) => ({ ticketId: t.ticketId }));
+          }
+          if (ticketTiers.length) {
+            bookingPayload.ticketTiers = ticketTiers.map((t) => ({ tierId: t.tierId, quantity: t.quantity }));
+          }
+          if (tours.length) {
+            bookingPayload.tourItems = tours.map((t) => ({ scheduleId: t.scheduleId, quantity: t.quantity }));
+          }
+          if (singerPackages.length) {
+            bookingPayload.singerPackages = singerPackages.map((p) => ({ packageId: p.packageId, quantity: p.quantity }));
+          }
+          if (data.voucherCode?.trim()) {
+            bookingPayload.voucherCode = data.voucherCode.trim();
+          }
+          if (data.note?.trim()) {
+            bookingPayload.note = data.note.trim();
+          }
+
+          const createResult = await post<{ bookingCode: string }>('/bookings', bookingPayload);
+          currentBookingCode = createResult.bookingCode;
+        }
+
+        if (currentBookingCode) {
+          setCreatedBookingCode(currentBookingCode);
+          setIsQRModalOpen(true);
+        }
+      } catch (error: unknown) {
+        const err = error as { response?: { data?: { message?: string } } };
+        toast.error(err.response?.data?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
+      } finally {
+        setIsProcessing(false);
+      }
       return;
     }
 
@@ -272,6 +333,7 @@ export default function CheckoutPage() {
           ticketsWithSeats?: Array<{ ticketId: number }>;
           ticketTiers?: Array<{ tierId: number; quantity: number }>;
           tourItems?: Array<{ scheduleId: number; quantity: number }>;
+          singerPackages?: Array<{ packageId: string; quantity: number }>;
           voucherCode?: string;
           note?: string;
         } = {};
@@ -284,6 +346,9 @@ export default function CheckoutPage() {
         }
         if (tours.length) {
           bookingPayload.tourItems = tours.map((t) => ({ scheduleId: t.scheduleId, quantity: t.quantity }));
+        }
+        if (singerPackages.length) {
+          bookingPayload.singerPackages = singerPackages.map((p) => ({ packageId: p.packageId, quantity: p.quantity }));
         }
         if (data.voucherCode?.trim()) {
           bookingPayload.voucherCode = data.voucherCode.trim();
@@ -459,12 +524,16 @@ export default function CheckoutPage() {
                       {booking.items.map((item, index) => {
                         const isTicket = item.itemType === 'SHOW_TICKET';
                         const isTour = item.itemType === 'TOUR_SLOT';
+                        const isSingerPackage = item.itemType === 'SINGER_PACKAGE';
 
                         // Get item details
                         const showTitle = item.ticket?.show?.title;
                         const ticketTierName = item.ticketTier?.name;
                         const ticketClassName = item.ticket?.ticketClass?.name;
                         const tourTitle = item.tourSchedule?.tour?.title;
+                        const packageName = item.singerPackage?.name;
+                        const packageDescription = item.singerPackage?.description;
+                        const packageBenefits = item.singerPackage?.benefits as string[] | null;
                         const seatInfo = item.ticket?.physicalSeat
                           ? `${item.ticket.physicalSeat.zoneName || ''} - Hàng ${item.ticket.physicalSeat.rowName}, Ghế ${item.ticket.physicalSeat.seatNumber}`
                           : null;
@@ -473,23 +542,53 @@ export default function CheckoutPage() {
                         const totalPrice = unitPrice * item.quantity;
 
                         return (
-                          <div key={item.id} className="bg-neutral-50 rounded-lg p-3 space-y-2">
+                          <div key={item.id} className={`rounded-lg p-4 space-y-3 ${isSingerPackage ? 'bg-gradient-to-r from-green-50 to-blue-50 border border-green-200' : 'bg-neutral-50'}`}>
                             {/* Item Header */}
                             <div className="flex justify-between items-start">
                               <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-sm text-neutral-900 truncate">
-                                  {isTicket ? (showTitle || 'Vé xem show') : (tourTitle || 'Tour du lịch')}
+                                  {isTicket 
+                                    ? (showTitle || 'Vé xem show') 
+                                    : isTour 
+                                      ? (tourTitle || 'Tour du lịch')
+                                      : (packageName || 'Gói ca sĩ')
+                                  }
                                 </p>
                                 {/* Item Type Badge */}
-                                <Badge variant="outline" className="mt-1 text-xs">
-                                  {isTicket ? 'Vé xem show' : 'Tour'}
+                                <Badge 
+                                  variant="outline" 
+                                  className={`mt-1 text-xs ${isSingerPackage ? 'bg-green-50 text-green-700 border-green-200' : ''}`}
+                                >
+                                  {isTicket ? 'Vé xem show' : isTour ? 'Tour' : 'Gói ca sĩ'}
                                 </Badge>
                               </div>
                               <span className="text-xs text-neutral-500">#{index + 1}</span>
                             </div>
 
                             {/* Item Details */}
-                            <div className="space-y-1 text-sm">
+                            <div className="space-y-2 text-sm">
+                              {/* Singer Package Description */}
+                              {isSingerPackage && packageDescription && (
+                                <div className="pb-2 border-b border-green-200">
+                                  <p className="text-neutral-700 leading-relaxed">{packageDescription}</p>
+                                </div>
+                              )}
+
+                              {/* Singer Package Benefits */}
+                              {isSingerPackage && packageBenefits && packageBenefits.length > 0 && (
+                                <div className="pb-2 border-b border-green-200">
+                                  <p className="font-semibold text-green-800 mb-2">Quyền lợi:</p>
+                                  <ul className="space-y-1.5 ml-1">
+                                    {packageBenefits.map((benefit, idx) => (
+                                      <li key={idx} className="flex items-start gap-2 text-neutral-700">
+                                        <span className="text-green-600 mt-0.5">✓</span>
+                                        <span className="flex-1 leading-relaxed">{benefit}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
                               {/* Ticket Tier or Class */}
                               {(ticketTierName || ticketClassName) && (
                                 <div className="flex justify-between">
@@ -517,15 +616,15 @@ export default function CheckoutPage() {
                               )}
 
                               {/* Quantity */}
-                              <div className="flex justify-between">
-                                <span className="text-neutral-600">Số lượng:</span>
-                                <span className="font-medium">{item.quantity}</span>
+                              <div className="flex justify-between pt-1 border-t border-neutral-200">
+                                <span className="text-neutral-600 font-medium">Số lượng:</span>
+                                <span className="font-semibold">{item.quantity}</span>
                               </div>
 
                               {/* Unit Price */}
                               <div className="flex justify-between">
-                                <span className="text-neutral-600">Đơn giá:</span>
-                                <span className="font-medium">{formatCurrency(unitPrice)}</span>
+                                <span className="text-neutral-600 font-medium">Đơn giá:</span>
+                                <span className="font-semibold">{formatCurrency(unitPrice)}</span>
                               </div>
                             </div>
 
@@ -620,6 +719,54 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                       ))}
+                      {singerPackages.map((pkg, index) => (
+                        <div key={pkg.packageId} className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-neutral-900">{pkg.packageName}</p>
+                              <Badge variant="outline" className="mt-1 text-xs bg-green-100 text-green-800 border-green-300 font-semibold">Gói ca sĩ</Badge>
+                            </div>
+                            <span className="text-xs text-neutral-500">#{ticketTiers.length + tickets.length + tours.length + index + 1}</span>
+                          </div>
+
+                          {/* Package Description */}
+                          {pkg.description && (
+                            <div className="pb-2 border-b border-green-200">
+                              <p className="text-sm text-neutral-700 leading-relaxed">{pkg.description}</p>
+                            </div>
+                          )}
+
+                          {/* Package Benefits */}
+                          {pkg.benefits && pkg.benefits.length > 0 && (
+                            <div className="pb-2 border-b border-green-200">
+                              <p className="text-sm font-semibold text-green-800 mb-2">Quyền lợi:</p>
+                              <ul className="space-y-1.5 ml-1">
+                                {pkg.benefits.map((benefit, idx) => (
+                                  <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700">
+                                    <span className="text-green-600 mt-0.5 font-bold">✓</span>
+                                    <span className="flex-1 leading-relaxed">{benefit}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          <div className="space-y-1 text-sm pt-1">
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600 font-medium">Số lượng:</span>
+                              <span className="font-semibold">{pkg.quantity}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600 font-medium">Đơn giá:</span>
+                              <span className="font-semibold">{formatCurrency(pkg.price)}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-green-300">
+                            <span className="text-sm font-bold text-neutral-800">Thành tiền:</span>
+                            <span className="font-bold text-green-700 text-base">{formatCurrency(pkg.price * pkg.quantity)}</span>
+                          </div>
+                        </div>
+                      ))}
                     </>
                   )}
                 </div>
@@ -632,7 +779,7 @@ export default function CheckoutPage() {
                     <span className="font-medium">
                       {isBuyNowMode && booking
                         ? booking.items.reduce((sum, item) => sum + item.quantity, 0)
-                        : ticketTiers.reduce((sum, t) => sum + t.quantity, 0) + tickets.length + tours.reduce((sum, t) => sum + t.quantity, 0)
+                        : ticketTiers.reduce((sum, t) => sum + t.quantity, 0) + tickets.length + tours.reduce((sum, t) => sum + t.quantity, 0) + singerPackages.reduce((sum, p) => sum + p.quantity, 0)
                       } mục
                     </span>
                   </div>
@@ -694,14 +841,15 @@ export default function CheckoutPage() {
         isOpen={isQRModalOpen}
         onClose={() => setIsQRModalOpen(false)}
         defaultAmount={isBuyNowMode && booking ? booking.finalAmount : getTotal()}
-        defaultDescription={`Thanh toan don hang Music Travel - ${isBuyNowMode && booking ? booking.bookingCode : 'Cart'}`}
+        defaultDescription={`Thanh toan don hang Music Travel - ${createdBookingCode || (isBuyNowMode && booking ? booking.bookingCode : 'Cart')}`}
         onSuccess={() => {
-          toast.success('Thanh toán QR thành công!');
-          if (isBuyNowMode && booking) {
-            router.push(`/profile?booking=${booking.bookingCode}`);
+          toast.success('Xác nhận thanh toán thành công!');
+          clearCart();
+          const code = createdBookingCode || (booking ? booking.bookingCode : '');
+          if (code) {
+             router.push(`/profile?booking=${code}`);
           } else {
-            clearCart();
-            router.push('/profile');
+             router.push('/profile');
           }
         }}
       />
