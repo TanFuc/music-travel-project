@@ -6,7 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { EnhancedLoggingInterceptor } from './common/interceptors/enhanced-logging.interceptor';
 import { NormalizeBookingBodyPipe } from './modules/bookings/pipes/normalize-booking-body.pipe';
 
 async function bootstrap() {
@@ -67,7 +67,7 @@ async function bootstrap() {
 
   // Global filters and interceptors
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
+  app.useGlobalInterceptors(new TransformInterceptor(), new EnhancedLoggingInterceptor());
 
   // Swagger documentation
   if (configService.get<string>('NODE_ENV') !== 'production') {

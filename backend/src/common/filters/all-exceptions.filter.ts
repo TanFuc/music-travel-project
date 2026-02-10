@@ -9,6 +9,9 @@ import {
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { ERROR_CODES, getErrorMessage, ErrorCode } from '../constants/error-codes.constant';
 import { ErrorResponse } from '../interfaces/api-response.interface';
+import { getCorrelationId } from '../constants/async-context';
+import { Sanitizer } from '../utils/sanitizer.util';
+import { LoggingConfigService } from '../config/logging.config';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -50,12 +53,39 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     }
 
-    // Log error for debugging (non-client errors)
+    // Log error for debugging with correlation ID and context
+    const correlationId = getCorrelationId();
+    const config = LoggingConfigService.getConfig();
+
+    // Log all errors (including 4xx) with full context
+    const logParts: string[] = [];
+    logParts.push(`[${correlationId}] ${request.method} ${request.url} - ${status}`);
+    logParts.push(`  error: ${message}`);
+    logParts.push(`  code: ${code}`);
+
+    // Add request body for debugging (sanitized)
+    if (config.enableRequestBodyLogging && request.body) {
+      const sanitizedBody = config.sanitizeSensitive
+        ? Sanitizer.sanitize(request.body)
+        : request.body;
+      const truncatedBody = Sanitizer.truncate(sanitizedBody, config.maxBodySize);
+      logParts.push(`  requestBody: ${JSON.stringify(truncatedBody, null, 2)}`);
+    }
+
+    // Add user context if available
+    const user = (request as any).user;
+    if (user) {
+      logParts.push(`  userId: ${user.id}, role: ${user.role}`);
+    }
+
+    // Log based on severity
     if (status >= 500) {
       this.logger.error(
-        `${request.method} ${request.url} - ${status}`,
+        logParts.join('\n'),
         exception instanceof Error ? exception.stack : String(exception),
       );
+    } else if (status >= 400) {
+      this.logger.warn(logParts.join('\n'));
     }
 
     const errorResponse: ErrorResponse = {
@@ -67,6 +97,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
       ...(errors && { errors }),
     };
+
+    // Add correlation ID to response header if available
+    if (correlationId) {
+      response.header('X-Correlation-ID', correlationId);
+    }
 
     response.status(status).send(errorResponse);
   }

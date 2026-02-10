@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -30,6 +30,9 @@ import { ShowActivityModule } from './modules/show-activity/show-activity.module
 import { SingersModule } from './modules/singers/singers.module';
 import { SingerPackagesModule } from './modules/singer-packages/singer-packages.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
+import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
+import { EnhancedLoggerService } from './common/services/enhanced-logger.service';
+import { CommonModule } from './common/common.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
@@ -37,6 +40,7 @@ import cloudinaryConfig from './config/cloudinary.config';
 
 @Module({
   imports: [
+    CommonModule,
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
@@ -89,5 +93,11 @@ import cloudinaryConfig from './config/cloudinary.config';
     SingerPackagesModule,
     WishlistModule,
   ],
+  providers: [EnhancedLoggerService],
+  exports: [EnhancedLoggerService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}
