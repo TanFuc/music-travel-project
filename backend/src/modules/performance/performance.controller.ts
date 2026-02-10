@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, ParseIntPipe, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+  BadRequestException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { PerformanceService } from './performance.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
@@ -66,10 +78,7 @@ export class PerformanceController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel own registration' })
-  async cancelMyRegistration(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: any,
-  ) {
+  async cancelMyRegistration(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.performanceService.cancelRegistration(id, user.id);
   }
 
@@ -127,10 +136,7 @@ export class AdminPerformanceController {
 
   @Patch('qr-codes/:id')
   @ApiOperation({ summary: 'Update QR code' })
-  async updateQRCode(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateQRCodeDto,
-  ) {
+  async updateQRCode(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateQRCodeDto) {
     return this.performanceService.updateQRCode(id, dto);
   }
 
@@ -187,10 +193,7 @@ export class AdminPerformanceController {
   // ============================================================================
   @Post('registrations/:id/slot')
   @ApiOperation({ summary: 'Assign performance slot to registration' })
-  async assignSlot(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AssignSlotDto,
-  ) {
+  async assignSlot(@Param('id', ParseIntPipe) id: number, @Body() dto: AssignSlotDto) {
     return this.performanceService.assignSlot(id, dto);
   }
 
@@ -228,19 +231,13 @@ export class AdminPerformanceController {
 
   @Post('shows/:showId/call-next')
   @ApiOperation({ summary: 'Call next performer in queue' })
-  async callNextPerformer(
-    @Param('showId', ParseIntPipe) showId: number,
-    @CurrentUser() user: any,
-  ) {
+  async callNextPerformer(@Param('showId', ParseIntPipe) showId: number, @CurrentUser() user: any) {
     return this.performanceService.callNextPerformer(showId, user.sub);
   }
 
   @Post('registrations/:id/no-show')
   @ApiOperation({ summary: 'Mark registration as no-show' })
-  async markNoShow(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: any,
-  ) {
+  async markNoShow(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.performanceService.markNoShow(id, user.sub);
   }
 

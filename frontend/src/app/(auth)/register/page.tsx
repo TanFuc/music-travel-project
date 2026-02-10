@@ -20,7 +20,7 @@ const registerSchema = z.object({
     .string()
     .min(1, 'Số điện thoại không được để trống')
     .regex(/^0[3-9]\d{8,9}$/, 'Số điện thoại không hợp lệ'),
-  email: z.string().email('Email không đúng định dạng').optional().or(z.literal('')),
+
   password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -103,13 +103,7 @@ export default function RegisterPage() {
               <p className="text-sm text-error-500">{errors.phoneNumber.message}</p>
             )}
           </div>
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email (không bắt buộc)
-            </label>
-            <Input id="email" type="email" placeholder="email@example.com" {...register('email')} />
-            {errors.email && <p className="text-sm text-error-500">{errors.email.message}</p>}
-          </div>
+
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
               Mật khẩu

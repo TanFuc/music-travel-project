@@ -16,7 +16,7 @@ export class AdminQRService {
     private readonly vietQRService: VietQRService,
     private readonly bankDeeplinkService: BankDeeplinkService,
     private readonly bankQRConfigService: BankQRConfigService,
-  ) { }
+  ) {}
 
   /**
    * Generate QR code using admin bank account.
@@ -27,7 +27,7 @@ export class AdminQRService {
 
     try {
       // 1) Prefer active bank config from database
-      let bankConfig = await this.bankQRConfigService.getBankInfoForQR();
+      const bankConfig = await this.bankQRConfigService.getBankInfoForQR();
 
       let bankCode: VietnamBankCode;
       let adminAccountNumber: string;
@@ -36,19 +36,28 @@ export class AdminQRService {
       let bankBin: string;
 
       if (bankConfig) {
-        const { bankBin: bin, accountNumber, accountName, bankCode: adminBankCode, bankName } = bankConfig;
+        const {
+          bankBin: bin,
+          accountNumber,
+          accountName,
+          bankCode: adminBankCode,
+          bankName,
+        } = bankConfig;
         bankBin = bin;
         adminAccountNumber = accountNumber;
         adminAccountName = accountName;
         adminBankName = bankName || `Bank ${bin}`;
 
-        if (adminBankCode && Object.values(VietnamBankCode).includes(adminBankCode as VietnamBankCode)) {
+        if (
+          adminBankCode &&
+          Object.values(VietnamBankCode).includes(adminBankCode as VietnamBankCode)
+        ) {
           bankCode = adminBankCode as VietnamBankCode;
         } else {
           const resolved = this.binToBankCode(bin);
           if (!resolved) {
             throw new BadRequestException(
-              `Unsupported bank BIN: ${bin}. Use a supported BIN (e.g. 970422 for MB, 970432 for VPBank).`
+              `Unsupported bank BIN: ${bin}. Use a supported BIN (e.g. 970422 for MB, 970432 for VPBank).`,
             );
           }
           bankCode = resolved;
@@ -58,17 +67,17 @@ export class AdminQRService {
         const envConfig = await this.getAdminBankConfig();
         if (!Object.values(VietnamBankCode).includes(envConfig.bankCode as VietnamBankCode)) {
           throw new BadRequestException(
-            'Admin bank not configured. Set ADMIN_BANK_CODE (e.g. VPB, MB) or create a config via POST /admin/bank-qr-config'
+            'Admin bank not configured. Set ADMIN_BANK_CODE (e.g. VPB, MB) or create a config via POST /admin/bank-qr-config',
           );
         }
         if (!/^[0-9]{6,20}$/.test(envConfig.accountNumber)) {
           throw new BadRequestException(
-            'Admin account number invalid. Set ADMIN_ACCOUNT_NUMBER (6–20 digits) or configure via admin API.'
+            'Admin account number invalid. Set ADMIN_ACCOUNT_NUMBER (6–20 digits) or configure via admin API.',
           );
         }
         if (!envConfig.accountName || envConfig.accountName.trim().length < 2) {
           throw new BadRequestException(
-            'Admin account name invalid. Set ADMIN_ACCOUNT_NAME (min 2 chars) or configure via admin API.'
+            'Admin account name invalid. Set ADMIN_ACCOUNT_NAME (min 2 chars) or configure via admin API.',
           );
         }
 
@@ -112,7 +121,12 @@ export class AdminQRService {
       const qrBase64 = await this.vietQRService.generateQRImage(qrContent, qrOptions);
 
       // VietQR.io public image URL - QR from this URL is accepted by all Vietnamese bank apps
-      const qrImageUrl = this.buildVietQRioImageUrl(bankCode, adminAccountNumber, dto.amount, dto.description);
+      const qrImageUrl = this.buildVietQRioImageUrl(
+        bankCode,
+        adminAccountNumber,
+        dto.amount,
+        dto.description,
+      );
 
       // Generate deeplink
       const deeplink = this.bankDeeplinkService.generateDeeplink({
@@ -140,7 +154,9 @@ export class AdminQRService {
         deeplink: deeplink || undefined,
       };
 
-      this.logger.log(`Successfully generated admin QR for ${bankCode} (BIN: ${bankBin}) - ${adminAccountNumber}`);
+      this.logger.log(
+        `Successfully generated admin QR for ${bankCode} (BIN: ${bankBin}) - ${adminAccountNumber}`,
+      );
       return response;
     } catch (error) {
       this.logger.error(`Failed to generate admin QR: ${error.message}`, error.stack);
@@ -195,10 +211,18 @@ export class AdminQRService {
 
     // Fallback to environment variables with defaults
     return {
-      bankCode: this.configService.get<string>('ADMIN_BANK_CODE') ?? AdminQRService.DEFAULT_ADMIN_BANK.bankCode,
-      bankName: this.configService.get<string>('ADMIN_BANK_NAME') ?? AdminQRService.DEFAULT_ADMIN_BANK.bankName,
-      accountNumber: this.configService.get<string>('ADMIN_ACCOUNT_NUMBER') ?? AdminQRService.DEFAULT_ADMIN_BANK.accountNumber,
-      accountName: this.configService.get<string>('ADMIN_ACCOUNT_NAME') ?? AdminQRService.DEFAULT_ADMIN_BANK.accountName,
+      bankCode:
+        this.configService.get<string>('ADMIN_BANK_CODE') ??
+        AdminQRService.DEFAULT_ADMIN_BANK.bankCode,
+      bankName:
+        this.configService.get<string>('ADMIN_BANK_NAME') ??
+        AdminQRService.DEFAULT_ADMIN_BANK.bankName,
+      accountNumber:
+        this.configService.get<string>('ADMIN_ACCOUNT_NUMBER') ??
+        AdminQRService.DEFAULT_ADMIN_BANK.accountNumber,
+      accountName:
+        this.configService.get<string>('ADMIN_ACCOUNT_NAME') ??
+        AdminQRService.DEFAULT_ADMIN_BANK.accountName,
     };
   }
 

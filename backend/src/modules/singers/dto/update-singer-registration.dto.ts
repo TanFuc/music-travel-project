@@ -4,11 +4,11 @@ import { SingerRegistrationStatus } from '@prisma/client';
 import { CreateSingerRegistrationDto } from './create-singer-registration.dto';
 
 export class UpdateSingerRegistrationDto extends PartialType(CreateSingerRegistrationDto) {
-  @ApiProperty({ 
-    description: 'Registration status (Admin only)', 
+  @ApiProperty({
+    description: 'Registration status (Admin only)',
     enum: SingerRegistrationStatus,
     enumName: 'SingerRegistrationStatus',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsEnum(SingerRegistrationStatus)

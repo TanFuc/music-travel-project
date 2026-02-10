@@ -24,6 +24,8 @@
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed:tiers": "ts-node prisma/seed-tiers.ts",
+    "prisma:seed:singer-packages": "ts-node prisma/seed-singer-packages.ts",
     "validate": "pnpm lint && pnpm build && pnpm test"
   },
   "dependencies": {

@@ -24,7 +24,7 @@ import { Public } from '@/common/decorators/public.decorator';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) { }
+  constructor(private readonly ticketsService: TicketsService) {}
 
   @Public()
   @Get('tiers')

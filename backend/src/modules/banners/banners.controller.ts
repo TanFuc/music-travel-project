@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { BannersService } from './banners.service';
 import { BannerPosition } from '@prisma/client';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
@@ -25,7 +36,7 @@ export class BannersController {
   // ============================================================================
   // ADMIN ENDPOINTS
   // ============================================================================
-  
+
   @Get('admin/all')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
@@ -81,4 +92,3 @@ export class BannersController {
     return this.bannersService.delete(id);
   }
 }
-

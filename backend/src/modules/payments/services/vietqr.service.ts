@@ -243,7 +243,7 @@ export class VietQRService {
     },
   };
 
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Get bank information by bank code

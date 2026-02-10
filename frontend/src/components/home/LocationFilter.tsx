@@ -60,8 +60,8 @@ export function LocationFilter({
       )}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide pb-2">
-          <div className="flex items-center gap-3 text-brand-700 shrink-0">
+        <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide pb-2 no-scrollbar">
+          <div className="flex items-center gap-3 text-brand-700 shrink-0 sticky left-0 z-10 bg-white pr-4 sm:pr-0 sm:static sm:bg-transparent">
             <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 shadow-sm shadow-brand-500/10">
               <MapPin className="w-4 h-4" />
             </div>
@@ -74,14 +74,14 @@ export function LocationFilter({
               <span className="text-gray-400 text-sm font-bold uppercase tracking-tighter">Đang tìm địa điểm...</span>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
               <button
                 onClick={() => onLocationChange?.(null)}
                 className={cn(
-                  'px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap',
+                  'px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap border',
                   !selectedLocation
-                    ? 'btn-primary'
-                    : 'bg-white text-gray-400 hover:bg-brand-50 hover:text-brand-600 border border-gray-100 shadow-sm'
+                    ? 'bg-brand-500 text-white border-brand-500 shadow-md transform scale-105'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-brand-300 hover:text-brand-600'
                 )}
               >
                 Tất cả
@@ -92,10 +92,10 @@ export function LocationFilter({
                   key={location.id}
                   onClick={() => onLocationChange?.(location.slug)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap',
+                    'flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap border',
                     selectedLocation === location.slug
-                      ? 'btn-primary shadow-glow-lg scale-105'
-                      : 'bg-white text-gray-400 hover:bg-brand-50 hover:text-brand-600 border border-gray-100 shadow-sm'
+                      ? 'bg-brand-500 text-white border-brand-500 shadow-md transform scale-105'
+                      : 'bg-white text-gray-500 border-gray-200 hover:border-brand-300 hover:text-brand-600'
                   )}
                 >
                   {location.name}
@@ -105,7 +105,7 @@ export function LocationFilter({
                         'min-w-[20px] h-5 flex items-center justify-center text-[10px] font-black rounded-lg px-1.5',
                         selectedLocation === location.slug
                           ? 'bg-white/20 text-white'
-                          : 'bg-brand-50 text-brand-600'
+                          : 'bg-gray-100 text-gray-600 group-hover:bg-brand-100 group-hover:text-brand-600'
                       )}
                     >
                       {location.showCount}

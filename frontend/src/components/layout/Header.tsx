@@ -272,26 +272,28 @@ export function Header() {
 
             {/* Auth - Show skeleton while hydrating */}
             {!hasHydrated ? (
-              <div className="hidden md:flex items-center gap-2">
-                <div className="h-9 w-24 bg-neutral-200 animate-pulse rounded-lg"></div>
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 md:w-24 bg-neutral-200 animate-pulse rounded-lg"></div>
               </div>
             ) : isAuthenticated ? (
-              <div className="hidden md:flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <Link href="/profile">
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="gap-2 text-gray-600 hover:text-brand-600 hover:bg-brand-50"
+                    className={cn(
+                      "text-gray-600 hover:text-brand-600 hover:bg-brand-50",
+                      "h-10 w-10 px-0 md:h-9 md:w-auto md:px-3 md:gap-2"
+                    )}
                   >
-                    <User className="h-4 w-4" />
-                    {user?.fullName}
+                    <User className="h-5 w-5 md:h-4 md:w-4" />
+                    <span className="hidden md:inline text-sm font-medium">{user?.fullName}</span>
                   </Button>
                 </Link>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={logout}
-                  className="text-gray-600 hover:text-brand-600 hover:bg-brand-50"
+                  className="hidden md:flex text-gray-600 hover:text-brand-600 hover:bg-brand-50"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>

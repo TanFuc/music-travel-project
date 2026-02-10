@@ -1,28 +1,28 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
-  Query, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
   Req,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
   ApiBearerAuth,
   ApiParam,
   ApiQuery,
   ApiConsumes,
-  ApiBody
+  ApiBody,
 } from '@nestjs/swagger';
 import { SingersService } from './singers.service';
 import { CreateSingerRegistrationDto } from './dto/create-singer-registration.dto';
@@ -62,7 +62,7 @@ export class SingersController {
     const registration = await this.singersService.create(createDto);
     return {
       message: 'Đăng ký thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.',
-      data: registration
+      data: registration,
     };
   }
 
@@ -118,10 +118,7 @@ export class SingersController {
   @ApiResponse({ status: 200, description: 'Registration updated successfully' })
   @ApiResponse({ status: 404, description: 'Registration not found' })
   @ApiResponse({ status: 409, description: 'Phone number or email already registered' })
-  async update(
-    @Param('id') id: string,
-    @Body() updateDto: UpdateSingerRegistrationDto
-  ) {
+  async update(@Param('id') id: string, @Body() updateDto: UpdateSingerRegistrationDto) {
     return this.singersService.update(id, updateDto);
   }
 
@@ -135,7 +132,7 @@ export class SingersController {
   @ApiResponse({ status: 404, description: 'Registration not found' })
   async updateStatus(
     @Param('id') id: string,
-    @Body() body: { status: SingerRegistrationStatus; adminNotes?: string }
+    @Body() body: { status: SingerRegistrationStatus; adminNotes?: string },
   ) {
     return this.singersService.updateStatus(id, body.status, body.adminNotes);
   }
@@ -152,10 +149,10 @@ export class SingersController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'Voice sample file (MP3, WAV, M4A, max 10MB)'
-        }
-      }
-    }
+          description: 'Voice sample file (MP3, WAV, M4A, max 10MB)',
+        },
+      },
+    },
   })
   @ApiResponse({ status: 200, description: 'File uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid file format or size' })

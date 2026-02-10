@@ -72,7 +72,6 @@ export class BannersService {
     });
   }
 
-
   async create(data: {
     title?: string;
     imageUrl: string;

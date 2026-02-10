@@ -4,7 +4,7 @@ import { $Enums } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getDashboardStats() {
     const now = new Date();
@@ -141,13 +141,13 @@ export class AdminService {
     const skip = (page - 1) * limit;
     const where = search
       ? {
-        deletedAt: null,
-        OR: [
-          { fullName: { contains: search, mode: 'insensitive' as const } },
-          { phoneNumber: { contains: search } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }
+          deletedAt: null,
+          OR: [
+            { fullName: { contains: search, mode: 'insensitive' as const } },
+            { phoneNumber: { contains: search } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
       : { deletedAt: null };
 
     const [items, total] = await Promise.all([
@@ -743,13 +743,16 @@ export class AdminService {
     });
   }
 
-  async updateTour(id: number, data: Partial<{
-    title: string;
-    description: string;
-    duration: string;
-    departureLocId: number;
-    destinationLocId: number;
-  }>) {
+  async updateTour(
+    id: number,
+    data: Partial<{
+      title: string;
+      description: string;
+      duration: string;
+      departureLocId: number;
+      destinationLocId: number;
+    }>,
+  ) {
     const tour = await this.prisma.tour.findUnique({ where: { id } });
     if (!tour) throw new Error('Tour not found');
 
@@ -803,7 +806,10 @@ export class AdminService {
     return ticket;
   }
 
-  async updateTicketStatus(id: number, status: 'AVAILABLE' | 'LOCKED' | 'SOLD' | 'USED' | 'CANCELLED') {
+  async updateTicketStatus(
+    id: number,
+    status: 'AVAILABLE' | 'LOCKED' | 'SOLD' | 'USED' | 'CANCELLED',
+  ) {
     const ticket = await this.prisma.ticket.findUnique({ where: { id } });
     if (!ticket) throw new Error('Ticket not found');
 
@@ -892,10 +898,13 @@ export class AdminService {
     });
   }
 
-  async updateMedia(id: number, data: Partial<{
-    url: string;
-    isFeatured: boolean;
-  }>) {
+  async updateMedia(
+    id: number,
+    data: Partial<{
+      url: string;
+      isFeatured: boolean;
+    }>,
+  ) {
     const media = await this.prisma.media.findUnique({ where: { id } });
     if (!media) throw new Error('Media not found');
 
@@ -915,7 +924,11 @@ export class AdminService {
   // ============================================================================
   // BOOKINGS MANAGEMENT
   // ============================================================================
-  async getBookings(page: number = 1, limit: number = 20, status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED') {
+  async getBookings(
+    page: number = 1,
+    limit: number = 20,
+    status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
+  ) {
     const skip = (page - 1) * limit;
     const where = status ? { status } : {};
 
@@ -1046,7 +1059,11 @@ export class AdminService {
   // ============================================================================
   // MEDIA MANAGEMENT
   // ============================================================================
-  async getMedia(page: number = 1, limit: number = 20, targetType?: 'SHOW' | 'TOUR' | 'STAGE' | 'ARTIST') {
+  async getMedia(
+    page: number = 1,
+    limit: number = 20,
+    targetType?: 'SHOW' | 'TOUR' | 'STAGE' | 'ARTIST',
+  ) {
     const skip = (page - 1) * limit;
     const where = targetType ? { targetType } : {};
 
@@ -1131,14 +1148,17 @@ export class AdminService {
     });
   }
 
-  async updateVoucher(id: number, data: Partial<{
-    discountValue: number;
-    minOrderValue: number;
-    usageLimit: number;
-    startDate: Date;
-    endDate: Date;
-    isActive: boolean;
-  }>) {
+  async updateVoucher(
+    id: number,
+    data: Partial<{
+      discountValue: number;
+      minOrderValue: number;
+      usageLimit: number;
+      startDate: Date;
+      endDate: Date;
+      isActive: boolean;
+    }>,
+  ) {
     const voucher = await this.prisma.voucher.findUnique({ where: { id } });
     if (!voucher) throw new Error('Voucher not found');
 
@@ -1173,7 +1193,10 @@ export class AdminService {
     return booking;
   }
 
-  async updateBookingStatus(id: number, status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED') {
+  async updateBookingStatus(
+    id: number,
+    status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
+  ) {
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new Error('Booking not found');
 
@@ -1192,9 +1215,7 @@ export class AdminService {
 
     // Release tickets back to available
     if (booking.items.length > 0) {
-      const ticketIds = booking.items
-        .filter(item => item.ticketId)
-        .map(item => item.ticketId!);
+      const ticketIds = booking.items.filter((item) => item.ticketId).map((item) => item.ticketId!);
 
       if (ticketIds.length > 0) {
         await this.prisma.ticket.updateMany({
@@ -1258,10 +1279,10 @@ export class AdminService {
         where: { isActive: true, deletedAt: null },
         select: { id: true },
       });
-      targetUserIds = users.map(u => u.id);
+      targetUserIds = users.map((u) => u.id);
     }
 
-    const notifications = targetUserIds.map(userId => ({
+    const notifications = targetUserIds.map((userId) => ({
       userId,
       title: data.title,
       message: data.message,

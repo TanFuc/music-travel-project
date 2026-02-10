@@ -18,36 +18,36 @@ export class SingerRegistrationFilterDto {
   @Min(1)
   limit?: number = 10;
 
-  @ApiProperty({ 
-    description: 'Filter by status', 
+  @ApiProperty({
+    description: 'Filter by status',
     enum: SingerRegistrationStatus,
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsEnum(SingerRegistrationStatus)
   status?: SingerRegistrationStatus;
 
-  @ApiProperty({ 
-    description: 'Filter by package (legacy)', 
+  @ApiProperty({
+    description: 'Filter by package (legacy)',
     enum: SingerPackage,
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsEnum(SingerPackage)
   package?: SingerPackage;
 
-  @ApiProperty({ 
-    description: 'Filter by package template ID', 
-    required: false 
+  @ApiProperty({
+    description: 'Filter by package template ID',
+    required: false,
   })
   @IsOptional()
   @IsUUID()
   packageTemplateId?: string;
 
-  @ApiProperty({ 
-    description: 'Filter by singing experience', 
+  @ApiProperty({
+    description: 'Filter by singing experience',
     enum: SingingExperience,
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsEnum(SingingExperience)

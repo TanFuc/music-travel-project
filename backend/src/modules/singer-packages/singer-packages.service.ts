@@ -9,13 +9,16 @@ import { SingerPackageFilterDto } from './dto/singer-package-filter.dto';
 export class SingerPackagesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createDto: CreateSingerPackageDto, createdBy?: number): Promise<SingerPackageTemplate> {
+  async create(
+    createDto: CreateSingerPackageDto,
+    createdBy?: number,
+  ): Promise<SingerPackageTemplate> {
     // Check for duplicate name
     const existingPackage = await this.prisma.singerPackageTemplate.findFirst({
       where: {
         name: createDto.name.trim(),
-        isActive: true
-      }
+        isActive: true,
+      },
     });
 
     if (existingPackage) {
@@ -28,14 +31,14 @@ export class SingerPackagesService {
         name: createDto.name.trim(),
         nameEn: createDto.nameEn?.trim() || null,
         description: createDto.description?.trim() || null,
-        createdBy
-      }
+        createdBy,
+      },
     });
   }
 
   async findAll(filterDto: SingerPackageFilterDto) {
     const { page = 1, limit = 10, isActive, search } = filterDto;
-    
+
     const safeLimit = Math.min(Math.max(limit, 1), 100);
     const safePage = Math.max(page, 1);
     const skip = (safePage - 1) * safeLimit;
@@ -51,7 +54,7 @@ export class SingerPackagesService {
       where.OR = [
         { name: { contains: sanitizedSearch, mode: 'insensitive' } },
         { nameEn: { contains: sanitizedSearch, mode: 'insensitive' } },
-        { description: { contains: sanitizedSearch, mode: 'insensitive' } }
+        { description: { contains: sanitizedSearch, mode: 'insensitive' } },
       ];
     }
 
@@ -60,19 +63,16 @@ export class SingerPackagesService {
         where,
         skip,
         take: safeLimit,
-        orderBy: [
-          { displayOrder: 'asc' },
-          { createdAt: 'desc' }
-        ],
+        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
         include: {
           _count: {
             select: {
-              registrations: true
-            }
-          }
-        }
+              registrations: true,
+            },
+          },
+        },
       }),
-      this.prisma.singerPackageTemplate.count({ where })
+      this.prisma.singerPackageTemplate.count({ where }),
     ]);
 
     return {
@@ -81,27 +81,24 @@ export class SingerPackagesService {
         page: safePage,
         limit: safeLimit,
         total,
-        totalPages: Math.ceil(total / safeLimit)
-      }
+        totalPages: Math.ceil(total / safeLimit),
+      },
     };
   }
 
   async findAllActive() {
     return this.prisma.singerPackageTemplate.findMany({
       where: {
-        isActive: true
+        isActive: true,
       },
-      orderBy: [
-        { displayOrder: 'asc' },
-        { createdAt: 'desc' }
-      ],
+      orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
       include: {
         _count: {
           select: {
-            registrations: true
-          }
-        }
-      }
+            registrations: true,
+          },
+        },
+      },
     });
   }
 
@@ -111,10 +108,10 @@ export class SingerPackagesService {
       include: {
         _count: {
           select: {
-            registrations: true
-          }
-        }
-      }
+            registrations: true,
+          },
+        },
+      },
     });
 
     if (!packageTemplate) {
@@ -124,7 +121,11 @@ export class SingerPackagesService {
     return packageTemplate;
   }
 
-  async update(id: string, updateDto: UpdateSingerPackageDto, updatedBy?: number): Promise<SingerPackageTemplate> {
+  async update(
+    id: string,
+    updateDto: UpdateSingerPackageDto,
+    updatedBy?: number,
+  ): Promise<SingerPackageTemplate> {
     await this.findOne(id); // Check if exists
 
     // Check for duplicate name if name is being updated
@@ -133,8 +134,8 @@ export class SingerPackagesService {
         where: {
           name: updateDto.name.trim(),
           id: { not: id },
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       if (existingPackage) {
@@ -149,8 +150,8 @@ export class SingerPackagesService {
         ...(updateDto.name && { name: updateDto.name.trim() }),
         ...(updateDto.nameEn && { nameEn: updateDto.nameEn.trim() }),
         ...(updateDto.description && { description: updateDto.description.trim() }),
-        updatedBy
-      }
+        updatedBy,
+      },
     });
   }
 
@@ -162,9 +163,9 @@ export class SingerPackagesService {
       where: {
         packageTemplateId: id,
         status: {
-          in: ['PENDING', 'APPROVED']
-        }
-      }
+          in: ['PENDING', 'APPROVED'],
+        },
+      },
     });
 
     if (registrationCount > 0) {
@@ -172,49 +173,45 @@ export class SingerPackagesService {
     }
 
     await this.prisma.singerPackageTemplate.delete({
-      where: { id }
+      where: { id },
     });
   }
 
   async getStatistics() {
-    const [
-      totalPackages,
-      activePackages,
-      totalRegistrations,
-      packageRegistrationStats
-    ] = await Promise.all([
-      this.prisma.singerPackageTemplate.count(),
-      this.prisma.singerPackageTemplate.count({ where: { isActive: true } }),
-      this.prisma.singerRegistration.count({
-        where: {
-          packageTemplateId: { not: null }
-        }
-      }),
-      this.prisma.singerPackageTemplate.findMany({
-        select: {
-          id: true,
-          name: true,
-          _count: {
-            select: {
-              registrations: true
-            }
-          }
-        },
-        where: {
-          isActive: true
-        }
-      })
-    ]);
+    const [totalPackages, activePackages, totalRegistrations, packageRegistrationStats] =
+      await Promise.all([
+        this.prisma.singerPackageTemplate.count(),
+        this.prisma.singerPackageTemplate.count({ where: { isActive: true } }),
+        this.prisma.singerRegistration.count({
+          where: {
+            packageTemplateId: { not: null },
+          },
+        }),
+        this.prisma.singerPackageTemplate.findMany({
+          select: {
+            id: true,
+            name: true,
+            _count: {
+              select: {
+                registrations: true,
+              },
+            },
+          },
+          where: {
+            isActive: true,
+          },
+        }),
+      ]);
 
     return {
       totalPackages,
       activePackages,
       totalRegistrations,
-      packageRegistrationStats: packageRegistrationStats.map(pkg => ({
+      packageRegistrationStats: packageRegistrationStats.map((pkg) => ({
         id: pkg.id,
         name: pkg.name,
-        registrationCount: pkg._count.registrations
-      }))
+        registrationCount: pkg._count.registrations,
+      })),
     };
   }
 }

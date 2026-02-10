@@ -10,7 +10,7 @@ export interface RegisterRequest {
   phoneNumber: string;
   password: string;
   fullName: string;
-  email?: string;
+
 }
 
 export interface AuthResponse {

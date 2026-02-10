@@ -34,13 +34,14 @@ export class BankQRController {
   constructor(
     private readonly bankQRService: BankQRService,
     private readonly adminQRService: AdminQRService,
-  ) { }
+  ) {}
 
   @Post('generate-qr')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOperation({
     summary: 'Generate QR code using admin bank account',
-    description: 'Generate VietQR EMVCo format QR code using database-configured admin bank account with base64 image and deeplink',
+    description:
+      'Generate VietQR EMVCo format QR code using database-configured admin bank account with base64 image and deeplink',
   })
   @ApiResponse({
     status: 201,
@@ -72,7 +73,8 @@ export class BankQRController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOperation({
     summary: 'Generate Vietnam bank payment QR code with custom bank account',
-    description: 'Generate VietQR EMVCo format QR code with custom bank account, base64 image and bank mobile app deeplink',
+    description:
+      'Generate VietQR EMVCo format QR code with custom bank account, base64 image and bank mobile app deeplink',
   })
   @ApiResponse({
     status: 201,
@@ -103,7 +105,12 @@ export class BankQRController {
   @ApiQuery({ name: 'accountNumber', type: 'string', description: 'Account number' })
   @ApiQuery({ name: 'accountName', type: 'string', description: 'Account holder name' })
   @ApiQuery({ name: 'amount', type: 'number', required: false, description: 'Amount in VND' })
-  @ApiQuery({ name: 'description', type: 'string', required: false, description: 'Payment description' })
+  @ApiQuery({
+    name: 'description',
+    type: 'string',
+    required: false,
+    description: 'Payment description',
+  })
   @ApiResponse({
     status: 200,
     description: 'QR code as base64 string',
@@ -116,11 +123,11 @@ export class BankQRController {
           properties: {
             qrBase64: { type: 'string', description: 'Base64 encoded PNG image' },
             contentType: { type: 'string', example: 'image/png' },
-            filename: { type: 'string', example: 'qr-code.png' }
-          }
-        }
-      }
-    }
+            filename: { type: 'string', example: 'qr-code.png' },
+          },
+        },
+      },
+    },
   })
   async generateQRImage(
     @Query('bankCode') bankCode: VietnamBankCode,
@@ -153,7 +160,7 @@ export class BankQRController {
     return {
       qrBase64: `data:image/png;base64,${qrBase64}`,
       contentType: 'image/png',
-      filename: `qr-${bankCode}-${Date.now()}.png`
+      filename: `qr-${bankCode}-${Date.now()}.png`,
     };
   }
 

@@ -10,7 +10,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private client: Redis;
   private isConnected = false;
 
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
     const host = this.configService.get<string>('redis.host', 'localhost');

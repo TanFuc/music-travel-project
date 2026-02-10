@@ -18,18 +18,13 @@ import { VietQRService } from './services/vietqr.service';
 import { BankDeeplinkService } from './services/bank-deeplink.service';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-    BookingsModule,
-    WalletModule,
-    TicketsModule,
-  ],
+  imports: [ScheduleModule.forRoot(), BookingsModule, WalletModule, TicketsModule],
   controllers: [PaymentsController, BankQRController, BankQRConfigController],
   providers: [
-    PaymentsService, 
-    PaymentsCronService, 
-    MoMoGateway, 
-    VNPayGateway, 
+    PaymentsService,
+    PaymentsCronService,
+    MoMoGateway,
+    VNPayGateway,
     PayOSGateway,
     BankQRService,
     BankQRConfigService,

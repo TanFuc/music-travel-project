@@ -5,52 +5,49 @@ import { UpdateHomeStageDto } from './dto/update-home-stage.dto';
 
 @Injectable()
 export class HomeStagesService {
-    constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
-    async findAll(activeOnly = false) {
-        return this.prisma.homeStage.findMany({
-            where: activeOnly ? { isActive: true } : {},
-            orderBy: [
-                { displayOrder: 'asc' },
-                { createdAt: 'desc' },
-            ],
-        });
+  async findAll(activeOnly = false) {
+    return this.prisma.homeStage.findMany({
+      where: activeOnly ? { isActive: true } : {},
+      orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+  }
+
+  async findOne(id: number) {
+    const stage = await this.prisma.homeStage.findUnique({
+      where: { id },
+    });
+
+    if (!stage) {
+      throw new NotFoundException('Không tìm thấy sân khấu.');
     }
 
-    async findOne(id: number) {
-        const stage = await this.prisma.homeStage.findUnique({
-            where: { id },
-        });
+    return stage;
+  }
 
-        if (!stage) {
-            throw new NotFoundException('Không tìm thấy sân khấu.');
-        }
+  async create(createDto: CreateHomeStageDto, userId?: number) {
+    return this.prisma.homeStage.create({
+      data: {
+        ...createDto,
+        createdBy: userId,
+      },
+    });
+  }
 
-        return stage;
-    }
+  async update(id: number, updateDto: UpdateHomeStageDto) {
+    await this.findOne(id);
+    return this.prisma.homeStage.update({
+      where: { id },
+      data: updateDto,
+    });
+  }
 
-    async create(createDto: CreateHomeStageDto, userId?: number) {
-        return this.prisma.homeStage.create({
-            data: {
-                ...createDto,
-                createdBy: userId,
-            },
-        });
-    }
-
-    async update(id: number, updateDto: UpdateHomeStageDto) {
-        await this.findOne(id);
-        return this.prisma.homeStage.update({
-            where: { id },
-            data: updateDto,
-        });
-    }
-
-    async remove(id: number) {
-        await this.findOne(id);
-        await this.prisma.homeStage.delete({
-            where: { id },
-        });
-        return { message: 'Đã xóa thành công.' };
-    }
+  async remove(id: number) {
+    await this.findOne(id);
+    await this.prisma.homeStage.delete({
+      where: { id },
+    });
+    return { message: 'Đã xóa thành công.' };
+  }
 }

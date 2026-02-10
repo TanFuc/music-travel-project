@@ -1,5 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEmail, IsInt, IsEnum, IsOptional, MinLength, MaxLength, Min, Max, IsUUID, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsInt,
+  IsEnum,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  Min,
+  Max,
+  IsUUID,
+  IsBoolean,
+} from 'class-validator';
 import { SingingExperience, SingerPackage } from '@prisma/client';
 
 export class CreateSingerRegistrationDto {
@@ -35,10 +47,10 @@ export class CreateSingerRegistrationDto {
   @MaxLength(255)
   address: string;
 
-  @ApiProperty({ 
-    description: 'Singing experience level', 
+  @ApiProperty({
+    description: 'Singing experience level',
     enum: SingingExperience,
-    enumName: 'SingingExperience'
+    enumName: 'SingingExperience',
   })
   @IsEnum(SingingExperience)
   singingExperience: SingingExperience;
@@ -48,11 +60,11 @@ export class CreateSingerRegistrationDto {
   @MaxLength(100)
   favoriteGenre: string;
 
-  @ApiProperty({ 
-    description: 'Package selection (legacy)', 
+  @ApiProperty({
+    description: 'Package selection (legacy)',
     enum: SingerPackage,
     enumName: 'SingerPackage',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsEnum(SingerPackage)

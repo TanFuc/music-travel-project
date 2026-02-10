@@ -53,9 +53,7 @@ export class PaymentsCronService {
           // Rate limiting: wait 100ms between requests
           await new Promise((resolve) => setTimeout(resolve, 100));
         } catch (error) {
-          this.logger.error(
-            `Failed to reconcile transaction ${transaction.id}: ${error.message}`,
-          );
+          this.logger.error(`Failed to reconcile transaction ${transaction.id}: ${error.message}`);
         }
       }
 
@@ -92,9 +90,7 @@ export class PaymentsCronService {
       // Query PayOS for payment status
       const gatewayStatus = await this.payosGateway.getPaymentInfo(orderCode);
 
-      this.logger.log(
-        `PayOS status for transaction ${transaction.id}: ${gatewayStatus.status}`,
-      );
+      this.logger.log(`PayOS status for transaction ${transaction.id}: ${gatewayStatus.status}`);
 
       // Map PayOS status to our transaction status
       const statusMap: Record<string, TransactionStatus> = {

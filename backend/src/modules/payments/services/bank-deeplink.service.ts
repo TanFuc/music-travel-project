@@ -18,7 +18,7 @@ export class BankDeeplinkService {
    */
   generateDeeplink(params: BankDeeplinkParams): string | null {
     const bank = this.vietQRService.getBankInfo(params.bankCode as VietnamBankCode);
-    
+
     if (!bank.deeplinkSupported || !bank.appScheme) {
       this.logger.debug(`Deeplink not supported for bank: ${params.bankCode}`);
       return null;
@@ -65,11 +65,11 @@ export class BankDeeplinkService {
       queryParams.append('action', 'transfer');
       queryParams.append('account', params.accountNumber);
       queryParams.append('name', params.accountName);
-      
+
       if (params.amount) {
         queryParams.append('amount', params.amount.toString());
       }
-      
+
       if (params.description) {
         queryParams.append('memo', params.description);
       }
@@ -83,7 +83,7 @@ export class BankDeeplinkService {
    */
   private generateVietcombankDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'vcb://';
-    
+
     if (params.qrContent) {
       return `${baseUrl}qr-payment?qr=${encodeURIComponent(params.qrContent)}`;
     }
@@ -110,7 +110,7 @@ export class BankDeeplinkService {
    */
   private generateTechcombankDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'tcb://';
-    
+
     if (params.qrContent) {
       return `${baseUrl}qr?data=${encodeURIComponent(params.qrContent)}`;
     }
@@ -131,7 +131,7 @@ export class BankDeeplinkService {
    */
   private generateBIDVDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'bidv://';
-    
+
     if (params.qrContent) {
       return `${baseUrl}qrpay?qr=${encodeURIComponent(params.qrContent)}`;
     }
@@ -158,7 +158,7 @@ export class BankDeeplinkService {
    */
   private generateACBDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'acb://';
-    
+
     if (params.qrContent) {
       return `${baseUrl}qr-payment/${encodeURIComponent(params.qrContent)}`;
     }
@@ -184,7 +184,7 @@ export class BankDeeplinkService {
    */
   private generateVPBankDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'vpbank://';
-    
+
     if (params.qrContent) {
       return `${baseUrl}qr?code=${encodeURIComponent(params.qrContent)}`;
     }
@@ -211,7 +211,7 @@ export class BankDeeplinkService {
    */
   private generateTPBankDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'tpbank://';
-    
+
     if (params.qrContent) {
       return `${baseUrl}qr-scan?qr_data=${encodeURIComponent(params.qrContent)}`;
     }
@@ -233,7 +233,7 @@ export class BankDeeplinkService {
   private generateGenericDeeplink(params: BankDeeplinkParams): string {
     const bank = this.vietQRService.getBankInfo(params.bankCode as VietnamBankCode);
     const baseUrl = `${bank.appScheme}://`;
-    
+
     if (params.qrContent) {
       return `${baseUrl}qr?data=${encodeURIComponent(params.qrContent)}`;
     }
@@ -268,7 +268,7 @@ export class BankDeeplinkService {
    */
   getFallbackUrl(params: BankDeeplinkParams): string {
     const bank = this.vietQRService.getBankInfo(params.bankCode as VietnamBankCode);
-    
+
     // Return a generic banking QR payment instruction
     return `https://qr.sepay.vn/img?acc=${params.accountNumber}&bank=${bank.napasCode}&amount=${params.amount || ''}&des=${encodeURIComponent(params.description || '')}`;
   }

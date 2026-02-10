@@ -1,6 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { VerifyTicketDto, ManualEntryDto, VerificationMethod, AttendanceStatsDto } from './dto/ticket-verification.dto';
+import {
+  VerifyTicketDto,
+  ManualEntryDto,
+  VerificationMethod,
+  AttendanceStatsDto,
+} from './dto/ticket-verification.dto';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -30,7 +40,13 @@ export class TicketVerificationService {
 
     if (!ticket) {
       // Log failed attempt
-      await this.logFailedVerification(dto.showId, dto.ticketCode, verifierId, 'TICKET_NOT_FOUND', dto);
+      await this.logFailedVerification(
+        dto.showId,
+        dto.ticketCode,
+        verifierId,
+        'TICKET_NOT_FOUND',
+        dto,
+      );
       return {
         success: false,
         message: 'Ticket not found',
@@ -41,11 +57,20 @@ export class TicketVerificationService {
     // Validate ticket status
     const validStatuses = ['SOLD', 'AVAILABLE'];
     if (!validStatuses.includes(ticket.status)) {
-      await this.logFailedVerification(dto.showId, dto.ticketCode, verifierId, 'INVALID_TICKET_STATUS', dto);
+      await this.logFailedVerification(
+        dto.showId,
+        dto.ticketCode,
+        verifierId,
+        'INVALID_TICKET_STATUS',
+        dto,
+      );
       return {
         success: false,
         message: `Ticket status is ${ticket.status}`,
-        error: { code: 'INVALID_TICKET_STATUS', details: `Ticket is ${ticket.status.toLowerCase()}` },
+        error: {
+          code: 'INVALID_TICKET_STATUS',
+          details: `Ticket is ${ticket.status.toLowerCase()}`,
+        },
       };
     }
 
@@ -74,7 +99,13 @@ export class TicketVerificationService {
     // Get ticket holder user ID
     const userId = ticket.booking?.userId || ticket.holderUserId;
     if (!userId) {
-      await this.logFailedVerification(dto.showId, dto.ticketCode, verifierId, 'NO_TICKET_HOLDER', dto);
+      await this.logFailedVerification(
+        dto.showId,
+        dto.ticketCode,
+        verifierId,
+        'NO_TICKET_HOLDER',
+        dto,
+      );
       return {
         success: false,
         message: 'Ticket has no associated user',
@@ -111,7 +142,13 @@ export class TicketVerificationService {
 
     // Check capacity if maxCapacity is set
     if (show.maxCapacity && show.currentAttendance >= show.maxCapacity && !dto.isReEntry) {
-      await this.logFailedVerification(dto.showId, dto.ticketCode, verifierId, 'CAPACITY_FULL', dto);
+      await this.logFailedVerification(
+        dto.showId,
+        dto.ticketCode,
+        verifierId,
+        'CAPACITY_FULL',
+        dto,
+      );
       return {
         success: false,
         message: 'Show is at full capacity',
@@ -287,7 +324,10 @@ export class TicketVerificationService {
         include: { booking: true },
       });
 
-      if (!ticket || (ticket.booking?.userId !== dto.userId && ticket.holderUserId !== dto.userId)) {
+      if (
+        !ticket ||
+        (ticket.booking?.userId !== dto.userId && ticket.holderUserId !== dto.userId)
+      ) {
         throw new BadRequestException('Ticket does not belong to this user');
       }
     }
@@ -424,7 +464,9 @@ export class TicketVerificationService {
       this.prisma.ticketVerification.count({ where: { showId, isSuccessful: false } }),
       this.prisma.ticketVerification.count({ where: { showId, isReEntry: true } }),
       this.prisma.ticketVerification.count({ where: { showId, verificationMethod: 'QR_SCAN' } }),
-      this.prisma.ticketVerification.count({ where: { showId, verificationMethod: 'MANUAL_ENTRY' } }),
+      this.prisma.ticketVerification.count({
+        where: { showId, verificationMethod: 'MANUAL_ENTRY' },
+      }),
       this.prisma.ticketVerification.findMany({
         where: { showId, isSuccessful: true },
         take: 10,
@@ -441,7 +483,9 @@ export class TicketVerificationService {
       showTitle: show.title,
       maxCapacity: show.maxCapacity,
       currentAttendance: show.currentAttendance,
-      attendancePercentage: show.maxCapacity ? Math.round((show.currentAttendance / show.maxCapacity) * 100) : null,
+      attendancePercentage: show.maxCapacity
+        ? Math.round((show.currentAttendance / show.maxCapacity) * 100)
+        : null,
       totalVerifications,
       successfulVerifications,
       failedVerifications,
@@ -507,7 +551,8 @@ export class TicketVerificationService {
         isSuccessful: v.isSuccessful,
         failureReason: v.failureReason,
       })),
-      totalShowsAttended: ticket.ticketVerifications.filter((v) => v.isSuccessful && !v.isReEntry).length,
+      totalShowsAttended: ticket.ticketVerifications.filter((v) => v.isSuccessful && !v.isReEntry)
+        .length,
     };
   }
 
@@ -523,7 +568,11 @@ export class TicketVerificationService {
 
   private generateSecurityHash(ticketCode: string, timestamp: string): string {
     const secret = process.env.QR_SECRET_KEY || 'default-secret-key';
-    return crypto.createHmac('sha256', secret).update(`${ticketCode}${timestamp}`).digest('hex').substring(0, 16);
+    return crypto
+      .createHmac('sha256', secret)
+      .update(`${ticketCode}${timestamp}`)
+      .digest('hex')
+      .substring(0, 16);
   }
 
   // ============================================================================

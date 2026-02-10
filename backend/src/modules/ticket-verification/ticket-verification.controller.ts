@@ -5,7 +5,12 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
-import { VerifyTicketDto, VerifyTicketByQRDto, ManualEntryDto, VerificationMethod } from './dto/ticket-verification.dto';
+import {
+  VerifyTicketDto,
+  VerifyTicketByQRDto,
+  ManualEntryDto,
+  VerificationMethod,
+} from './dto/ticket-verification.dto';
 
 // ============================================================================
 // STAFF TICKET VERIFICATION ENDPOINTS
@@ -29,7 +34,12 @@ export class TicketVerificationController {
   @ApiOperation({ summary: 'Verify ticket by QR code scan' })
   @ApiResponse({ status: 200, description: 'Verification result' })
   async verifyTicketByQR(@Body() dto: VerifyTicketByQRDto, @CurrentUser() user: any) {
-    return this.ticketVerificationService.verifyTicketByQR(dto.qrData, dto.showId, user.sub, dto.deviceInfo);
+    return this.ticketVerificationService.verifyTicketByQR(
+      dto.qrData,
+      dto.showId,
+      user.sub,
+      dto.deviceInfo,
+    );
   }
 
   @Get(':ticketCode/verification-history')

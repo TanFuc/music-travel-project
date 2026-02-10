@@ -12,7 +12,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { ShowDetailServer } from '@/components/server/ShowDetailServer';
+import { ShowDetailServer, ShowHero } from '@/components/server/ShowDetailServer';
 import { TicketBookingClient } from '@/components/client/TicketBookingClient';
 import { ShowDetailSkeleton } from '@/components/server/Skeletons';
 import { fetchServer } from '@/lib/api-server';
@@ -165,16 +165,16 @@ export default async function ShowDetailPage({
     <div className="bg-neutral-50 min-h-screen pb-20">
       <Suspense fallback={<ShowDetailSkeleton />}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          {/* Hero Banner - rendered by ShowDetailServer */}
-          <ShowDetailServer show={show} />
+          {/* Hero Banner */}
+          <ShowHero show={show} />
         </div>
 
         {/* Re-structure: Main content and sidebar */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Column - Show Details (from ShowDetailServer) */}
+            {/* Main Column - Show Details */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Content rendered by ShowDetailServer above */}
+              <ShowDetailServer show={show} />
             </div>
 
             {/* Right Sidebar - Sticky Booking Card */}

@@ -41,7 +41,10 @@ class SingerPackageItemDto {
 }
 
 export class CreateBookingDto {
-  @ApiPropertyOptional({ type: [Number], description: 'Array of ticket IDs (deprecated - use ticketsWithSeats for seat selection)' })
+  @ApiPropertyOptional({
+    type: [Number],
+    description: 'Array of ticket IDs (deprecated - use ticketsWithSeats for seat selection)',
+  })
   @IsOptional()
   @IsArray()
   @IsInt({ each: true })
@@ -50,7 +53,10 @@ export class CreateBookingDto {
   @ApiPropertyOptional({
     type: [TicketWithSeatDto],
     description: 'Array of tickets with physical seat IDs',
-    example: [{ ticketId: 1, physicalSeatId: 10 }, { ticketId: 2, physicalSeatId: 11 }]
+    example: [
+      { ticketId: 1, physicalSeatId: 10 },
+      { ticketId: 2, physicalSeatId: 11 },
+    ],
   })
   @IsOptional()
   @IsArray()
@@ -63,7 +69,7 @@ export class CreateBookingDto {
     type: 'object',
     isArray: true,
     description: 'Array of ticket tiers to book (Open Ticket flow)',
-    example: [{ tierId: 1, quantity: 2 }]
+    example: [{ tierId: 1, quantity: 2 }],
   })
   @IsOptional()
   @IsArray()
@@ -78,7 +84,10 @@ export class CreateBookingDto {
   @Type(() => TourItemDto)
   tourItems?: TourItemDto[];
 
-  @ApiPropertyOptional({ type: [SingerPackageItemDto], description: 'Singer package booking items' })
+  @ApiPropertyOptional({
+    type: [SingerPackageItemDto],
+    description: 'Singer package booking items',
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

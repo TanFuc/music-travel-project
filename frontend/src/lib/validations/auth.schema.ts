@@ -19,13 +19,7 @@ export const registerSchema = z
       .string()
       .min(1, 'Vui lòng nhập số điện thoại')
       .regex(/^(0|84|\+84)[0-9]{9}$/, 'Số điện thoại không hợp lệ'),
-    email: z
-      .string()
-      .optional()
-      .refine(
-        (val) => !val || z.string().email().safeParse(val).success,
-        'Email không đúng định dạng'
-      ),
+
     password: z
       .string()
       .min(1, 'Vui lòng nhập mật khẩu')

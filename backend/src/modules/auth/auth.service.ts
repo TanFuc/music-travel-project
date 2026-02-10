@@ -55,7 +55,6 @@ export class AuthService {
       phoneNumber: registerDto.phoneNumber,
       passwordHash,
       fullName: registerDto.fullName,
-      email: registerDto.email,
     });
 
     // Generate tokens

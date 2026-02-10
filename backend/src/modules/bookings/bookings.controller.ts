@@ -59,6 +59,15 @@ export class BookingsController {
     return this.bookingsService.create(user.sub, createBookingDto);
   }
 
+  @Post(':code/confirm-payment')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Confirm manual payment transferred' })
+  @ApiResponse({ status: 200, description: 'Booking payment confirmed' })
+  async confirmPayment(@CurrentUser() user: JwtPayload, @Param('code') code: string) {
+    return this.bookingsService.confirmManualPayment(code, user.sub);
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

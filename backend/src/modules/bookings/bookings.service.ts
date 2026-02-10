@@ -18,17 +18,20 @@ export class BookingsService {
     private readonly ticketsService: TicketsService,
     private readonly toursService: ToursService,
     private readonly cache: CacheService,
-  ) { }
+  ) {}
 
   async create(userId: number, createBookingDto: CreateBookingDto) {
-    const hasTickets = (createBookingDto.ticketsWithSeats?.length ?? 0) > 0 || (createBookingDto.ticketIds?.length ?? 0) > 0;
+    const hasTickets =
+      (createBookingDto.ticketsWithSeats?.length ?? 0) > 0 ||
+      (createBookingDto.ticketIds?.length ?? 0) > 0;
     const hasTiers = (createBookingDto.ticketTiers?.length ?? 0) > 0;
     const hasTours = (createBookingDto.tourItems?.length ?? 0) > 0;
     const hasSingerPackages = (createBookingDto.singerPackages?.length ?? 0) > 0;
     if (!hasTickets && !hasTiers && !hasTours && !hasSingerPackages) {
       throw new BadRequestException({
         code: ERROR_CODES.VAL_001,
-        message: 'Đơn hàng phải có ít nhất một mục: vé (ticketsWithSeats/ticketIds), loại vé (ticketTiers), tour (tourItems), hoặc gói ca sĩ (singerPackages).',
+        message:
+          'Đơn hàng phải có ít nhất một mục: vé (ticketsWithSeats/ticketIds), loại vé (ticketTiers), tour (tourItems), hoặc gói ca sĩ (singerPackages).',
       });
     }
 
@@ -40,7 +43,7 @@ export class BookingsService {
 
     // Handle new flow: ticketsWithSeats (includes seat selection)
     if (createBookingDto.ticketsWithSeats?.length) {
-      const ticketIds = createBookingDto.ticketsWithSeats.map(t => t.ticketId);
+      const ticketIds = createBookingDto.ticketsWithSeats.map((t) => t.ticketId);
       const tickets = await this.prisma.ticket.findMany({
         where: {
           id: { in: ticketIds },
@@ -62,7 +65,7 @@ export class BookingsService {
 
       // Validate and assign seats
       for (const ticketWithSeat of createBookingDto.ticketsWithSeats) {
-        const ticket = tickets.find(t => t.id === ticketWithSeat.ticketId);
+        const ticket = tickets.find((t) => t.id === ticketWithSeat.ticketId);
         if (!ticket) continue;
 
         // If seat selection is enabled and seat is provided, validate it
@@ -103,7 +106,7 @@ export class BookingsService {
         ticketItems.push({
           ticketId: ticket.id,
           price: (ticket.ticketClass?.price as unknown as Decimal) || new Decimal(0),
-          physicalSeatId: ticketWithSeat.physicalSeatId
+          physicalSeatId: ticketWithSeat.physicalSeatId,
         });
         totalAmount = totalAmount.plus((ticket.ticketClass?.price as unknown as Decimal) || 0);
       }
@@ -127,7 +130,10 @@ export class BookingsService {
       }
 
       for (const ticket of tickets) {
-        ticketItems.push({ ticketId: ticket.id, price: (ticket.ticketClass?.price as unknown as Decimal) || new Decimal(0) });
+        ticketItems.push({
+          ticketId: ticket.id,
+          price: (ticket.ticketClass?.price as unknown as Decimal) || new Decimal(0),
+        });
         totalAmount = totalAmount.plus((ticket.ticketClass?.price as unknown as Decimal) || 0);
       }
     }
@@ -155,7 +161,7 @@ export class BookingsService {
     // Validate and calculate ticket tiers (Open Ticket Flow)
     const tierItems: { tierId: number; quantity: number; price: Decimal }[] = [];
     if (createBookingDto.ticketTiers?.length) {
-      const tierIds = createBookingDto.ticketTiers.map(t => t.tierId);
+      const tierIds = createBookingDto.ticketTiers.map((t) => t.tierId);
       const tiers = await this.prisma.ticketTier.findMany({
         where: { id: { in: tierIds }, isActive: true },
       });
@@ -168,13 +174,13 @@ export class BookingsService {
       }
 
       for (const item of createBookingDto.ticketTiers) {
-        const tier = tiers.find(t => t.id === item.tierId);
+        const tier = tiers.find((t) => t.id === item.tierId);
         if (tier) {
           const itemTotal = tier.price.mul(item.quantity);
           tierItems.push({
             tierId: item.tierId,
             quantity: item.quantity,
-            price: tier.price
+            price: tier.price,
           });
           totalAmount = totalAmount.plus(itemTotal);
         }
@@ -184,7 +190,7 @@ export class BookingsService {
     // Validate and calculate singer packages
     const singerPackageItems: { packageId: string; quantity: number; price: Decimal }[] = [];
     if (createBookingDto.singerPackages?.length) {
-      const packageIds = createBookingDto.singerPackages.map(p => p.packageId);
+      const packageIds = createBookingDto.singerPackages.map((p) => p.packageId);
       const packages = await this.prisma.singerPackageTemplate.findMany({
         where: { id: { in: packageIds }, isActive: true },
       });
@@ -197,13 +203,13 @@ export class BookingsService {
       }
 
       for (const item of createBookingDto.singerPackages) {
-        const pkg = packages.find(p => p.id === item.packageId);
+        const pkg = packages.find((p) => p.id === item.packageId);
         if (pkg) {
           const itemTotal = pkg.price.mul(item.quantity);
           singerPackageItems.push({
             packageId: item.packageId,
             quantity: item.quantity,
-            price: pkg.price
+            price: pkg.price,
           });
           totalAmount = totalAmount.plus(itemTotal);
         }
@@ -304,7 +310,7 @@ export class BookingsService {
             ticketTierId: item.tierId,
             quantity: item.quantity,
             originalPrice: item.price,
-          }
+          },
         });
       }
 
@@ -317,7 +323,7 @@ export class BookingsService {
             singerPackageId: item.packageId,
             quantity: item.quantity,
             originalPrice: item.price,
-          }
+          },
         });
       }
 
@@ -337,6 +343,41 @@ export class BookingsService {
       status: booking.status,
       message: 'Đặt hàng thành công. Vui lòng thanh toán để hoàn tất.',
     };
+  }
+
+  async confirmManualPayment(code: string, userId: number) {
+    const booking = await this.prisma.booking.findFirst({
+      where: { bookingCode: code, userId },
+    });
+
+    if (!booking) {
+      throw new NotFoundException({
+        code: ERROR_CODES.BOOKING_001,
+        message: getErrorMessage(ERROR_CODES.BOOKING_001),
+      });
+    }
+
+    // Allow confirming if Pending or if already Manual Review (idempotent)
+    if (
+      booking.status !== BookingStatus.PENDING &&
+      booking.status !== BookingStatus.MANUAL_REVIEW
+    ) {
+       throw new BadRequestException('Trạng thái đơn hàng không hợp lệ để xác nhận thanh toán.');
+    }
+
+    if (booking.status === BookingStatus.MANUAL_REVIEW) {
+      return booking;
+    }
+
+    const updated = await this.prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        status: BookingStatus.MANUAL_REVIEW,
+      },
+    });
+
+    await this.invalidateBookingCache(code, userId);
+    return updated;
   }
 
   async findByUserId(userId: number) {

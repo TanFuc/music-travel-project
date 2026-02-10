@@ -60,7 +60,16 @@ export class SearchService {
   ) {}
 
   async search(dto: SearchDto): Promise<SearchResults> {
-    const { q = '', type = SearchType.ALL, locationId, branchId, fromDate, toDate, page = 1, limit = 10 } = dto;
+    const {
+      q = '',
+      type = SearchType.ALL,
+      locationId,
+      branchId,
+      fromDate,
+      toDate,
+      page = 1,
+      limit = 10,
+    } = dto;
     const skip = (page - 1) * limit;
 
     // Build cache key
@@ -79,7 +88,14 @@ export class SearchService {
 
     // Search shows
     if (type === SearchType.ALL || type === SearchType.SHOWS) {
-      const showsResult = await this.searchShows(searchTerm, { locationId, branchId, fromDate, toDate, skip, limit });
+      const showsResult = await this.searchShows(searchTerm, {
+        locationId,
+        branchId,
+        fromDate,
+        toDate,
+        skip,
+        limit,
+      });
       results.shows = showsResult;
     }
 
@@ -103,7 +119,14 @@ export class SearchService {
 
   private async searchShows(
     searchTerm: string,
-    filters: { locationId?: number; branchId?: number; fromDate?: string; toDate?: string; skip: number; limit: number },
+    filters: {
+      locationId?: number;
+      branchId?: number;
+      fromDate?: string;
+      toDate?: string;
+      skip: number;
+      limit: number;
+    },
   ) {
     const where: any = {
       deletedAt: null,
@@ -166,7 +189,10 @@ export class SearchService {
           location: show.stage.location,
         },
         branch: show.branch,
-        minPrice: show.ticketClasses.length > 0 ? Math.min(...show.ticketClasses.map((tc) => Number(tc.price))) : null,
+        minPrice:
+          show.ticketClasses.length > 0
+            ? Math.min(...show.ticketClasses.map((tc) => Number(tc.price)))
+            : null,
         availableTickets: show.tickets.length,
       })),
       total,
@@ -234,9 +260,14 @@ export class SearchService {
         destinationLoc: tour.destinationLoc,
         branch: tour.branch,
         minPrice: tour.schedules.length > 0 ? Number(tour.schedules[0].price) : null,
-        nextSchedule: tour.schedules.length > 0
-          ? { id: tour.schedules[0].id, startDate: tour.schedules[0].startDate, price: Number(tour.schedules[0].price) }
-          : null,
+        nextSchedule:
+          tour.schedules.length > 0
+            ? {
+                id: tour.schedules[0].id,
+                startDate: tour.schedules[0].startDate,
+                price: Number(tour.schedules[0].price),
+              }
+            : null,
       })),
       total,
     };

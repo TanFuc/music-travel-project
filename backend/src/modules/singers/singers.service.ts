@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import {
   SingerRegistration,
@@ -16,7 +21,7 @@ import { SingerRegistrationFilterDto } from './dto/singer-registration-filter.dt
 export class SingersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cloudinaryService: CloudinaryService
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(createDto: CreateSingerRegistrationDto): Promise<SingerRegistration> {
@@ -30,8 +35,8 @@ export class SingersService {
       const packageTemplate = await this.prisma.singerPackageTemplate.findFirst({
         where: {
           id: createDto.packageTemplateId,
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       if (!packageTemplate) {
@@ -44,9 +49,9 @@ export class SingersService {
           where: {
             packageTemplateId: createDto.packageTemplateId,
             status: {
-              in: ['PENDING', 'APPROVED']
-            }
-          }
+              in: ['PENDING', 'APPROVED'],
+            },
+          },
         });
 
         if (currentRegistrations >= packageTemplate.maxRegistrations) {
@@ -63,21 +68,18 @@ export class SingersService {
       email: createDto.email.toLowerCase().trim(),
       address: createDto.address.trim(),
       favoriteGenre: createDto.favoriteGenre.trim(),
-      introduction: createDto.introduction?.trim() || null
+      introduction: createDto.introduction?.trim() || null,
     };
 
     // Try to link registration to an existing user by phone/email
     const existingUser = await this.prisma.user.findFirst({
       where: {
         isActive: true,
-        OR: [
-          { phoneNumber: sanitizedData.phoneNumber },
-          { email: sanitizedData.email }
-        ]
+        OR: [{ phoneNumber: sanitizedData.phoneNumber }, { email: sanitizedData.email }],
       },
       select: {
-        id: true
-      }
+        id: true,
+      },
     });
 
     // Prepare data to store, excluding agreeToTerms which is not persisted
@@ -87,14 +89,11 @@ export class SingersService {
     // Check for duplicate phone number or email
     const existingRegistration = await this.prisma.singerRegistration.findFirst({
       where: {
-        OR: [
-          { phoneNumber: sanitizedData.phoneNumber },
-          { email: sanitizedData.email }
-        ],
+        OR: [{ phoneNumber: sanitizedData.phoneNumber }, { email: sanitizedData.email }],
         status: {
-          not: SingerRegistrationStatus.CANCELLED
-        }
-      }
+          not: SingerRegistrationStatus.CANCELLED,
+        },
+      },
     });
 
     if (existingRegistration) {
@@ -115,16 +114,24 @@ export class SingersService {
             id: true,
             fullName: true,
             phoneNumber: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
   }
 
   async findAll(filterDto: SingerRegistrationFilterDto) {
-    const { page = 1, limit = 10, status, package: packageFilter, packageTemplateId, singingExperience, search } = filterDto;
-    
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      package: packageFilter,
+      packageTemplateId,
+      singingExperience,
+      search,
+    } = filterDto;
+
     // Limit page size for security
     const safeLimit = Math.min(Math.max(limit, 1), 100);
     const safePage = Math.max(page, 1);
@@ -154,7 +161,7 @@ export class SingersService {
       where.OR = [
         { fullName: { contains: sanitizedSearch, mode: 'insensitive' } },
         { phoneNumber: { contains: sanitizedSearch } },
-        { email: { contains: sanitizedSearch, mode: 'insensitive' } }
+        { email: { contains: sanitizedSearch, mode: 'insensitive' } },
       ];
     }
 
@@ -171,12 +178,12 @@ export class SingersService {
               id: true,
               fullName: true,
               phoneNumber: true,
-              email: true
-            }
-          }
-        }
+              email: true,
+            },
+          },
+        },
       }),
-      this.prisma.singerRegistration.count({ where })
+      this.prisma.singerRegistration.count({ where }),
     ]);
 
     return {
@@ -185,8 +192,8 @@ export class SingersService {
         page: safePage,
         limit: safeLimit,
         total,
-        totalPages: Math.ceil(total / safeLimit)
-      }
+        totalPages: Math.ceil(total / safeLimit),
+      },
     };
   }
 
@@ -200,10 +207,10 @@ export class SingersService {
             id: true,
             fullName: true,
             phoneNumber: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
 
     if (!registration) {
@@ -220,16 +227,16 @@ export class SingersService {
     if (updateDto.phoneNumber || updateDto.email) {
       const duplicateCheck: any = {
         id: { not: id },
-        status: { not: SingerRegistrationStatus.CANCELLED }
+        status: { not: SingerRegistrationStatus.CANCELLED },
       };
 
       if (updateDto.phoneNumber || updateDto.email) {
         duplicateCheck.OR = [];
-        
+
         if (updateDto.phoneNumber && updateDto.phoneNumber !== registration.phoneNumber) {
           duplicateCheck.OR.push({ phoneNumber: updateDto.phoneNumber });
         }
-        
+
         if (updateDto.email && updateDto.email !== registration.email) {
           duplicateCheck.OR.push({ email: updateDto.email });
         }
@@ -237,7 +244,7 @@ export class SingersService {
 
       if (duplicateCheck.OR?.length > 0) {
         const existingRegistration = await this.prisma.singerRegistration.findFirst({
-          where: duplicateCheck
+          where: duplicateCheck,
         });
 
         if (existingRegistration) {
@@ -261,10 +268,10 @@ export class SingersService {
             id: true,
             fullName: true,
             phoneNumber: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
   }
 
@@ -272,18 +279,22 @@ export class SingersService {
     await this.findOne(id); // Check if exists
 
     await this.prisma.singerRegistration.delete({
-      where: { id }
+      where: { id },
     });
   }
 
-  async updateStatus(id: string, status: SingerRegistrationStatus, adminNotes?: string): Promise<SingerRegistration> {
+  async updateStatus(
+    id: string,
+    status: SingerRegistrationStatus,
+    adminNotes?: string,
+  ): Promise<SingerRegistration> {
     await this.findOne(id); // Check if exists
 
     return this.prisma.singerRegistration.update({
       where: { id },
       data: {
         status,
-        ...(adminNotes && { adminNotes })
+        ...(adminNotes && { adminNotes }),
       },
       include: {
         packageTemplate: true,
@@ -292,10 +303,10 @@ export class SingersService {
             id: true,
             fullName: true,
             phoneNumber: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
   }
 
@@ -306,20 +317,24 @@ export class SingersService {
       approvedCount,
       rejectedCount,
       packageStats,
-      experienceStats
+      experienceStats,
     ] = await Promise.all([
       this.prisma.singerRegistration.count(),
       this.prisma.singerRegistration.count({ where: { status: SingerRegistrationStatus.PENDING } }),
-      this.prisma.singerRegistration.count({ where: { status: SingerRegistrationStatus.APPROVED } }),
-      this.prisma.singerRegistration.count({ where: { status: SingerRegistrationStatus.REJECTED } }),
+      this.prisma.singerRegistration.count({
+        where: { status: SingerRegistrationStatus.APPROVED },
+      }),
+      this.prisma.singerRegistration.count({
+        where: { status: SingerRegistrationStatus.REJECTED },
+      }),
       this.prisma.singerRegistration.groupBy({
         by: ['package'],
-        _count: { package: true }
+        _count: { package: true },
       }),
       this.prisma.singerRegistration.groupBy({
         by: ['singingExperience'],
-        _count: { singingExperience: true }
-      })
+        _count: { singingExperience: true },
+      }),
     ]);
 
     return {
@@ -327,25 +342,31 @@ export class SingersService {
       byStatus: {
         pending: pendingCount,
         approved: approvedCount,
-        rejected: rejectedCount
+        rejected: rejectedCount,
       },
-      byPackage: packageStats.reduce<Record<SingerPackage, number>>((acc, stat) => {
-        if (stat.package) {
-          acc[stat.package] = stat._count.package;
-        }
-        return acc;
-      }, {} as Record<SingerPackage, number>),
-      byExperience: experienceStats.reduce<Record<SingingExperience, number>>((acc, stat) => {
-        acc[stat.singingExperience] = stat._count.singingExperience;
-        return acc;
-      }, {} as Record<SingingExperience, number>),
+      byPackage: packageStats.reduce<Record<SingerPackage, number>>(
+        (acc, stat) => {
+          if (stat.package) {
+            acc[stat.package] = stat._count.package;
+          }
+          return acc;
+        },
+        {} as Record<SingerPackage, number>,
+      ),
+      byExperience: experienceStats.reduce<Record<SingingExperience, number>>(
+        (acc, stat) => {
+          acc[stat.singingExperience] = stat._count.singingExperience;
+          return acc;
+        },
+        {} as Record<SingingExperience, number>,
+      ),
     };
   }
 
   async uploadVoiceSample(req: FastifyRequest): Promise<{ url: string }> {
     try {
       const data = await req.file();
-      
+
       if (!data) {
         throw new BadRequestException('Không có file được tải lên');
       }
@@ -367,7 +388,7 @@ export class SingersService {
       const result = await this.cloudinaryService.uploadFromBuffer(
         buffer,
         'singer-voice-samples',
-        `voice-sample-${Date.now()}`
+        `voice-sample-${Date.now()}`,
       );
 
       if ('secure_url' in result) {
@@ -389,8 +410,8 @@ export class SingersService {
       where: { id: userId },
       select: {
         phoneNumber: true,
-        email: true
-      }
+        email: true,
+      },
     });
 
     if (!user) {
@@ -407,17 +428,17 @@ export class SingersService {
             userId: null,
             OR: [
               { phoneNumber: user.phoneNumber },
-              ...(user.email ? [{ email: user.email.toLowerCase() }] : [])
-            ]
-          }
-        ]
+              ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+            ],
+          },
+        ],
       },
       include: {
-        packageTemplate: true
+        packageTemplate: true,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
   }
 }

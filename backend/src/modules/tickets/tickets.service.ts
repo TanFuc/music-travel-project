@@ -281,7 +281,9 @@ export class TicketsService {
       select: { showId: true },
     });
 
-    const showIds = [...new Set(lockedTickets.map((t) => t.showId).filter((id): id is number => id !== null))];
+    const showIds = [
+      ...new Set(lockedTickets.map((t) => t.showId).filter((id): id is number => id !== null)),
+    ];
 
     const result = await this.prisma.ticket.updateMany({
       where: {
@@ -320,7 +322,9 @@ export class TicketsService {
       select: { showId: true },
     });
 
-    const showIds = [...new Set(expiredTickets.map((t) => t.showId).filter((id): id is number => id !== null))];
+    const showIds = [
+      ...new Set(expiredTickets.map((t) => t.showId).filter((id): id is number => id !== null)),
+    ];
 
     const result = await this.prisma.ticket.updateMany({
       where: {
@@ -355,7 +359,9 @@ export class TicketsService {
       select: { showId: true },
     });
 
-    const showIds = [...new Set(tickets.map((t) => t.showId).filter((id): id is number => id !== null))];
+    const showIds = [
+      ...new Set(tickets.map((t) => t.showId).filter((id): id is number => id !== null)),
+    ];
 
     await this.prisma.ticket.updateMany({
       where: {
@@ -457,7 +463,9 @@ export class TicketsService {
     // Generate tickets
     const ticketsData = [];
     for (let i = 0; i < quantity; i++) {
-      const ticketCode = `TK${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      const ticketCode = `TK${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)
+        .toString()
+        .padStart(3, '0')}`;
       ticketsData.push({
         ticketCode,
         ticketTierId: tierId,
@@ -512,7 +520,7 @@ export class TicketsService {
             price: true,
             colorCode: true,
             description: true,
-          }
+          },
         },
         physicalSeat: {
           select: {
@@ -537,11 +545,11 @@ export class TicketsService {
       ticketTier: ticket.ticketTier,
       seat: ticket.physicalSeat
         ? {
-          zone: ticket.physicalSeat.zoneName,
-          row: ticket.physicalSeat.rowName,
-          number: ticket.physicalSeat.seatNumber,
-          type: ticket.physicalSeat.type,
-        }
+            zone: ticket.physicalSeat.zoneName,
+            row: ticket.physicalSeat.rowName,
+            number: ticket.physicalSeat.seatNumber,
+            type: ticket.physicalSeat.type,
+          }
         : null,
     }));
   }
@@ -812,7 +820,8 @@ export class TicketsService {
     if (!ticket.show || !ticket.showId) {
       throw new BadRequestException({
         code: ERROR_CODES.CHECKIN_006,
-        message: 'Vé này chưa được kích hoạt cho sự kiện nào. Vui lòng chọn sự kiện trước khi check-in.',
+        message:
+          'Vé này chưa được kích hoạt cho sự kiện nào. Vui lòng chọn sự kiện trước khi check-in.',
       });
     }
 

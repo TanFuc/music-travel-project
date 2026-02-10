@@ -62,13 +62,11 @@ const statusLabels: Record<string, string> = {
   CANCELLED: 'Đã hủy',
 };
 
-export function ShowDetailServer({ show }: ShowDetailServerProps) {
+export function ShowHero({ show }: ShowDetailServerProps) {
   const bannerUrl = (show.properties?.bannerUrl as string) || show.thumbnailUrl || '';
 
   return (
-    <>
-      {/* Hero Banner Background */}
-      <div className="relative h-[40vh] min-h-[300px] w-full overflow-hidden">
+    <div className="relative h-[40vh] min-h-[300px] w-full overflow-hidden">
         {bannerUrl ? (
           <Image
             src={bannerUrl}
@@ -94,6 +92,13 @@ export function ShowDetailServer({ show }: ShowDetailServerProps) {
           </Link>
         </div>
       </div>
+  );
+}
+
+export function ShowDetailServer({ show }: ShowDetailServerProps) {
+  return (
+    <>
+
 
       {/* Header Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-neutral-100 border border-neutral-100/50">

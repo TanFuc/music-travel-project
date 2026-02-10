@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreatePerformanceQRCodeDto, CreatePerformanceRegistrationDto, ReviewRegistrationDto } from './dto/performance.dto';
+import {
+  CreatePerformanceQRCodeDto,
+  CreatePerformanceRegistrationDto,
+  ReviewRegistrationDto,
+} from './dto/performance.dto';
 
 @Injectable()
 export class PerformanceService {
@@ -85,7 +89,10 @@ export class PerformanceService {
     return qrCode;
   }
 
-  async updateQRCode(id: number, data: Partial<{ isActive: boolean; maxRegistrations: number; registrationDeadline: Date }>) {
+  async updateQRCode(
+    id: number,
+    data: Partial<{ isActive: boolean; maxRegistrations: number; registrationDeadline: Date }>,
+  ) {
     const qrCode = await this.prisma.performanceQRCode.findUnique({ where: { id } });
     if (!qrCode) {
       throw new NotFoundException('QR code not found');
@@ -250,7 +257,10 @@ export class PerformanceService {
     });
   }
 
-  async assignSlot(registrationId: number, slotData: { startTime: Date; endTime: Date; slotOrder: number }) {
+  async assignSlot(
+    registrationId: number,
+    slotData: { startTime: Date; endTime: Date; slotOrder: number },
+  ) {
     const registration = await this.prisma.performanceRegistration.findUnique({
       where: { id: registrationId },
     });

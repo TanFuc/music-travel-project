@@ -1,7 +1,15 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
-import { PaymentMethod, TransactionStatus, BookingStatus, PaymentStatus, RefundMethod, RefundStatus, TransactionType } from '@prisma/client';
+import {
+  PaymentMethod,
+  TransactionStatus,
+  BookingStatus,
+  PaymentStatus,
+  RefundMethod,
+  RefundStatus,
+  TransactionType,
+} from '@prisma/client';
 import { CheckoutDto } from './dto/checkout.dto';
 import { CreateRefundDto } from './dto/refund.dto';
 import { WalletService } from '../wallet/wallet.service';
@@ -244,7 +252,11 @@ export class PaymentsService {
 
       for (const item of tierItems) {
         if (item.ticketTierId && item.quantity > 0) {
-          await this.ticketsService.generateTicketsForBooking(bookingId, item.ticketTierId, item.quantity);
+          await this.ticketsService.generateTicketsForBooking(
+            bookingId,
+            item.ticketTierId,
+            item.quantity,
+          );
         }
       }
 
@@ -333,7 +345,9 @@ export class PaymentsService {
 
     // Double payment prevention check
     if (transaction.booking.paymentStatus === PaymentStatus.PAID) {
-      this.logger.warn(`Booking ${transaction.booking.bookingCode} already paid - duplicate webhook ignored`);
+      this.logger.warn(
+        `Booking ${transaction.booking.bookingCode} already paid - duplicate webhook ignored`,
+      );
       return { success: true, message: 'Already paid' };
     }
 
@@ -391,7 +405,9 @@ export class PaymentsService {
 
     // Double payment prevention check
     if (transaction.booking.paymentStatus === PaymentStatus.PAID) {
-      this.logger.warn(`Booking ${transaction.booking.bookingCode} already paid - duplicate webhook ignored`);
+      this.logger.warn(
+        `Booking ${transaction.booking.bookingCode} already paid - duplicate webhook ignored`,
+      );
       return { RspCode: '00', Message: 'Already paid' };
     }
 
@@ -452,7 +468,9 @@ export class PaymentsService {
 
     // Double payment prevention check
     if (transaction.booking.paymentStatus === PaymentStatus.PAID) {
-      this.logger.warn(`Booking ${transaction.booking.bookingCode} already paid - duplicate webhook ignored`);
+      this.logger.warn(
+        `Booking ${transaction.booking.bookingCode} already paid - duplicate webhook ignored`,
+      );
       return { success: true, message: 'Already paid' };
     }
 
@@ -550,7 +568,11 @@ export class PaymentsService {
 
         for (const item of tierItems) {
           if (item.ticketTierId && item.quantity > 0) {
-            await this.ticketsService.generateTicketsForBooking(bookingId, item.ticketTierId, item.quantity);
+            await this.ticketsService.generateTicketsForBooking(
+              bookingId,
+              item.ticketTierId,
+              item.quantity,
+            );
           }
         }
 
@@ -761,7 +783,9 @@ export class PaymentsService {
         });
       });
 
-      this.logger.log(`Refund completed for booking ${booking.bookingCode}: ${refundDto.amount} VND`);
+      this.logger.log(
+        `Refund completed for booking ${booking.bookingCode}: ${refundDto.amount} VND`,
+      );
 
       return {
         success: true,

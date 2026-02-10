@@ -29,6 +29,7 @@ import { TicketVerificationModule } from './modules/ticket-verification/ticket-v
 import { ShowActivityModule } from './modules/show-activity/show-activity.module';
 import { SingersModule } from './modules/singers/singers.module';
 import { SingerPackagesModule } from './modules/singer-packages/singer-packages.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
@@ -86,6 +87,7 @@ import cloudinaryConfig from './config/cloudinary.config';
     ShowActivityModule,
     SingersModule,
     SingerPackagesModule,
+    WishlistModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

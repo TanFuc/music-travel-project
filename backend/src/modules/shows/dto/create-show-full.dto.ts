@@ -192,8 +192,7 @@ export class CreateShowFullDto {
 
   @ApiPropertyOptional({
     example: true,
-    description:
-      'Enable seat selection. When false, operates in General Admission mode.',
+    description: 'Enable seat selection. When false, operates in General Admission mode.',
     default: true,
   })
   @IsOptional()

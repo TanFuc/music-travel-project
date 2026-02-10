@@ -842,13 +842,20 @@ export default function CheckoutPage() {
         onClose={() => setIsQRModalOpen(false)}
         defaultAmount={isBuyNowMode && booking ? booking.finalAmount : getTotal()}
         defaultDescription={`Thanh toan don hang Music Travel - ${createdBookingCode || (isBuyNowMode && booking ? booking.bookingCode : 'Cart')}`}
-        onSuccess={() => {
-          toast.success('Xác nhận thanh toán thành công!');
-          clearCart();
+        onSuccess={async () => {
           const code = createdBookingCode || (booking ? booking.bookingCode : '');
           if (code) {
+             try {
+                await post(`/bookings/${code}/confirm-payment`, {});
+                toast.success('Xác nhận thanh toán thành công!');
+             } catch (error) {
+                console.error("Failed to confirm payment status", error);
+                toast.error('Có lỗi khi xác nhận thanh toán.');
+             }
+             clearCart();
              router.push(`/profile?booking=${code}`);
           } else {
+             clearCart();
              router.push('/profile');
           }
         }}

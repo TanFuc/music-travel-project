@@ -9,7 +9,11 @@ import { PrismaModule } from '@/prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [TicketVerificationController, ShowVerificationController, AdminVerificationController],
+  controllers: [
+    TicketVerificationController,
+    ShowVerificationController,
+    AdminVerificationController,
+  ],
   providers: [TicketVerificationService],
   exports: [TicketVerificationService],
 })

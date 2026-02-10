@@ -6,6 +6,7 @@ import { Link } from '@/components/common/Link';
 import { Heart, MapPin, Calendar, Clock, Ticket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { WishlistButton } from './WishlistButton';
 
 // Memoize formatters outside component to avoid recreation
 const priceFormatter = new Intl.NumberFormat('vi-VN');
@@ -88,16 +89,10 @@ export const ShowCard = React.memo(function ShowCard({
 
   return (
     <div className="group glass-card-premium overflow-hidden border-none h-full flex flex-col relative">
-      <button
-        className="absolute top-4 right-4 p-2.5 rounded-full bg-white/40 backdrop-blur-md text-white hover:text-red-500 hover:bg-white shadow-lg transition-all border border-white/20 z-20"
-        aria-label="Thêm vào yêu thích"
-        onClick={(e) => { 
-          e.preventDefault(); 
-          e.stopPropagation(); 
-        }}
-      >
-        <Heart className="w-5 h-5" />
-      </button>
+      <WishlistButton
+        showId={id}
+        showTitle={title}
+      />
 
       <Link href={`/shows/${slug}`} className="flex flex-col h-full flex-1">
         {/* Image Container */}

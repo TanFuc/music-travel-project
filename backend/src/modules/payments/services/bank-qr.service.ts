@@ -152,7 +152,7 @@ export class BankQRService {
    */
   getSupportedBanks() {
     const banks = this.vietQRService.getAllBanks();
-    return banks.map(bank => ({
+    return banks.map((bank) => ({
       code: bank.code,
       name: bank.name,
       fullName: bank.fullName,
@@ -225,7 +225,8 @@ export class BankQRService {
       const result: any = {};
       let index = 0;
 
-      while (index < qrString.length - 4) { // -4 for CRC
+      while (index < qrString.length - 4) {
+        // -4 for CRC
         const tag = qrString.substr(index, 2);
         const length = parseInt(qrString.substr(index + 2, 2));
         const value = qrString.substr(index + 4, length);
@@ -263,7 +264,9 @@ export class BankQRService {
   /**
    * Parse Merchant Account Information field
    */
-  private parseMerchantAccountInfo(value: string): { bankCode?: string; accountNumber?: string } | null {
+  private parseMerchantAccountInfo(
+    value: string,
+  ): { bankCode?: string; accountNumber?: string } | null {
     try {
       let index = 0;
       let napasCode = '';
@@ -283,7 +286,7 @@ export class BankQRService {
             const subTag = fieldValue.substr(subIndex, 2);
             const subLength = parseInt(fieldValue.substr(subIndex + 2, 2));
             const subValue = fieldValue.substr(subIndex + 4, subLength);
-            
+
             if (subTag === '01') {
               accountNumber = subValue;
               break;
@@ -298,7 +301,7 @@ export class BankQRService {
 
       // Find bank code by NAPAS code
       const banks = this.vietQRService.getAllBanks();
-      const bank = banks.find(b => b.napasCode === napasCode);
+      const bank = banks.find((b) => b.napasCode === napasCode);
 
       return {
         bankCode: bank?.code,

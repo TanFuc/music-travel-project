@@ -9,4 +9,4 @@ import { SeatLayoutService } from './seat-layout.service';
   providers: [StagesService, SeatLayoutService],
   exports: [StagesService, SeatLayoutService],
 })
-export class StagesModule { }
+export class StagesModule {}

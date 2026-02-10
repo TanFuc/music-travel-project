@@ -57,10 +57,7 @@ export class BranchesController {
   @ApiOperation({ summary: 'Update branch (Admin only)' })
   @ApiResponse({ status: 200, description: 'Branch updated successfully' })
   @ApiResponse({ status: 404, description: 'Branch not found' })
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateBranchDto: UpdateBranchDto,
-  ) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateBranchDto: UpdateBranchDto) {
     return this.branchesService.update(id, updateBranchDto);
   }
 

@@ -29,7 +29,7 @@ export default function PaymentQRModal({
   const [timeLeft, setTimeLeft] = useState(expirationSeconds);
   const [isExpired, setIsExpired] = useState(false);
 
-  console.log('qrData', qrData);
+
 
   const handleClose = () => {
     setLoading(false);

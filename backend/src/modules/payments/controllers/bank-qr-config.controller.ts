@@ -32,7 +32,8 @@ export class BankQRConfigController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOperation({
     summary: 'Create new bank QR configuration',
-    description: 'Create a new bank QR configuration. If set as active, all other configs will be deactivated.',
+    description:
+      'Create a new bank QR configuration. If set as active, all other configs will be deactivated.',
   })
   @ApiResponse({
     status: 201,
@@ -88,7 +89,7 @@ export class BankQRConfigController {
   })
   async findActive(): Promise<BankQRConfigSingleResponse> {
     const data = await this.bankQRConfigService.findActive();
-    
+
     if (!data) {
       return {
         success: false,
@@ -137,7 +138,8 @@ export class BankQRConfigController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOperation({
     summary: 'Update bank QR configuration',
-    description: 'Update a specific bank QR configuration. If set as active, all other configs will be deactivated.',
+    description:
+      'Update a specific bank QR configuration. If set as active, all other configs will be deactivated.',
   })
   @ApiParam({
     name: 'id',

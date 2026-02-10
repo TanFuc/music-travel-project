@@ -19,7 +19,7 @@ export class ShowsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-  ) { }
+  ) {}
 
   async findAll(filterDto: ShowFilterDto) {
     // Generate cache key from filters
@@ -125,9 +125,9 @@ export class ShowsService {
       },
       branch: show.branch
         ? {
-          id: show.branch.id,
-          name: show.branch.name,
-        }
+            id: show.branch.id,
+            name: show.branch.name,
+          }
         : null,
       artists: show.artists.map((sa) => ({
         id: sa.artist.id,
@@ -218,9 +218,9 @@ export class ShowsService {
       },
       branch: show.branch
         ? {
-          id: show.branch.id,
-          name: show.branch.name,
-        }
+            id: show.branch.id,
+            name: show.branch.name,
+          }
         : null,
       artists: show.artists.map((sa) => ({
         id: sa.artist.id,
@@ -294,14 +294,14 @@ export class ShowsService {
       ticketClass: ticket.ticketClass,
       seat: ticket.physicalSeat
         ? {
-          id: ticket.physicalSeat.id,
-          zone: ticket.physicalSeat.zoneName,
-          row: ticket.physicalSeat.rowName,
-          number: ticket.physicalSeat.seatNumber,
-          type: ticket.physicalSeat.type,
-          x: ticket.physicalSeat.xPosition,
-          y: ticket.physicalSeat.yPosition,
-        }
+            id: ticket.physicalSeat.id,
+            zone: ticket.physicalSeat.zoneName,
+            row: ticket.physicalSeat.rowName,
+            number: ticket.physicalSeat.seatNumber,
+            type: ticket.physicalSeat.type,
+            x: ticket.physicalSeat.xPosition,
+            y: ticket.physicalSeat.yPosition,
+          }
         : null,
     }));
 

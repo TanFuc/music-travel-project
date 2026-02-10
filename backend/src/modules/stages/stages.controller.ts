@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { StagesService } from './stages.service';
 import { CreateStageDto, UpdateStageDto } from './dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
@@ -50,10 +61,7 @@ export class StagesController {
   }
 
   @Get(':id/seats')
-  async getPhysicalSeats(
-    @Param('id') id: string,
-    @Query('showId') showId?: string,
-  ) {
+  async getPhysicalSeats(@Param('id') id: string, @Query('showId') showId?: string) {
     const stageId = parseInt(id, 10);
     const show = showId ? parseInt(showId, 10) : undefined;
     return this.stagesService.getPhysicalSeats(stageId, show);

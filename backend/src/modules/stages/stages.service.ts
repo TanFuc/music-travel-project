@@ -11,7 +11,7 @@ export class StagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-  ) { }
+  ) {}
 
   async findAll(locationId?: number) {
     const cacheKey = locationId ? CacheKeys.stagesByLocation(locationId) : CacheKeys.stages();
@@ -351,9 +351,7 @@ export class StagesService {
   }
 
   async getPhysicalSeats(stageId: number, showId?: number) {
-    const cacheKey = showId
-      ? CacheKeys.showSeats(showId)
-      : CacheKeys.stageSeats(stageId);
+    const cacheKey = showId ? CacheKeys.showSeats(showId) : CacheKeys.stageSeats(stageId);
 
     const cached = await this.cache.get(cacheKey);
     if (cached) {
@@ -375,11 +373,7 @@ export class StagesService {
     // Get all physical seats of the stage
     const seats = await this.prisma.physicalSeat.findMany({
       where: { stageId },
-      orderBy: [
-        { zoneName: 'asc' },
-        { rowName: 'asc' },
-        { seatNumber: 'asc' },
-      ],
+      orderBy: [{ zoneName: 'asc' }, { rowName: 'asc' }, { seatNumber: 'asc' }],
     });
 
     // If showId is provided, get ticket status for each seat
@@ -388,7 +382,7 @@ export class StagesService {
       const tickets = await this.prisma.ticket.findMany({
         where: {
           showId,
-          physicalSeatId: { in: seats.map(s => s.id) },
+          physicalSeatId: { in: seats.map((s) => s.id) },
         },
         select: {
           physicalSeatId: true,
@@ -397,9 +391,9 @@ export class StagesService {
         },
       });
 
-      const ticketMap = new Map(tickets.map(t => [t.physicalSeatId, t]));
+      const ticketMap = new Map(tickets.map((t) => [t.physicalSeatId, t]));
 
-      result = seats.map(seat => {
+      result = seats.map((seat) => {
         const ticket = ticketMap.get(seat.id);
         return {
           id: seat.id,
@@ -418,7 +412,7 @@ export class StagesService {
         };
       });
     } else {
-      result = seats.map(seat => ({
+      result = seats.map((seat) => ({
         id: seat.id,
         stageId: seat.stageId,
         zoneName: seat.zoneName,

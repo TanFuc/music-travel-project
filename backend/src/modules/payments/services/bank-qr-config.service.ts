@@ -11,7 +11,7 @@ import {
 export class BankQRConfigService {
   private readonly logger = new Logger(BankQRConfigService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Create a new bank QR configuration

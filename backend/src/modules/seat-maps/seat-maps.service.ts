@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateSeatMapTemplateDto, UpdateSeatMapTemplateDto, UpdateStageSeatMapDto, SeatMapConfig } from './dto/seat-map.dto';
+import {
+  CreateSeatMapTemplateDto,
+  UpdateSeatMapTemplateDto,
+  UpdateStageSeatMapDto,
+  SeatMapConfig,
+} from './dto/seat-map.dto';
 import { SeatType } from '@prisma/client';
 
 @Injectable()
@@ -83,7 +88,7 @@ export class SeatMapsService {
 
     if (stagesUsingTemplate > 0) {
       throw new BadRequestException(
-        `Không thể xóa template này vì đang có ${stagesUsingTemplate} sân khấu đang sử dụng`
+        `Không thể xóa template này vì đang có ${stagesUsingTemplate} sân khấu đang sử dụng`,
       );
     }
 
@@ -105,11 +110,7 @@ export class SeatMapsService {
       include: {
         template: true,
         physicalSeats: {
-          orderBy: [
-            { zoneName: 'asc' },
-            { rowName: 'asc' },
-            { seatNumber: 'asc' },
-          ],
+          orderBy: [{ zoneName: 'asc' }, { rowName: 'asc' }, { seatNumber: 'asc' }],
         },
       },
     });
@@ -368,7 +369,7 @@ export class SeatMapsService {
     seatsPerRow: number,
     startX: number,
     startY: number,
-    spacing: number
+    spacing: number,
   ) {
     const rows = [];
     for (let r = 0; r < numRows; r++) {

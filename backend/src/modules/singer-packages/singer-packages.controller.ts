@@ -10,7 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-  Req
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SingerPackagesService } from './singer-packages.service';
@@ -96,7 +96,7 @@ export class SingerPackagesController {
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateSingerPackageDto,
-    @Req() req: AuthenticatedRequest
+    @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user?.id;
     return this.singerPackagesService.update(id, updateDto, userId);

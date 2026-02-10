@@ -99,7 +99,11 @@ export class ShowActivityService {
     });
   }
 
-  async logQueueReorder(showId: number, adminId: number, changes: { registrationId: number; oldPosition: number; newPosition: number }[]) {
+  async logQueueReorder(
+    showId: number,
+    adminId: number,
+    changes: { registrationId: number; oldPosition: number; newPosition: number }[],
+  ) {
     const adminName = await this.getUserName(adminId);
 
     return this.createActivityLog({
@@ -111,7 +115,12 @@ export class ShowActivityService {
     });
   }
 
-  async logAdminAction(showId: number, adminId: number, action: string, details?: Record<string, any>) {
+  async logAdminAction(
+    showId: number,
+    adminId: number,
+    action: string,
+    details?: Record<string, any>,
+  ) {
     const adminName = await this.getUserName(adminId);
 
     return this.createActivityLog({
@@ -234,7 +243,15 @@ export class ShowActivityService {
       throw new NotFoundException('Show not found');
     }
 
-    const activityTypes = ['REGISTRATION', 'CANCELLATION', 'STATUS_CHANGE', 'TICKET_VERIFICATION', 'ADMIN_ACTION', 'QUEUE_REORDER', 'CHECK_IN'];
+    const activityTypes = [
+      'REGISTRATION',
+      'CANCELLATION',
+      'STATUS_CHANGE',
+      'TICKET_VERIFICATION',
+      'ADMIN_ACTION',
+      'QUEUE_REORDER',
+      'CHECK_IN',
+    ];
 
     const counts = await Promise.all(
       activityTypes.map((type) =>
@@ -320,7 +337,9 @@ export class ShowActivityService {
     const [totalVerifications, qrScanVerifications, manualEntryVerifications] = await Promise.all([
       this.prisma.ticketVerification.count({ where: { showId } }),
       this.prisma.ticketVerification.count({ where: { showId, verificationMethod: 'QR_SCAN' } }),
-      this.prisma.ticketVerification.count({ where: { showId, verificationMethod: 'MANUAL_ENTRY' } }),
+      this.prisma.ticketVerification.count({
+        where: { showId, verificationMethod: 'MANUAL_ENTRY' },
+      }),
     ]);
 
     // Activity stats
@@ -417,7 +436,9 @@ export class ShowActivityService {
       noShowRate: Math.round(noShowRate * 100) / 100,
       maxCapacity: show.maxCapacity,
       currentAttendance: show.currentAttendance,
-      attendancePercentage: show.maxCapacity ? Math.round((show.currentAttendance / show.maxCapacity) * 100) : null,
+      attendancePercentage: show.maxCapacity
+        ? Math.round((show.currentAttendance / show.maxCapacity) * 100)
+        : null,
       totalVerifications,
       qrScanVerifications,
       manualEntryVerifications,
@@ -447,7 +468,15 @@ export class ShowActivityService {
     }
 
     // CSV format
-    const headers = ['ID', 'Type', 'Actor', 'Target ID', 'Target Type', 'Description', 'Created At'];
+    const headers = [
+      'ID',
+      'Type',
+      'Actor',
+      'Target ID',
+      'Target Type',
+      'Description',
+      'Created At',
+    ];
     const rows = logs.map((log) => [
       log.id.toString(),
       log.activityType,

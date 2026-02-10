@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@/components/common/Link';
-import { Eye, EyeOff, Loader2, Phone, Lock, User, Mail } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Phone, Lock, User } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,7 @@ export function RegisterForm() {
     defaultValues: {
       fullName: '',
       phoneNumber: '',
-      email: '',
+
       password: '',
       confirmPassword: '',
     },
@@ -35,7 +35,7 @@ export function RegisterForm() {
     registerUser({
       fullName: data.fullName,
       phoneNumber: data.phoneNumber,
-      email: data.email || undefined,
+
       password: data.password,
     });
   };
@@ -86,24 +86,7 @@ export function RegisterForm() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email <span className="text-neutral-400">(tùy chọn)</span>
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="email@example.com"
-                className="pl-10"
-                {...register('email')}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-sm text-error-500">{errors.email.message}</p>
-            )}
-          </div>
+
 
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">

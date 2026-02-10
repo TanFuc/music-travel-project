@@ -11,7 +11,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { SeatMapsService } from './seat-maps.service';
-import { CreateSeatMapTemplateDto, UpdateSeatMapTemplateDto, UpdateStageSeatMapDto } from './dto/seat-map.dto';
+import {
+  CreateSeatMapTemplateDto,
+  UpdateSeatMapTemplateDto,
+  UpdateStageSeatMapDto,
+} from './dto/seat-map.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -64,10 +68,7 @@ export class SeatMapsController {
    */
   @Post('templates')
   @Roles(UserRole.ADMIN)
-  async createTemplate(
-    @Body() dto: CreateSeatMapTemplateDto,
-    @CurrentUser('sub') userId: number
-  ) {
+  async createTemplate(@Body() dto: CreateSeatMapTemplateDto, @CurrentUser('sub') userId: number) {
     return this.seatMapsService.createTemplate(dto, userId);
   }
 
@@ -79,7 +80,7 @@ export class SeatMapsController {
   @Roles(UserRole.ADMIN)
   async updateTemplate(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateSeatMapTemplateDto
+    @Body() dto: UpdateSeatMapTemplateDto,
   ) {
     return this.seatMapsService.updateTemplate(id, dto);
   }
@@ -117,7 +118,7 @@ export class SeatMapsController {
   async applyTemplateToStage(
     @Param('stageId', ParseIntPipe) stageId: number,
     @Body('templateId', ParseIntPipe) templateId: number,
-    @CurrentUser('sub') userId: number
+    @CurrentUser('sub') userId: number,
   ) {
     return this.seatMapsService.applyTemplateToStage(stageId, templateId, userId);
   }
@@ -131,7 +132,7 @@ export class SeatMapsController {
   async updateStageSeatMap(
     @Param('stageId', ParseIntPipe) stageId: number,
     @Body() dto: UpdateStageSeatMapDto,
-    @CurrentUser('sub') userId: number
+    @CurrentUser('sub') userId: number,
   ) {
     return this.seatMapsService.updateStageSeatMap(stageId, dto, userId);
   }

@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateTicketTierDto, UpdateTicketTierDto, TicketTierQueryDto } from './dto/ticket-tier.dto';
+import {
+  CreateTicketTierDto,
+  UpdateTicketTierDto,
+  TicketTierQueryDto,
+} from './dto/ticket-tier.dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -122,7 +126,9 @@ export class TicketTiersService {
     }
 
     if (ticketTier._count.bookingItems > 0) {
-      throw new BadRequestException('Không thể xóa loại vé đã có đơn hàng. Hãy vô hiệu hóa thay vì xóa.');
+      throw new BadRequestException(
+        'Không thể xóa loại vé đã có đơn hàng. Hãy vô hiệu hóa thay vì xóa.',
+      );
     }
 
     return this.prisma.ticketTier.delete({ where: { id } });
@@ -150,7 +156,9 @@ export class TicketTiersService {
     }
 
     if (quantity < ticketTier.soldCount) {
-      throw new BadRequestException(`Số lượng không thể nhỏ hơn số vé đã bán (${ticketTier.soldCount})`);
+      throw new BadRequestException(
+        `Số lượng không thể nhỏ hơn số vé đã bán (${ticketTier.soldCount})`,
+      );
     }
 
     return this.prisma.ticketTier.update({
@@ -250,7 +258,9 @@ export class TicketTiersService {
     }
 
     if (quantity > ticketTier.maxPerOrder) {
-      throw new BadRequestException(`Tối đa ${ticketTier.maxPerOrder} vé mỗi đơn hàng cho loại vé này.`);
+      throw new BadRequestException(
+        `Tối đa ${ticketTier.maxPerOrder} vé mỗi đơn hàng cho loại vé này.`,
+      );
     }
 
     return {

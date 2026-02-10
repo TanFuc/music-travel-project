@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Patch, Delete, UseGuards, Query, Param, Body, ParseIntPipe, DefaultValuePipe, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  UseGuards,
+  Query,
+  Param,
+  Body,
+  ParseIntPipe,
+  DefaultValuePipe,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
@@ -12,7 +25,7 @@ import { CreateShowFullDto } from '../shows/dto/create-show-full.dto';
 @Roles('ADMIN', 'STAFF')
 @ApiBearerAuth()
 export class AdminController {
-  constructor(private readonly adminService: AdminService) { }
+  constructor(private readonly adminService: AdminService) {}
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Get dashboard statistics' })
@@ -63,13 +76,16 @@ export class AdminController {
 
   @Post('users')
   @ApiOperation({ summary: 'Create new user' })
-  async createUser(@Body() createUserDto: {
-    phoneNumber: string;
-    fullName: string;
-    email?: string;
-    password: string;
-    role: 'USER' | 'STAFF' | 'ADMIN' | 'PARTNER';
-  }) {
+  async createUser(
+    @Body()
+    createUserDto: {
+      phoneNumber: string;
+      fullName: string;
+      email?: string;
+      password: string;
+      role: 'USER' | 'STAFF' | 'ADMIN' | 'PARTNER';
+    },
+  ) {
     return this.adminService.createUser(createUserDto);
   }
 
@@ -77,7 +93,8 @@ export class AdminController {
   @ApiOperation({ summary: 'Update user' })
   async updateUser(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserDto: {
+    @Body()
+    updateUserDto: {
       fullName?: string;
       email?: string;
       role?: 'USER' | 'STAFF' | 'ADMIN' | 'PARTNER';
@@ -121,13 +138,16 @@ export class AdminController {
 
   @Post('shows')
   @ApiOperation({ summary: 'Create show' })
-  async createShow(@Body() data: {
-    title: string;
-    description?: string;
-    stageId: number;
-    performTime: Date;
-    status: 'UPCOMING' | 'ONGOING' | 'ENDED' | 'CANCELLED';
-  }) {
+  async createShow(
+    @Body()
+    data: {
+      title: string;
+      description?: string;
+      stageId: number;
+      performTime: Date;
+      status: 'UPCOMING' | 'ONGOING' | 'ENDED' | 'CANCELLED';
+    },
+  ) {
     return this.adminService.createShow(data);
   }
 
@@ -135,7 +155,8 @@ export class AdminController {
   @ApiOperation({ summary: 'Update show' })
   async updateShow(
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: Partial<{
+    @Body()
+    data: Partial<{
       title: string;
       description: string;
       stageId: number;
@@ -162,12 +183,11 @@ export class AdminController {
   }
 
   @Post('shows/full')
-  @ApiOperation({ summary: 'Create show with full configuration (artists, ticket classes, tickets)' })
+  @ApiOperation({
+    summary: 'Create show with full configuration (artists, ticket classes, tickets)',
+  })
   @ApiResponse({ status: 201, description: 'Show created successfully with all related data' })
-  async createShowFull(
-    @Body() data: CreateShowFullDto,
-    @Req() req: any,
-  ) {
+  async createShowFull(@Body() data: CreateShowFullDto, @Req() req: any) {
     return this.adminService.createShowFull(data, req.user.id);
   }
 
@@ -260,13 +280,16 @@ export class AdminController {
 
   @Post('tours')
   @ApiOperation({ summary: 'Create tour' })
-  async createTour(@Body() data: {
-    title: string;
-    description?: string;
-    duration: string;
-    departureLocId?: number;
-    destinationLocId?: number;
-  }) {
+  async createTour(
+    @Body()
+    data: {
+      title: string;
+      description?: string;
+      duration: string;
+      departureLocId?: number;
+      destinationLocId?: number;
+    },
+  ) {
     return this.adminService.createTour(data);
   }
 
@@ -274,7 +297,8 @@ export class AdminController {
   @ApiOperation({ summary: 'Update tour' })
   async updateTour(
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: Partial<{
+    @Body()
+    data: Partial<{
       title: string;
       description: string;
       duration: string;
@@ -291,7 +315,7 @@ export class AdminController {
     return this.adminService.deleteTour(id);
   }
 
-  // ============================================================================ 
+  // ============================================================================
   @Get('tickets/:id')
   @ApiOperation({ summary: 'Get ticket by ID' })
   async getTicketById(@Param('id', ParseIntPipe) id: number) {
@@ -315,10 +339,7 @@ export class AdminController {
 
   @Patch('tickets/check-in/:code')
   @ApiOperation({ summary: 'Check in ticket by code' })
-  async checkInTicket(
-    @Param('code') code: string,
-    @Body() data: { showId: number },
-  ) {
+  async checkInTicket(@Param('code') code: string, @Body() data: { showId: number }) {
     return this.adminService.checkInTicket(code, data.showId);
   }
 
@@ -351,13 +372,16 @@ export class AdminController {
 
   @Post('media')
   @ApiOperation({ summary: 'Create media' })
-  async createMedia(@Body() data: {
-    url: string;
-    type: 'IMAGE' | 'VIDEO';
-    targetType: 'SHOW' | 'TOUR' | 'STAGE' | 'ARTIST';
-    targetId: number;
-    isFeatured?: boolean;
-  }) {
+  async createMedia(
+    @Body()
+    data: {
+      url: string;
+      type: 'IMAGE' | 'VIDEO';
+      targetType: 'SHOW' | 'TOUR' | 'STAGE' | 'ARTIST';
+      targetId: number;
+      isFeatured?: boolean;
+    },
+  ) {
     return this.adminService.createMedia(data);
   }
 
@@ -365,7 +389,8 @@ export class AdminController {
   @ApiOperation({ summary: 'Update media' })
   async updateMedia(
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: Partial<{
+    @Body()
+    data: Partial<{
       url: string;
       isFeatured: boolean;
     }>,
@@ -386,7 +411,11 @@ export class AdminController {
   @ApiOperation({ summary: 'Get all bookings with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'] })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'],
+  })
   async getBookings(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
@@ -472,23 +501,29 @@ export class AdminController {
 
   @Post('notifications')
   @ApiOperation({ summary: 'Create notification' })
-  async createNotification(@Body() data: {
-    userId: number;
-    title: string;
-    message: string;
-    type: 'ORDER' | 'PROMOTION' | 'SYSTEM';
-  }) {
+  async createNotification(
+    @Body()
+    data: {
+      userId: number;
+      title: string;
+      message: string;
+      type: 'ORDER' | 'PROMOTION' | 'SYSTEM';
+    },
+  ) {
     return this.adminService.createNotification(data);
   }
 
   @Post('notifications/broadcast')
   @ApiOperation({ summary: 'Broadcast notification to multiple users' })
-  async broadcastNotification(@Body() data: {
-    title: string;
-    message: string;
-    type: 'ORDER' | 'PROMOTION' | 'SYSTEM';
-    userIds?: number[];
-  }) {
+  async broadcastNotification(
+    @Body()
+    data: {
+      title: string;
+      message: string;
+      type: 'ORDER' | 'PROMOTION' | 'SYSTEM';
+      userIds?: number[];
+    },
+  ) {
     return this.adminService.broadcastNotification(data);
   }
 
@@ -515,16 +550,19 @@ export class AdminController {
 
   @Post('vouchers')
   @ApiOperation({ summary: 'Create voucher' })
-  async createVoucher(@Body() data: {
-    code: string;
-    discountType: 'PERCENT' | 'FIXED_AMOUNT';
-    discountValue: number;
-    minOrderValue?: number;
-    usageLimit?: number;
-    startDate?: Date;
-    endDate?: Date;
-    isActive?: boolean;
-  }) {
+  async createVoucher(
+    @Body()
+    data: {
+      code: string;
+      discountType: 'PERCENT' | 'FIXED_AMOUNT';
+      discountValue: number;
+      minOrderValue?: number;
+      usageLimit?: number;
+      startDate?: Date;
+      endDate?: Date;
+      isActive?: boolean;
+    },
+  ) {
     return this.adminService.createVoucher(data);
   }
 
@@ -532,7 +570,8 @@ export class AdminController {
   @ApiOperation({ summary: 'Update voucher' })
   async updateVoucher(
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: Partial<{
+    @Body()
+    data: Partial<{
       discountValue: number;
       minOrderValue: number;
       usageLimit: number;
@@ -570,10 +609,7 @@ export class AdminController {
 
   @Post('bookings/:id/cancel')
   @ApiOperation({ summary: 'Cancel booking' })
-  async cancelBooking(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data?: { reason?: string },
-  ) {
+  async cancelBooking(@Param('id', ParseIntPipe) id: number, @Body() data?: { reason?: string }) {
     return this.adminService.cancelBooking(id, data?.reason);
   }
 }

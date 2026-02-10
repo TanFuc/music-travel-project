@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsEnum, IsPositive, Length, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  IsPositive,
+  Length,
+  Matches,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export enum VietnamBankCode {
@@ -66,7 +74,7 @@ export class GenerateBankQRDto {
   @IsOptional()
   @IsNumber({}, { message: 'Amount must be a number' })
   @IsPositive({ message: 'Amount must be positive' })
-  @Transform(({ value }) => value ? Number(value) : undefined)
+  @Transform(({ value }) => (value ? Number(value) : undefined))
   amount?: number;
 
   @ApiProperty({
@@ -91,7 +99,8 @@ export class BankQRResponse {
 
   @ApiProperty({
     description: 'Raw QR content (VietQR/EMVCo format)',
-    example: '00020101021238540010A00000072701270006970454011501234567890208QRIBFTTA53037045802VN6304...',
+    example:
+      '00020101021238540010A00000072701270006970454011501234567890208QRIBFTTA53037045802VN6304...',
   })
   qrContent: string;
 

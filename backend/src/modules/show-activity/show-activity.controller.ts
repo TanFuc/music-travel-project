@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query, UseGuards, ParseIntPipe, Res, Header } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+  Res,
+  Header,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ShowActivityService } from './show-activity.service';
@@ -65,7 +74,12 @@ export class ShowActivityController {
 
   @Get('activity-log/export')
   @ApiOperation({ summary: 'Export activity log for a show' })
-  @ApiQuery({ name: 'format', required: false, enum: ['csv', 'json'], description: 'Export format (default: json)' })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    enum: ['csv', 'json'],
+    description: 'Export format (default: json)',
+  })
   @Header('Content-Type', 'application/octet-stream')
   async exportActivityLogs(
     @Param('showId', ParseIntPipe) showId: number,
