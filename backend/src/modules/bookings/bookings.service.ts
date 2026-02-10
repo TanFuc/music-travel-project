@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { BookingStatus, PaymentStatus, BookingItemType } from '@prisma/client';
+import { BookingStatus, PaymentStatus, BookingItemType, TransactionStatus } from '@prisma/client';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { TicketsService } from '../tickets/tickets.service';
 import { ToursService } from '../tours/tours.service';
@@ -408,12 +408,12 @@ export class BookingsService {
       booking.status !== BookingStatus.PENDING &&
       booking.status !== BookingStatus.MANUAL_REVIEW
     ) {
-       this.logger.warn('Invalid booking status for manual payment confirmation', {
-         bookingCode: code,
-         userId,
-         currentStatus: booking.status,
-       });
-       throw new BadRequestException('Trạng thái đơn hàng không hợp lệ để xác nhận thanh toán.');
+      this.logger.warn('Invalid booking status for manual payment confirmation', {
+        bookingCode: code,
+        userId,
+        currentStatus: booking.status,
+      });
+      throw new BadRequestException('Trạng thái đơn hàng không hợp lệ để xác nhận thanh toán.');
     }
 
     // Idempotent - already confirmed
@@ -421,7 +421,28 @@ export class BookingsService {
       this.logger.debug('Booking already in manual review status', {
         bookingCode: code,
         userId,
+        currentPaymentStatus: booking.paymentStatus,
       });
+
+      // Still need to ensure paymentStatus is PAID
+      if (booking.paymentStatus !== PaymentStatus.PAID) {
+        this.logger.debug('Updating payment status to PAID for existing MANUAL_REVIEW booking', {
+          bookingCode: code,
+          userId,
+        });
+
+        const updated = await this.prisma.booking.update({
+          where: { id: booking.id },
+          data: {
+            paymentStatus: PaymentStatus.PAID,
+          },
+        });
+
+        await this.invalidateBookingCache(code, userId);
+
+        return updated;
+      }
+
       return booking;
     }
 
@@ -435,6 +456,7 @@ export class BookingsService {
       where: { id: booking.id },
       data: {
         status: BookingStatus.MANUAL_REVIEW,
+        paymentStatus: PaymentStatus.PAID, // Mark as paid when user confirms
       },
     });
 
@@ -551,35 +573,68 @@ export class BookingsService {
         },
         items: {
           include: {
-            show: {
+            ticket: {
               include: {
-                stage: {
+                show: {
+                  select: {
+                    title: true,
+                    performTime: true,
+                    description: true,
+                    stage: {
+                      select: {
+                        name: true,
+                        address: true,
+                      },
+                    },
+                  },
+                },
+                ticketClass: {
                   select: {
                     name: true,
-                    address: true,
+                    price: true,
+                    colorCode: true,
                   },
                 },
               },
             },
-            tour: {
+            tourSchedule: {
+              include: {
+                tour: {
+                  select: {
+                    title: true,
+                    description: true,
+                    duration: true,
+                  },
+                },
+              },
+            },
+            ticketTier: {
               select: {
-                title: true,
-                thumbnailUrl: true,
-                departureDate: true,
+                name: true,
+                price: true,
+                description: true,
+                benefits: true,
+                colorCode: true,
               },
             },
             singerPackage: {
               select: {
                 name: true,
+                price: true,
                 description: true,
+                benefits: true,
+                colorCode: true,
               },
             },
-            ticketClass: {
-              select: {
-                name: true,
-                description: true,
-              },
-            },
+          },
+        },
+        transactions: {
+          where: { status: TransactionStatus.SUCCESS },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            paymentMethod: true,
+            payTime: true,
           },
         },
       },
@@ -594,7 +649,96 @@ export class BookingsService {
       throw new NotFoundException('Booking not found');
     }
 
-    return booking;
+    // Get payment info from transaction
+    const paidTransaction = booking.transactions[0];
+
+    // Helper to get item type label
+    const getItemTypeLabel = (itemType: string) => {
+      switch (itemType) {
+        case 'SHOW_TICKET':
+          return 'Vé xem show';
+        case 'TOUR':
+          return 'Tour du lịch';
+        case 'SINGER_PACKAGE':
+          return 'Gói ca sĩ';
+        default:
+          return itemType;
+      }
+    };
+
+    // Helper to get product name
+    const getProductName = (item: typeof booking.items[0]) => {
+      if (item.ticket?.show) {
+        return item.ticket.show.title;
+      }
+      if (item.tourSchedule?.tour) {
+        return item.tourSchedule.tour.title;
+      }
+      if (item.singerPackage) {
+        return item.singerPackage.name;
+      }
+      return 'Sản phẩm không xác định';
+    };
+
+    // Transform the response to match frontend expectations
+    return {
+      id: booking.id,
+      bookingCode: booking.bookingCode,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      paymentMethod: paidTransaction?.paymentMethod || 'WALLET',
+      subtotalAmount: Number(booking.totalAmount),
+      discountAmount: Number(booking.discountAmount),
+      finalAmount: Number(booking.finalAmount),
+      createdAt: booking.createdAt,
+      updatedAt: booking.updatedAt,
+      paidAt: paidTransaction?.payTime || null,
+      confirmedAt: booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' ? booking.updatedAt : null,
+      user: booking.user,
+      items: booking.items.map((item) => ({
+        id: item.id,
+        itemType: item.itemType,
+        itemTypeLabel: getItemTypeLabel(item.itemType),
+        productName: getProductName(item),
+        itemId: item.ticketId || item.tourScheduleId || null,
+        quantity: item.quantity,
+        unitPrice: Number(item.originalPrice),
+        subtotal: Number(item.originalPrice) * item.quantity,
+        show: item.ticket?.show ? {
+          title: item.ticket.show.title,
+          description: item.ticket.show.description,
+          thumbnailUrl: null,
+          startDate: item.ticket.show.performTime,
+          stage: item.ticket.show.stage,
+        } : null,
+        tour: item.tourSchedule?.tour ? {
+          title: item.tourSchedule.tour.title,
+          description: item.tourSchedule.tour.description,
+          duration: item.tourSchedule.tour.duration,
+          thumbnailUrl: null,
+          departureDate: item.tourSchedule.startDate,
+        } : null,
+        singerPackage: item.singerPackage ? {
+          name: item.singerPackage.name,
+          price: Number(item.singerPackage.price),
+          description: item.singerPackage.description,
+          benefits: item.singerPackage.benefits,
+          colorCode: item.singerPackage.colorCode,
+        } : null,
+        ticketClass: item.ticket?.ticketClass ? {
+          name: item.ticket.ticketClass.name,
+          price: Number(item.ticket.ticketClass.price),
+          colorCode: item.ticket.ticketClass.colorCode,
+        } : null,
+        ticketTier: item.ticketTier ? {
+          name: item.ticketTier.name,
+          price: Number(item.ticketTier.price),
+          description: item.ticketTier.description,
+          benefits: item.ticketTier.benefits,
+          colorCode: item.ticketTier.colorCode,
+        } : null,
+      })),
+    };
   }
 
 
@@ -677,6 +821,8 @@ export class BookingsService {
     await this.cache.delMany([
       CacheKeys.bookingByCode(bookingCode),
       CacheKeys.userBookings(userId),
+      `${CacheKeys.userBookings(userId)}:shows`,
+      `${CacheKeys.userBookings(userId)}:singer`,
     ]);
   }
 

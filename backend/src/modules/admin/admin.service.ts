@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { $Enums } from '@prisma/client';
+import { CacheService } from '@/cache/cache.service';
+import { CacheKeys } from '@/cache/cache-keys.constant';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   async getDashboardStats() {
     const now = new Date();
@@ -927,10 +932,53 @@ export class AdminService {
   async getBookings(
     page: number = 1,
     limit: number = 20,
-    status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
+    filters?: {
+      status?: string;
+      paymentStatus?: string;
+      search?: string;
+      fromDate?: string;
+      toDate?: string;
+    },
   ) {
     const skip = (page - 1) * limit;
-    const where = status ? { status } : {};
+
+    // Build where clause
+    const where: any = {};
+
+    if (filters?.status) {
+      // Handle combined status filters
+      if (filters.status === 'PROCESSED') {
+        where.status = { in: ['CONFIRMED', 'COMPLETED'] };
+      } else if (filters.status === 'PENDING') {
+        where.status = { in: ['PENDING', 'MANUAL_REVIEW'] };
+      } else {
+        where.status = filters.status;
+      }
+    }
+
+    if (filters?.paymentStatus) {
+      where.paymentStatus = filters.paymentStatus;
+    }
+
+    if (filters?.search) {
+      where.OR = [
+        { bookingCode: { contains: filters.search, mode: 'insensitive' } },
+        { user: { fullName: { contains: filters.search, mode: 'insensitive' } } },
+        { user: { phoneNumber: { contains: filters.search } } },
+      ];
+    }
+
+    if (filters?.fromDate || filters?.toDate) {
+      where.createdAt = {};
+      if (filters.fromDate) {
+        where.createdAt.gte = new Date(filters.fromDate);
+      }
+      if (filters.toDate) {
+        const endDate = new Date(filters.toDate);
+        endDate.setHours(23, 59, 59, 999);
+        where.createdAt.lte = endDate;
+      }
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.booking.findMany({
@@ -939,20 +987,77 @@ export class AdminService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { id: true, fullName: true, phoneNumber: true } },
+          user: { select: { id: true, fullName: true, phoneNumber: true, email: true } },
           items: {
             include: {
-              ticket: { include: { show: true } },
-              tourSchedule: { include: { tour: true } },
+              ticket: {
+                include: {
+                  show: {
+                    select: {
+                      id: true,
+                      title: true,
+                      performTime: true,
+                      stage: { select: { name: true, address: true } },
+                    },
+                  },
+                  ticketClass: { select: { name: true, colorCode: true } },
+                },
+              },
+              tourSchedule: {
+                include: {
+                  tour: { select: { id: true, title: true } },
+                },
+              },
+              ticketTier: { select: { name: true, colorCode: true } },
+              singerPackage: { select: { name: true, colorCode: true } },
             },
+          },
+          transactions: {
+            where: { status: 'SUCCESS' },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: { paymentMethod: true, payTime: true },
           },
         },
       }),
       this.prisma.booking.count({ where }),
     ]);
 
+    // Transform items to include computed fields
+    const transformedItems = items.map((booking) => {
+      const paidTransaction = booking.transactions[0];
+      return {
+        id: booking.id,
+        bookingCode: booking.bookingCode,
+        status: booking.status,
+        paymentStatus: booking.paymentStatus,
+        paymentMethod: paidTransaction?.paymentMethod || null,
+        totalAmount: Number(booking.totalAmount),
+        discountAmount: Number(booking.discountAmount),
+        finalAmount: Number(booking.finalAmount),
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+        paidAt: paidTransaction?.payTime || null,
+        user: booking.user,
+        itemCount: booking.items.length,
+        items: booking.items.map((item) => ({
+          id: item.id,
+          itemType: item.itemType,
+          quantity: item.quantity,
+          unitPrice: Number(item.originalPrice),
+          subtotal: Number(item.originalPrice) * item.quantity,
+          productName: item.ticket?.show?.title || item.tourSchedule?.tour?.title || item.singerPackage?.name || 'N/A',
+          ticketClass: item.ticket?.ticketClass || null,
+          ticketTier: item.ticketTier || null,
+          singerPackage: item.singerPackage || null,
+          show: item.ticket?.show || null,
+          tour: item.tourSchedule?.tour || null,
+        })),
+      };
+    });
+
     return {
-      items,
+      items: transformedItems,
       meta: {
         page,
         limit,
@@ -1179,18 +1284,127 @@ export class AdminService {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
       include: {
-        user: true,
-        items: {
-          include: {
-            ticket: { include: { show: true } },
-            tourSchedule: { include: { tour: true } },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            phoneNumber: true,
+            email: true,
           },
         },
-        transactions: true,
+        items: {
+          include: {
+            ticket: {
+              include: {
+                show: {
+                  select: {
+                    id: true,
+                    title: true,
+                    performTime: true,
+                    description: true,
+                    stage: { select: { name: true, address: true } },
+                  },
+                },
+                ticketClass: { select: { name: true, price: true, colorCode: true } },
+              },
+            },
+            tourSchedule: {
+              include: {
+                tour: { select: { id: true, title: true, description: true, duration: true } },
+              },
+            },
+            ticketTier: { select: { name: true, price: true, description: true, benefits: true, colorCode: true } },
+            singerPackage: { select: { name: true, price: true, description: true, benefits: true, colorCode: true } },
+          },
+        },
+        transactions: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            paymentMethod: true,
+            amount: true,
+            status: true,
+            payTime: true,
+            createdAt: true,
+          },
+        },
       },
     });
+
     if (!booking) throw new Error('Booking not found');
-    return booking;
+
+    // Get item type label
+    const getItemTypeLabel = (itemType: string) => {
+      switch (itemType) {
+        case 'SHOW_TICKET': return 'Vé xem show';
+        case 'TOUR': return 'Tour du lịch';
+        case 'SINGER_PACKAGE': return 'Gói ca sĩ';
+        default: return itemType;
+      }
+    };
+
+    // Transform response
+    const paidTransaction = booking.transactions.find(t => t.status === 'SUCCESS');
+
+    return {
+      id: booking.id,
+      bookingCode: booking.bookingCode,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      paymentMethod: paidTransaction?.paymentMethod || null,
+      totalAmount: Number(booking.totalAmount),
+      discountAmount: Number(booking.discountAmount),
+      finalAmount: Number(booking.finalAmount),
+      note: booking.note,
+      createdAt: booking.createdAt,
+      updatedAt: booking.updatedAt,
+      paidAt: paidTransaction?.payTime || null,
+      user: booking.user,
+      items: booking.items.map((item) => ({
+        id: item.id,
+        itemType: item.itemType,
+        itemTypeLabel: getItemTypeLabel(item.itemType),
+        quantity: item.quantity,
+        unitPrice: Number(item.originalPrice),
+        subtotal: Number(item.originalPrice) * item.quantity,
+        productName: item.ticket?.show?.title || item.tourSchedule?.tour?.title || item.singerPackage?.name || 'N/A',
+        show: item.ticket?.show ? {
+          ...item.ticket.show,
+          startDate: item.ticket.show.performTime,
+        } : null,
+        tour: item.tourSchedule ? {
+          ...item.tourSchedule.tour,
+          departureDate: item.tourSchedule.startDate,
+        } : null,
+        ticketClass: item.ticket?.ticketClass ? {
+          name: item.ticket.ticketClass.name,
+          price: Number(item.ticket.ticketClass.price),
+          colorCode: item.ticket.ticketClass.colorCode,
+        } : null,
+        ticketTier: item.ticketTier ? {
+          name: item.ticketTier.name,
+          price: Number(item.ticketTier.price),
+          description: item.ticketTier.description,
+          benefits: item.ticketTier.benefits,
+          colorCode: item.ticketTier.colorCode,
+        } : null,
+        singerPackage: item.singerPackage ? {
+          name: item.singerPackage.name,
+          price: Number(item.singerPackage.price),
+          description: item.singerPackage.description,
+          benefits: item.singerPackage.benefits,
+          colorCode: item.singerPackage.colorCode,
+        } : null,
+      })),
+      transactions: booking.transactions.map((t) => ({
+        id: t.id,
+        paymentMethod: t.paymentMethod,
+        amount: Number(t.amount),
+        status: t.status,
+        payTime: t.payTime,
+        createdAt: t.createdAt,
+      })),
+    };
   }
 
   async updateBookingStatus(
@@ -1200,10 +1414,15 @@ export class AdminService {
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new Error('Booking not found');
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id },
       data: { status },
     });
+
+    // Invalidate user's booking cache so profile page shows updated status
+    await this.invalidateUserBookingCache(booking.userId, booking.bookingCode);
+
+    return updated;
   }
 
   async cancelBooking(id: number, reason?: string) {
@@ -1225,13 +1444,30 @@ export class AdminService {
       }
     }
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id },
       data: {
         status: 'CANCELLED',
         note: reason,
       },
     });
+
+    // Invalidate user's booking cache so profile page shows updated status
+    await this.invalidateUserBookingCache(booking.userId, booking.bookingCode);
+
+    return updated;
+  }
+
+  /**
+   * Invalidate all booking-related caches for a user
+   */
+  private async invalidateUserBookingCache(userId: number, bookingCode: string) {
+    await this.cache.delMany([
+      CacheKeys.bookingByCode(bookingCode),
+      CacheKeys.userBookings(userId),
+      `${CacheKeys.userBookings(userId)}:shows`,
+      `${CacheKeys.userBookings(userId)}:singer`,
+    ]);
   }
 
   // ============================================================================

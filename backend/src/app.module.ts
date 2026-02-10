@@ -29,6 +29,8 @@ import { TicketVerificationModule } from './modules/ticket-verification/ticket-v
 import { ShowActivityModule } from './modules/show-activity/show-activity.module';
 import { SingersModule } from './modules/singers/singers.module';
 import { SingerPackagesModule } from './modules/singer-packages/singer-packages.module';
+import { ContactChannelsModule } from './modules/contact-channels/contact-channels.module';
+import { PaymentMethodConfigsModule } from './modules/payment-method-configs/payment-method-configs.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { EnhancedLoggerService } from './common/services/enhanced-logger.service';
@@ -91,6 +93,8 @@ import cloudinaryConfig from './config/cloudinary.config';
     ShowActivityModule,
     SingersModule,
     SingerPackagesModule,
+    ContactChannelsModule,
+    PaymentMethodConfigsModule,
     WishlistModule,
   ],
   providers: [EnhancedLoggerService],

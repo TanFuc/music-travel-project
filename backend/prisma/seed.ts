@@ -1,6 +1,7 @@
 import { PrismaClient, UserRole, ShowStatus, TicketStatus, TourScheduleStatus, VoucherDiscountType, BannerPosition, MediaType, MediaTargetType, SeatType, BookingStatus, PaymentStatus, BookingItemType, WalletTransactionType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { seedSingerPackages } from './seed-singer-packages';
+import { seedPaymentMethods } from './seed-payment-methods';
 
 const prisma = new PrismaClient();
 
@@ -9,6 +10,7 @@ async function main() {
 
   // Clear existing data (in reverse order of dependencies)
   console.log('🧹 Cleaning existing data...');
+  await prisma.paymentMethodConfig.deleteMany(); // Added
   await prisma.walletTransaction.deleteMany();
   await prisma.userWallet.deleteMany();
   await prisma.notification.deleteMany();

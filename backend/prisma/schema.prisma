@@ -271,6 +271,7 @@ model TicketTier {
   id             Int           @id @default(autoincrement())
   name           String        @db.VarChar(100)
   price          Decimal       @db.Decimal(15, 2)
+  originalPrice  Decimal?      @map("original_price") @db.Decimal(15, 2)
   description    String?
   benefits       String?
   colorCode      String?       @map("color_code") @db.VarChar(10)
@@ -431,21 +432,21 @@ model Booking {
 }
 
 model BookingItem {
-  id               Int                     @id @default(autoincrement())
-  bookingId        Int                     @map("booking_id")
-  itemType         BookingItemType         @map("item_type")
-  ticketId         Int?                    @unique @map("ticket_id")
-  tourScheduleId   Int?                    @map("tour_schedule_id")
-  quantity         Int                     @default(1)
-  originalPrice    Decimal                 @map("original_price") @db.Decimal(15, 2)
-  passengerInfo    Json?                   @map("passenger_info")
-  ticketTierId     Int?                    @map("ticket_tier_id")
-  singerPackageId  String?                 @map("singer_package_id")
-  booking          Booking                 @relation(fields: [bookingId], references: [id])
-  ticket           Ticket?                 @relation(fields: [ticketId], references: [id])
-  ticketTier       TicketTier?             @relation(fields: [ticketTierId], references: [id])
-  tourSchedule     TourSchedule?           @relation(fields: [tourScheduleId], references: [id])
-  singerPackage    SingerPackageTemplate?  @relation(fields: [singerPackageId], references: [id])
+  id              Int                    @id @default(autoincrement())
+  bookingId       Int                    @map("booking_id")
+  itemType        BookingItemType        @map("item_type")
+  ticketId        Int?                   @unique @map("ticket_id")
+  tourScheduleId  Int?                   @map("tour_schedule_id")
+  quantity        Int                    @default(1)
+  originalPrice   Decimal                @map("original_price") @db.Decimal(15, 2)
+  passengerInfo   Json?                  @map("passenger_info")
+  ticketTierId    Int?                   @map("ticket_tier_id")
+  singerPackageId String?                @map("singer_package_id")
+  booking         Booking                @relation(fields: [bookingId], references: [id])
+  ticket          Ticket?                @relation(fields: [ticketId], references: [id])
+  ticketTier      TicketTier?            @relation(fields: [ticketTierId], references: [id])
+  tourSchedule    TourSchedule?          @relation(fields: [tourScheduleId], references: [id])
+  singerPackage   SingerPackageTemplate? @relation(fields: [singerPackageId], references: [id])
 
   @@map("booking_items")
 }
@@ -847,6 +848,7 @@ enum PaymentMethod {
   WALLET
   CASH
   PAYOS
+  BANK_QR
 }
 
 enum TransactionStatus {
@@ -959,50 +961,50 @@ enum SingerRegistrationStatus {
   CANCELLED
 }
 
-
 model SingerPackageTemplate {
-  id                String                    @id @default(uuid())
-  name              String                    @db.VarChar(100)
-  nameEn            String?                   @map("name_en") @db.VarChar(100)
-  price             Decimal                   @db.Decimal(15, 2)
-  description       String?                   @db.Text
-  benefits          Json?                     // Array of benefit strings
-  colorCode         String?                   @map("color_code") @db.VarChar(10)
-  icon              String?                   @db.VarChar(50)
-  displayOrder      Int                       @default(0) @map("display_order")
-  isActive          Boolean                   @default(true) @map("is_active")
-  maxRegistrations  Int?                      @map("max_registrations")
-  createdAt         DateTime                  @default(now()) @map("created_at")
-  updatedAt         DateTime                  @updatedAt @map("updated_at")
-  createdBy         Int?                      @map("created_by")
-  updatedBy         Int?                      @map("updated_by")
-  registrations     SingerRegistration[]
-  bookingItems      BookingItem[]
+  id               String               @id @default(uuid())
+  name             String               @db.VarChar(100)
+  nameEn           String?              @map("name_en") @db.VarChar(100)
+  price            Decimal              @db.Decimal(15, 2)
+  originalPrice    Decimal?             @map("original_price") @db.Decimal(15, 2)
+  description      String?              @db.Text
+  benefits         Json? // Array of benefit strings
+  colorCode        String?              @map("color_code") @db.VarChar(10)
+  icon             String?              @db.VarChar(50)
+  displayOrder     Int                  @default(0) @map("display_order")
+  isActive         Boolean              @default(true) @map("is_active")
+  maxRegistrations Int?                 @map("max_registrations")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  createdBy        Int?                 @map("created_by")
+  updatedBy        Int?                 @map("updated_by")
+  registrations    SingerRegistration[]
+  bookingItems     BookingItem[]
 
   @@map("singer_package_templates")
 }
 
 model SingerRegistration {
-  id                String                    @id @default(uuid())
-  fullName          String                    @map("full_name") @db.VarChar(100)
-  phoneNumber       String                    @map("phone_number") @db.VarChar(15)
-  email             String                    @db.VarChar(100)
+  id                String                   @id @default(uuid())
+  fullName          String                   @map("full_name") @db.VarChar(100)
+  phoneNumber       String                   @map("phone_number") @db.VarChar(15)
+  email             String                   @db.VarChar(100)
   age               Int
-  gender            String                    @db.VarChar(10)
-  address           String                    @db.VarChar(255)
-  singingExperience SingingExperience         @map("singing_experience")
-  favoriteGenre     String                    @map("favorite_genre") @db.VarChar(100)
-  package           SingerPackage?            // Keep for backward compatibility
-  packageTemplateId String?                   @map("package_template_id")
-  introduction      String?                   @db.Text
-  voiceSampleUrl    String?                   @map("voice_sample_url") @db.VarChar(500)
-  status            SingerRegistrationStatus  @default(PENDING)
-  adminNotes        String?                   @map("admin_notes") @db.Text
-  userId            Int?                      @map("user_id") // Link to user who registered
-  createdAt         DateTime                  @default(now()) @map("created_at")
-  updatedAt         DateTime                  @updatedAt @map("updated_at")
-  packageTemplate   SingerPackageTemplate?    @relation(fields: [packageTemplateId], references: [id])
-  user              User?                     @relation(fields: [userId], references: [id])
+  gender            String                   @db.VarChar(10)
+  address           String                   @db.VarChar(255)
+  singingExperience SingingExperience        @map("singing_experience")
+  favoriteGenre     String                   @map("favorite_genre") @db.VarChar(100)
+  package           SingerPackage? // Keep for backward compatibility
+  packageTemplateId String?                  @map("package_template_id")
+  introduction      String?                  @db.Text
+  voiceSampleUrl    String?                  @map("voice_sample_url") @db.VarChar(500)
+  status            SingerRegistrationStatus @default(PENDING)
+  adminNotes        String?                  @map("admin_notes") @db.Text
+  userId            Int?                     @map("user_id") // Link to user who registered
+  createdAt         DateTime                 @default(now()) @map("created_at")
+  updatedAt         DateTime                 @updatedAt @map("updated_at")
+  packageTemplate   SingerPackageTemplate?   @relation(fields: [packageTemplateId], references: [id])
+  user              User?                    @relation(fields: [userId], references: [id])
 
   @@index([phoneNumber])
   @@index([email])
@@ -1023,4 +1025,33 @@ model BankQRConfig {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@map("bank_qr_config")
+}
+
+model PaymentMethodConfig {
+  id                 Int           @id @default(autoincrement())
+  method             PaymentMethod @unique
+  name               String        @db.VarChar(100)
+  discountPercentage Decimal       @default(0) @map("discount_percentage") @db.Decimal(5, 2)
+  isActive           Boolean       @default(true) @map("is_active")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  @@map("payment_method_configs")
+}
+
+model ContactChannel {
+  id           Int      @id @default(autoincrement())
+  type         String   @db.VarChar(20)
+  label        String   @db.VarChar(100)
+  value        String   @db.VarChar(255)
+  icon         String?  @db.VarChar(50)
+  colorCode    String?  @map("color_code") @db.VarChar(10)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@map("contact_channels")
 }

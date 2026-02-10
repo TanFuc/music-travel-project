@@ -408,20 +408,24 @@ export class AdminController {
   // BOOKINGS MANAGEMENT
   // ============================================================================
   @Get('bookings')
-  @ApiOperation({ summary: 'Get all bookings with pagination' })
+  @ApiOperation({ summary: 'Get all bookings with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'],
-  })
+  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'MANUAL_REVIEW', 'CONFIRMED', 'CANCELLED', 'COMPLETED'] })
+  @ApiQuery({ name: 'paymentStatus', required: false, enum: ['PAID', 'UNPAID'] })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by booking code, customer name or phone' })
+  @ApiQuery({ name: 'fromDate', required: false, type: String, description: 'Filter from date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'toDate', required: false, type: String, description: 'Filter to date (YYYY-MM-DD)' })
   async getBookings(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
-    @Query('status') status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
+    @Query('status') status?: string,
+    @Query('paymentStatus') paymentStatus?: string,
+    @Query('search') search?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
   ) {
-    return this.adminService.getBookings(page, limit, status);
+    return this.adminService.getBookings(page, limit, { status, paymentStatus, search, fromDate, toDate });
   }
 
   // ============================================================================
