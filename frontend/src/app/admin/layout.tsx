@@ -108,6 +108,11 @@ const sidebarItems = [
     icon: CreditCard,
   },
   {
+    title: 'Cấu hình thanh toán',
+    href: '/admin/payment-methods',
+    icon: Settings,
+  },
+  {
     title: 'Voucher',
     href: '/admin/vouchers',
     icon: Tag,
@@ -241,7 +246,7 @@ export default function AdminLayout({
                 <Logo size="sm" />
               </div>
             </div>
-            
+
             {/* Icon only logo - visible when sidebar is collapsed on desktop */}
             <div className={cn(
               "absolute left-1/2 -translate-x-1/2 transition-all duration-300 ease-in-out",

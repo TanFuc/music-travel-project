@@ -1,364 +1,401 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Heart, Mic, Music, Star, Users, Video, Crown, ShoppingCart, Plus, Minus } from 'lucide-react';
-import { singerPackageService } from '@/services/singer-packages.service';
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { useCartStore } from '@/stores/cart.store';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatCurrency } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { singerPackageService } from '@/services/singer-packages.service';
+import { useCartStore } from '@/stores/cart.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { formatCurrency, cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import {
+  Loader2,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Check,
+  Sparkles,
+  Mic,
+  Music,
+  Heart,
+  Star,
+  Crown,
+  Users,
+  Video,
+  Info,
+  Tag,
+  Ticket
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { bookingService } from '@/services/booking.service';
+
+interface SingerPackage {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  description?: string;
+  benefits?: string[];
+  maxRegistrations?: number;
+  _count?: {
+    registrations: number;
+  };
+}
 
 export default function RegisterSingerPage() {
   usePageTitle();
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
-  const { singerPackages: cartItems, addSingerPackage, removeSingerPackage } = useCartStore();
+  const { addSingerPackage } = useCartStore();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [bookingLoading, setBookingLoading] = useState(false);
 
-  // Fetch active packages
   const { data: packages, isLoading: packagesLoading, error: packagesError } = useQuery({
     queryKey: ['singer-packages-active'],
     queryFn: singerPackageService.getActivePackages,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Handle quantity change
-  const handleQuantityChange = (packageId: string, increment: boolean) => {
+  const handleQuantityChange = (packageId: string, delta: number) => {
     setQuantities(prev => {
-      const currentQty = prev[packageId] || 1;
-      const newQty = increment ? Math.min(currentQty + 1, 10) : Math.max(currentQty - 1, 1);
-      return { ...prev, [packageId]: newQty };
+      const current = prev[packageId] || 0;
+      const next = Math.max(0, current + delta);
+      if (next > 10) return prev; // Max check
+      return { ...prev, [packageId]: next };
     });
   };
 
-  // Check if package is in cart
-  const getPackageInCart = (packageId: string) => {
-    return cartItems.find(item => item.packageId === packageId);
-  };
+  // Calculate totals from SELECTION (not cart)
+  const { totalItems, totalPrice } = useMemo(() => {
+    if (!packages) return { totalItems: 0, totalPrice: 0 };
+    let items = 0;
+    let price = 0;
 
-  // Handle add to cart
-  const handleAddToCart = (pkg: any) => {
+    Object.entries(quantities).forEach(([id, qty]) => {
+      const pkg = packages.find((p: any) => p.id === id); // id matches
+      if (pkg && qty > 0) {
+        items += qty;
+        price += pkg.price * qty;
+      }
+    });
+
+    return { totalItems: items, totalPrice: price };
+  }, [quantities, packages]);
+
+  const handleAddToCart = () => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng');
       router.push('/login?redirect=/register-singer');
       return;
     }
 
-    const quantity = quantities[pkg.id] || 1;
-    addSingerPackage({
-      packageId: pkg.id,
-      packageName: pkg.name,
-      price: pkg.price,
-      quantity,
-      description: pkg.description,
-      benefits: pkg.benefits,
+    if (totalItems === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 gói');
+      return;
+    }
+
+    Object.entries(quantities).forEach(([id, qty]) => {
+      if (qty > 0) {
+        const pkg = packages?.find((p: any) => p.id === id);
+        if (pkg) {
+          addSingerPackage({
+            packageId: pkg.id,
+            packageName: pkg.name,
+            price: pkg.price,
+            quantity: qty,
+            description: pkg.description,
+            benefits: pkg.benefits,
+          });
+        }
+      }
     });
 
-    toast.success(`Đã thêm ${quantity} gói "${pkg.name}" vào giỏ hàng`);
-    
-    // Reset quantity to 1 after adding
-    setQuantities(prev => ({ ...prev, [pkg.id]: 1 }));
+    toast.success(`Đã thêm ${totalItems} gói dịch vụ vào giỏ hàng`);
+    setQuantities({}); // Reset selection
   };
 
-  // Calculate total cart amount
-  const getTotalCartAmount = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để mua');
+      router.push('/login?redirect=/register-singer');
+      return;
+    }
+
+    if (totalItems === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 gói');
+      return;
+    }
+
+    setBookingLoading(true);
+    // Note: Singer packages might need specific booking flow or just add to cart + checkout
+    // If we want "Buy Now" to act like Tickets Page (create booking directly), we need an API for it.
+    // Logic: Add to cart -> Redirect Checkout
+    // Or: Call createBooking with singer items.
+
+    // For now, let's mimic Tickets Page "Buy Now": 
+    // 1. If backend supports direct booking of singer packages via similar payload?
+    // BookingService.createBooking({ ticketTiers: [...] }). Does it support singer packages?
+    // Looking at BookingDto, it might not verify "ticketTiers" vs "singerPackages".
+    // Let's use the safer approach: Add to Cart -> Redirect Checkout
+
+    // Actually, let's check booking.service.ts or backend logic.
+    // Assuming we add to cart then go to checkout is safer for now if API structure isn't confirmed.
+
+    // UPDATE: Tickets Page calls `bookingService.createBooking` with `ticketTiers`.
+    // Singer Packages are different items. The backend might allow mixed items or different payload.
+    // Let's stick to "Add + Checkout" flow for safety, OR if we want to be consistent: 
+    // Just implement handleAddToCart logic then push router.
+
+    handleAddToCart(); // Add to global store
+    router.push('/checkout'); // Redirect
   };
 
-  // Calculate total cart items
-  const getTotalCartItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
-  };
+  if (packagesLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+      </div>
+    );
+  }
 
-  // Handle checkout
-  const handleCheckout = () => {
-    router.push('/checkout');
-  };
+  if (packagesError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 text-red-600">
+        Không thể tải thông tin gói đăng ký.
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      {/* Hero Section with Program Content */}
-      <section className="relative py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
-          {/* Header */}
-          <div className="text-center mb-12 md:mb-16">
-            <div className="flex items-center justify-center gap-2 md:gap-3 mb-4 md:mb-6">
-              <Music className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
-              <Mic className="w-8 h-8 md:w-10 md:h-10 text-green-600" />
-              <Heart className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
-            </div>
-            <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-gray-900 mb-3 md:mb-4 leading-tight px-4">
-              ĐĂNG KÝ LÀM CA SĨ
-            </h1>
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-green-600 mb-2 px-4">
-              TRỞ THÀNH CA SĨ BIỂU DIỄN
-            </h2>
-            <h3 className="text-lg md:text-xl lg:text-2xl font-medium text-gray-700 px-4">
-              TRONG CHUỖI ĐÊM NHẠC MÃI CHO HÀNH TINH XANH
-            </h3>
+    <div className="min-h-screen bg-neutral-50 pb-32 font-sans selection:bg-brand-100">
+      {/* Immersive Header */}
+      <div className="relative bg-white overflow-hidden border-b border-gray-100">
+        <div className="absolute inset-0 bg-gradient-to-r from-green-50/50 to-emerald-50/50 opacity-70"></div>
+        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-green-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl"></div>
+
+        <div className="container mx-auto px-4 pt-16 pb-12 relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-100 shadow-sm rounded-full text-green-600 text-sm font-semibold mb-6 animate-in fade-in zoom-in duration-500">
+            <Mic className="w-4 h-4 fill-green-100" />
+            <span>Trải Nghiệm Sân Khấu Chuyên Nghiệp</span>
           </div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight mb-6">
+            Đăng Ký <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">Ca Sĩ Biểu Diễn</span>
+          </h1>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Cơ hội tỏa sáng trên sân khấu "Mãi cho Hành Tinh Xanh".
+            Được đào tạo, tập luyện cùng ban nhạc và lưu giữ khoảnh khắc đáng nhớ.
+          </p>
+        </div>
+      </div>
 
-          {/* Program Introduction */}
-          <Card className="mb-8 md:mb-12 border-green-200 shadow-xl">
-            <CardContent className="p-4 md:p-8">
-              <div className="prose prose-lg max-w-none">
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  Bạn yêu ca hát? Bạn từng ước một lần đứng trên sân khấu thật, hát cùng ban nhạc thật?
-                  Bạn muốn lưu giữ dấu ấn cá nhân bằng âm nhạc – hình ảnh – cảm xúc?
-                </p>
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  <strong>"Mãi cho Hành Tinh Xanh"</strong> mở ra chương trình đăng ký làm "Ca sĩ biểu diễn",
-                  nơi bạn không cần là ca sĩ chuyên nghiệp, chỉ cần đam mê và mong muốn trải nghiệm nghiêm túc.
-                </p>
-                <p className="text-gray-700 leading-relaxed mb-8">
-                  Đây là hành trình đào tạo – đồng hành – biểu diễn thật trong không gian âm nhạc xanh, nhân văn,
-                  gắn với cộng đồng doanh nhân – chủ cửa hàng – người yêu nghệ thuật.
-                </p>
-
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                    <span>Đào tạo thanh nhạc bài bản (từ cơ bản đến nâng cao)</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                    <span>Tập luyện, phối nhạc, ghép ban nhạc live</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                    <span>Biểu diễn trực tiếp trên sân khấu Đêm nhạc</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                    <span>Ghi hình – hậu kỳ – dựng TVC cá nhân</span>
-                  </div>
-                  <div className="flex items-start gap-3 md:col-span-2">
-                    <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                    <span>Kết nối cộng đồng cùng giá trị sống xanh – kinh doanh tử tế</span>
-                  </div>
-                </div>
+      {/* Feature Highlights */}
+      <div className="container mx-auto px-4 py-12 relative z-20">
+        <div className="grid md:grid-cols-4 gap-6 mb-16">
+          {[
+            { icon: Video, text: "Sân khấu & Ban nhạc Live", color: "text-purple-600", bg: "bg-purple-50" },
+            { icon: Star, text: "TVC Cá nhân 4K", color: "text-amber-600", bg: "bg-amber-50" },
+            { icon: Music, text: "Đào tạo Thanh nhạc", color: "text-blue-600", bg: "bg-blue-50" },
+            { icon: Users, text: "Kết nối Cộng đồng", color: "text-green-600", bg: "bg-green-50" },
+          ].map((feature, idx) => (
+            <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+              <div className={`p-3 rounded-full ${feature.bg}`}>
+                <feature.icon className={`w-6 h-6 ${feature.color}`} />
               </div>
-            </CardContent>
-          </Card>
+              <span className="font-semibold text-gray-800">{feature.text}</span>
+            </div>
+          ))}
+        </div>
 
-          {/* Package Information */}
-          {packagesLoading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8 md:mb-12">
-              {[1, 2].map((i) => (
-                <Card key={i} className="border-gray-200 shadow-lg">
-                  <CardHeader className="bg-gray-50 rounded-t-lg">
-                    <div className="h-6 bg-gray-300 rounded animate-pulse mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                  </CardHeader>
-                  <CardContent className="p-4 md:p-6">
-                    <div className="space-y-3">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                      <div className="space-y-2 mt-4">
-                        {[1, 2, 3, 4].map((j) => (
-                          <div key={j} className="h-3 bg-gray-100 rounded animate-pulse"></div>
-                        ))}
+        {/* Packages Grid */}
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {packages?.map((pkg: any, index: number) => {
+            const colorThemes = [
+              { border: 'border-blue-100', bgIcon: 'bg-blue-50', textIcon: 'text-blue-600', shadow: '#3b82f6' },
+              { border: 'border-purple-100', bgIcon: 'bg-purple-50', textIcon: 'text-purple-600', shadow: '#a855f7' },
+              { border: 'border-amber-100', bgIcon: 'bg-amber-50', textIcon: 'text-amber-600', shadow: '#f59e0b' }
+            ];
+            const theme = colorThemes[index % colorThemes.length];
+            const Icon = [Star, Crown, Sparkles][index % 3];
+
+            const hasDiscount = pkg.originalPrice && pkg.originalPrice > pkg.price;
+            const discountPercent = hasDiscount
+              ? Math.round(((pkg.originalPrice - pkg.price) / pkg.originalPrice) * 100)
+              : 0;
+
+            const currentQty = quantities[pkg.id] || 0;
+
+            return (
+              <div
+                key={pkg.id}
+                className="group relative bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden"
+                style={{
+                  boxShadow: `0 4px 6px -1px ${theme.shadow}20, 0 2px 4px -1px ${theme.shadow}10`
+                }}
+              >
+                {/* Active Selection Border */}
+                {currentQty > 0 && (
+                  <div className="absolute inset-0 border-2 border-brand-500 rounded-2xl pointer-events-none z-10 transition-all duration-300 animate-in fade-in"></div>
+                )}
+
+                <div className="p-6 flex-1 flex flex-col relative">
+                  {/* Discount Badge */}
+                  {hasDiscount && (
+                    <div className="absolute top-4 right-4 animate-in fade-in zoom-in duration-300">
+                      <div className="bg-red-50 text-red-600 border border-red-100 shadow-sm px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-1">
+                        <Tag className="w-3 h-3 fill-current" />
+                        <span>-{discountPercent}%</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : packagesError ? (
-            <div className="text-center py-8 mb-8">
-              <p className="text-red-600">Không thể tải thông tin gói đăng ký. Vui lòng thử lại sau.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 mb-8 md:mb-12">
-              {packages?.map((pkg, index) => {
-                const getIconByIndex = (idx: number) => {
-                  const icons = [Star, Users, Crown];
-                  return icons[idx % icons.length];
-                };
-                const getColorByIndex = (idx: number) => {
-                  const colors = [
-                    { border: 'border-blue-200', bg: 'bg-blue-50', text: 'text-blue-800', badge: 'bg-blue-100 text-blue-800' },
-                    { border: 'border-purple-200', bg: 'bg-purple-50', text: 'text-purple-800', badge: 'bg-purple-100 text-purple-800' },
-                    { border: 'border-amber-200', bg: 'bg-amber-50', text: 'text-amber-800', badge: 'bg-amber-100 text-amber-800' }
-                  ];
-                  return colors[idx % colors.length];
-                };
-                
-                const Icon = getIconByIndex(index);
-                const colors = getColorByIndex(index);
-                const inCart = getPackageInCart(pkg.id);
-                const currentQty = quantities[pkg.id] || 1;
-                
-                return (
-                  <Card key={pkg.id} className={`${colors.border} border-2 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col h-full`}>
-                    <CardHeader className={`${colors.bg} rounded-t-lg pb-4`}>
-                      <CardTitle className={`flex items-start gap-3 ${colors.text}`}>
-                        <Icon className="w-6 h-6 mt-1 flex-shrink-0" />
-                        <span className="leading-tight text-lg">{pkg.name}</span>
-                      </CardTitle>
-                      <Badge variant="secondary" className={`w-fit ${colors.badge} font-bold text-lg mt-3 px-3 py-1`}>
-                        {formatCurrency(pkg.price)}
-                      </Badge>
-                      {pkg.maxRegistrations && pkg._count && (
-                        <div className="text-sm text-gray-600 mt-2 font-medium">
-                          Còn lại: {pkg.maxRegistrations - pkg._count.registrations}/{pkg.maxRegistrations} chỗ
+                  )}
+
+                  {/* Header */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className={`p-3 rounded-full ${theme.bgIcon}`}>
+                      <Icon className={`w-6 h-6 ${theme.textIcon}`} />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 leading-tight">
+                      {pkg.name}
+                    </h3>
+                  </div>
+
+                  {/* Availability */}
+                  {pkg.maxRegistrations && pkg._count && (
+                    <div className="mb-4 flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-md w-fit">
+                      <Users className="w-4 h-4" />
+                      <span>Còn lại: <span className="font-bold text-gray-900">{pkg.maxRegistrations - pkg._count.registrations}</span>/{pkg.maxRegistrations} suất</span>
+                    </div>
+                  )}
+
+                  {/* Price Card */}
+                  <div className="bg-gray-50/80 rounded-xl p-5 mb-6 border border-gray-100 group-hover:bg-brand-50/20 transition-colors">
+                    <div className="flex flex-col items-center text-center">
+                      {hasDiscount && (
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Giá gốc</span>
+                          <span className="text-sm text-gray-400 font-medium line-through decoration-gray-400">
+                            {formatCurrency(pkg.originalPrice)}
+                          </span>
                         </div>
                       )}
-                    </CardHeader>
-                    <CardContent className="p-5 md:p-6 flex flex-col flex-1">
-                      {/* Content area - grows to fill space */}
-                      <div className="flex-1 space-y-4 mb-5">
-                        {pkg.description && (
-                          <p className="text-gray-600 text-sm md:text-base leading-relaxed">
-                            {pkg.description}
-                          </p>
-                        )}
-                        {pkg.benefits && pkg.benefits.length > 0 && (
-                          <>
-                            <h4 className="font-semibold text-gray-800 mb-3 mt-4">Bạn nhận được gì?</h4>
-                            <ul className="space-y-3 text-sm md:text-base min-h-[220px]">
-                              {pkg.benefits.map((benefit, benefitIndex) => (
-                                <li key={benefitIndex} className="flex items-start gap-3">
-                                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                                  <span className="leading-relaxed flex-1">{benefit}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-extrabold text-gray-900 group-hover:text-brand-700 transition-colors">
+                          {formatCurrency(pkg.price).replace(/\s?₫/, '')}
+                        </span>
+                        <span className="text-base font-bold text-gray-500 group-hover:text-brand-600">₫</span>
                       </div>
+                    </div>
+                  </div>
 
-                      {/* Quantity Selector - always at bottom */}
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-200 mt-auto">
-                        <span className="text-sm font-semibold text-gray-700">Số lượng:</span>
-                        <div className="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded-lg">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleQuantityChange(pkg.id, false)}
-                            disabled={currentQty === 1}
-                            className="h-8 w-8 p-0 hover:bg-gray-200"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="text-lg font-bold w-10 text-center">{currentQty}</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleQuantityChange(pkg.id, true)}
-                            disabled={currentQty >= 10}
-                            className="h-8 w-8 p-0 hover:bg-gray-200"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Add to Cart Button */}
-                      <div className="mt-4">
-                        {inCart ? (
-                          <div className="flex items-center justify-between p-4 bg-green-50 border-2 border-green-300 rounded-lg">
-                            <div className="flex items-center gap-2 text-green-700">
-                              <CheckCircle className="w-5 h-5" />
-                              <span className="font-semibold">Trong giỏ ({inCart.quantity})</span>
+                  {/* Benefits */}
+                  {pkg.benefits && pkg.benefits.length > 0 && (
+                    <div className="flex-1">
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <Info className="w-4 h-4" /> Quyền lợi
+                      </h4>
+                      <ul className="space-y-3">
+                        {pkg.benefits.map((benefit: string, idx: number) => (
+                          <li key={idx} className="flex items-start gap-3 text-sm text-gray-600">
+                            <div className="mt-0.5 w-5 h-5 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                              <Check className="w-3 h-3 text-green-600" strokeWidth={3} />
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeSingerPackage(pkg.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 font-medium"
-                            >
-                              Xóa
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            onClick={() => handleAddToCart(pkg)}
-                            className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-6 text-base shadow-md hover:shadow-lg transition-all"
-                          >
-                            <ShoppingCart className="w-5 h-5 mr-2" />
-                            Thêm vào giỏ hàng
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                            <span className="leading-snug pt-0.5">{benefit}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
 
-          {/* Unique Features */}
-          <Card className="mb-12 border-green-200 bg-gradient-to-r from-green-50 to-blue-50">
-            <CardHeader>
-              <CardTitle className="text-center text-green-800">
-                ĐIỂM KHÁC BIỆT CHỈ CÓ TẠI "MÃI CHO HÀNH TINH XANH"
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="flex items-start gap-3">
-                  <Video className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <span>Sân khấu thật – ban nhạc live – khán giả thật</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Heart className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <span>TVC cá nhân mang dấu ấn nhân văn – xanh – tử tế</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Music className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <span>Gắn âm nhạc với thông điệp sống xanh – phát triển bền vững</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Users className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <span>Kết nối doanh nhân, chủ cửa hàng, điểm bán trong cộng đồng</span>
-                </div>
-                <div className="flex items-start gap-3 md:col-span-2 justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <span className="font-medium">Không phô trương – không áp lực – không hình thức</span>
+                {/* Card Footer Control - Clean Quantity Selector */}
+                <div className="p-4 border-t border-gray-100 bg-gray-50/50 backdrop-blur-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center bg-white rounded-lg p-1 border border-gray-200 shadow-sm w-[120px] justify-between">
+                      <Button variant="ghost" size="sm" className="h-9 w-9" onClick={() => handleQuantityChange(pkg.id, -1)} disabled={!currentQty}>
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="font-bold text-gray-900 min-w-[20px] text-center">{currentQty}</span>
+                      <Button variant="ghost" size="sm" className="h-9 w-9 text-brand-600" onClick={() => handleQuantityChange(pkg.id, 1)}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex-1 text-right">
+                      {currentQty > 0 ? (
+                        <div className="animate-in slide-in-from-right-2 duration-200">
+                          <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-0.5">Tổng</div>
+                          <div className="text-lg font-bold text-brand-600 leading-none">
+                            {formatCurrency(currentQty * pkg.price)}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400 italic">Chưa chọn</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            );
+          })}
+        </div>
+      </div>
 
-          {/* Call to Action */}
-          <div className="text-center mb-12 md:mb-16 px-4">
-            <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
-              MỘT LẦN ĐỨNG TRÊN SÂN KHẤU – MỘT DẤU ẤN ĐỂ NHỚ
-            </h3>
-            <p className="text-base md:text-lg text-gray-700 mb-6 md:mb-8 max-w-3xl mx-auto">
-              "Mãi cho Hành Tinh Xanh" không chỉ cho bạn cơ hội hát mà cho bạn trải nghiệm
-              được lắng nghe – được ghi nhận – được sống trọn với đam mê.
-            </p>
-            <p className="text-sm text-gray-600 mb-6 md:mb-8">
-              Số lượng học viên & suất biểu diễn có giới hạn cho mỗi đêm nhạc.
-            </p>
+      {/* Smart Sticky Bar */}
+      <div
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out transform",
+          totalItems > 0 ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+        )}
+      >
+        {/* Gradient fade above bar */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white to-transparent -z-10 pointer-events-none"></div>
+
+        <div className="container mx-auto px-4 pb-6 pt-2 max-w-5xl">
+          <div className="bg-gray-900 text-white rounded-2xl shadow-2xl p-4 md:p-5 flex flex-col md:flex-row items-center justify-between gap-4 border border-gray-800 backdrop-blur-xl bg-opacity-95">
+            <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-start">
+              <div className="flex flex-col">
+                <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-1">Đã chọn {totalItems} gói</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-200 to-white">
+                    {formatCurrency(totalPrice)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Divider for desktop */}
+              <div className="hidden md:block w-px h-10 bg-gray-700"></div>
+            </div>
+
+            <div className="flex gap-3 w-full md:w-auto">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleAddToCart}
+                className="flex-1 md:flex-none border-gray-600 text-gray-300 hover:text-white hover:bg-gray-800 hover:border-gray-500 transition-colors"
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Thêm giỏ hàng</span>
+                <span className="sm:hidden">Thêm</span>
+              </Button>
+
+              <Button
+                size="lg"
+                onClick={handleBuyNow}
+                className="flex-1 md:flex-none bg-white text-gray-900 hover:bg-brand-50 font-bold px-8 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_25px_rgba(255,255,255,0.5)] transition-all transform hover:-translate-y-0.5"
+              >
+                {bookingLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : (
+                  <Ticket className="w-5 h-5 mr-2" />
+                )}
+                MUA NGAY
+              </Button>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Floating Checkout Button */}
-      {getTotalCartItems() > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
-            onClick={handleCheckout}
-            size="lg"
-            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-6 py-6 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all flex items-center gap-3"
-          >
-            <ShoppingCart className="w-6 h-6" />
-            <div className="flex flex-col items-start">
-              <span className="text-sm font-medium">Giỏ hàng ({getTotalCartItems()})</span>
-              <span className="text-lg font-bold">{formatCurrency(getTotalCartAmount())}</span>
-            </div>
-          </Button>
-        </div>
-      )}
+      <div className="h-32"></div>
     </div>
   );
 }

@@ -1,144 +1,738 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ShoppingBag, User, Calendar, CreditCard } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  ShoppingBag,
+  User,
+  Calendar,
+  CreditCard,
+  Search,
+  Filter,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  X,
+  MapPin,
+  Ticket,
+  Phone,
+  Mail,
+  Package,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
-import { get } from '@/lib/api';
+import { get, patch, post } from '@/lib/api';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 
-interface Booking {
-    id: number;
-    bookingCode: string;
-    user: { fullName: string; phoneNumber: string };
-    finalAmount: number;
-    status: string;
-    paymentStatus: string;
-    createdAt: string;
-    items: any[];
+interface BookingItem {
+  id: number;
+  itemType: string;
+  itemTypeLabel?: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  productName: string;
+  ticketClass?: { name: string; colorCode?: string };
+  ticketTier?: { name: string; colorCode?: string; description?: string; benefits?: string };
+  singerPackage?: { name: string; colorCode?: string; description?: string };
+  show?: { id: number; title: string; performTime?: string; startDate?: string; stage?: { name: string; address: string } };
+  tour?: { id: number; title: string; departureDate?: string; duration?: string };
 }
 
-const statusColors: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
-    PENDING: 'warning',
-    CONFIRMED: 'success',
-    CANCELLED: 'destructive',
-    COMPLETED: 'default',
+interface Booking {
+  id: number;
+  bookingCode: string;
+  user: { id: number; fullName: string; phoneNumber: string; email?: string };
+  finalAmount: number;
+  totalAmount: number;
+  discountAmount: number;
+  status: string;
+  paymentStatus: string;
+  paymentMethod?: string;
+  createdAt: string;
+  updatedAt: string;
+  paidAt?: string;
+  note?: string;
+  itemCount: number;
+  items: BookingItem[];
+  transactions?: Array<{
+    id: number;
+    paymentMethod: string;
+    amount: number;
+    status: string;
+    payTime?: string;
+    createdAt: string;
+  }>;
+}
+
+interface BookingFilters {
+  page: number;
+  limit: number;
+  status?: string;
+  paymentStatus?: string;
+  search?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+// Helper to get combined status display
+const getStatusDisplay = (booking: { status: string; paymentStatus: string }) => {
+  if (booking.status === 'CANCELLED') {
+    return { label: 'Đã hủy', variant: 'destructive' as const };
+  }
+  if (booking.paymentStatus === 'UNPAID') {
+    return { label: 'Chưa thanh toán', variant: 'warning' as const };
+  }
+  if (booking.status === 'CONFIRMED' || booking.status === 'COMPLETED') {
+    return { label: 'Đã xử lý', variant: 'success' as const };
+  }
+  // PENDING or MANUAL_REVIEW with PAID
+  return { label: 'Chờ xử lý', variant: 'default' as const };
+};
+
+const paymentMethodLabels: Record<string, string> = {
+  WALLET: 'Ví điện tử',
+  BANK_TRANSFER: 'Chuyển khoản',
+  CASH: 'Tiền mặt',
+  MOMO: 'MoMo',
+  VNPAY: 'VNPay',
+};
+
+const formatShortDateTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
 export default function AdminBookingsPage() {
-    usePageTitle();
-    const [page, setPage] = useState(1);
-    const [statusFilter, setStatusFilter] = useState<string>('');
+  usePageTitle();
+  const queryClient = useQueryClient();
+  const [filters, setFilters] = useState<BookingFilters>({
+    page: 1,
+    limit: 20,
+  });
+  const [searchInput, setSearchInput] = useState('');
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [statusUpdateOpen, setStatusUpdateOpen] = useState(false);
+  const [newStatus, setNewStatus] = useState<string>('');
 
-    const { data, isLoading } = useQuery({
-        queryKey: ['admin-bookings', page, statusFilter],
-        queryFn: () => {
-            const params = new URLSearchParams({ page: page.toString(), limit: '20' });
-            if (statusFilter) params.append('status', statusFilter);
-            return get<{ items: Booking[]; meta: any }>(`/admin/bookings?${params.toString()}`);
-        },
-        staleTime: 2 * 60 * 1000, // 2 minutes cache
-        placeholderData: (previousData) => previousData, // Keep previous data while loading new
-    });
+  // Fetch bookings
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['admin-bookings', filters],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      params.append('page', filters.page.toString());
+      params.append('limit', filters.limit.toString());
+      if (filters.status) params.append('status', filters.status);
+      if (filters.paymentStatus) params.append('paymentStatus', filters.paymentStatus);
+      if (filters.search) params.append('search', filters.search);
+      if (filters.fromDate) params.append('fromDate', filters.fromDate);
+      if (filters.toDate) params.append('toDate', filters.toDate);
+      return get<{ items: Booking[]; meta: any }>(`/admin/bookings?${params.toString()}`);
+    },
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-    return (
-        <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold">Quản lý đơn hàng</h1>
-                    <p className="text-sm sm:text-base text-neutral-600 mt-1">{data?.meta?.total || 0} đơn hàng</p>
-                </div>
-            </div>
+  // Fetch booking details
+  const { data: bookingDetails, isLoading: detailsLoading } = useQuery({
+    queryKey: ['admin-booking-detail', selectedBooking?.id],
+    queryFn: () => get<Booking>(`/admin/bookings/${selectedBooking?.id}`),
+    enabled: !!selectedBooking?.id && detailsOpen,
+  });
 
-            {/* Filters */}
-            <Card>
-                <CardContent className="pt-4 sm:pt-6">
-                    <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
-                        <Button variant={!statusFilter ? 'default' : 'outline'} size="sm" onClick={() => { setStatusFilter(''); setPage(1); }} className="whitespace-nowrap">
-                            Tất cả
-                        </Button>
-                        <Button variant={statusFilter === 'PENDING' ? 'default' : 'outline'} size="sm" onClick={() => { setStatusFilter('PENDING'); setPage(1); }} className="whitespace-nowrap">
-                            Chờ xử lý
-                        </Button>
-                        <Button variant={statusFilter === 'CONFIRMED' ? 'default' : 'outline'} size="sm" onClick={() => { setStatusFilter('CONFIRMED'); setPage(1); }} className="whitespace-nowrap">
-                            Đã xác nhận
-                        </Button>
-                        <Button variant={statusFilter === 'COMPLETED' ? 'default' : 'outline'} size="sm" onClick={() => { setStatusFilter('COMPLETED'); setPage(1); }} className="whitespace-nowrap">
-                            Hoàn thành
-                        </Button>
-                        <Button variant={statusFilter === 'CANCELLED' ? 'default' : 'outline'} size="sm" onClick={() => { setStatusFilter('CANCELLED'); setPage(1); }} className="whitespace-nowrap">
-                            Đã hủy
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+  // Update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: string }) =>
+      patch(`/admin/bookings/${id}/status`, { status }),
+    onSuccess: () => {
+      toast.success('Cập nhật trạng thái thành công');
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-booking-detail'] });
+      setStatusUpdateOpen(false);
+      setDetailsOpen(false);
+    },
+    onError: () => {
+      toast.error('Cập nhật trạng thái thất bại');
+    },
+  });
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Danh sách đơn hàng</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="space-y-4">
-                            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
-                        </div>
-                    ) : !data?.items?.length ? (
-                        <div className="text-center py-12 text-neutral-500">Chưa có đơn hàng nào.</div>
-                    ) : (
-                        <>
-                            <div className="space-y-3">
-                                {data.items.map((booking) => (
-                                    <div key={booking.id} className="border rounded-lg p-3 sm:p-4 hover:bg-neutral-50">
-                                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex flex-wrap items-center gap-2 mb-2">
-                                                    <span className="font-mono text-sm sm:text-base font-semibold">#{booking.bookingCode}</span>
-                                                    <Badge variant={statusColors[booking.status]}>{booking.status}</Badge>
-                                                    <Badge variant={booking.paymentStatus === 'PAID' ? 'success' : 'warning'}>
-                                                        {booking.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
-                                                    </Badge>
-                                                </div>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs sm:text-sm text-neutral-600">
-                                                    <div className="flex items-center gap-2">
-                                                        <User className="h-4 w-4" />
-                                                        {booking.user.fullName} - {booking.user.phoneNumber}
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar className="h-4 w-4" />
-                                                        {formatDate(booking.createdAt)}
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <ShoppingBag className="h-4 w-4" />
-                                                        {booking.items.length} sản phẩm
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="text-left lg:text-right flex lg:flex-col items-center lg:items-end justify-between lg:justify-start gap-2 pt-3 lg:pt-0 border-t lg:border-t-0">
-                                                <p className="text-base sm:text-lg font-bold text-brand-600">{formatCurrency(booking.finalAmount)}</p>
-                                                <Button variant="outline" size="sm" className="whitespace-nowrap">Chi tiết</Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+  // Cancel booking mutation
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => post(`/admin/bookings/${id}/cancel`, {}),
+    onSuccess: () => {
+      toast.success('Hủy đơn hàng thành công');
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+      setDetailsOpen(false);
+    },
+    onError: () => {
+      toast.error('Hủy đơn hàng thất bại');
+    },
+  });
 
-                            {data.meta.totalPages > 1 && (
-                                <div className="flex justify-between mt-6 pt-6 border-t">
-                                    <p className="text-sm text-neutral-600">Trang {data.meta.page} / {data.meta.totalPages}</p>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>Trước</Button>
-                                        <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === data.meta.totalPages}>Sau</Button>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </CardContent>
-            </Card>
+  const handleSearch = () => {
+    setFilters((prev) => ({ ...prev, search: searchInput, page: 1 }));
+  };
+
+  const handleFilterChange = (key: keyof BookingFilters, value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value || undefined,
+      page: 1,
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({ page: 1, limit: 20 });
+    setSearchInput('');
+  };
+
+  const openDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setDetailsOpen(true);
+  };
+
+  const openStatusUpdate = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setNewStatus(booking.status);
+    setStatusUpdateOpen(true);
+  };
+
+  const handleStatusUpdate = () => {
+    if (selectedBooking && newStatus) {
+      updateStatusMutation.mutate({ id: selectedBooking.id, status: newStatus });
+    }
+  };
+
+  const handleCancel = (booking: Booking) => {
+    if (confirm(`Bạn có chắc muốn hủy đơn hàng #${booking.bookingCode}?`)) {
+      cancelMutation.mutate(booking.id);
+    }
+  };
+
+  const activeFiltersCount = [
+    filters.status,
+    filters.paymentStatus,
+    filters.search,
+    filters.fromDate,
+    filters.toDate,
+  ].filter(Boolean).length;
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold">Quản lý đơn hàng</h1>
+          <p className="text-sm sm:text-base text-neutral-600 mt-1">
+            {data?.meta?.total || 0} đơn hàng
+            {isFetching && !isLoading && <span className="ml-2 text-xs">(đang tải...)</span>}
+          </p>
         </div>
-    );
+      </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="pt-4 sm:pt-6 space-y-4">
+          {/* Search bar */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+              <Input
+                placeholder="Tìm theo mã đơn, tên khách hàng, số điện thoại..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className="pl-9"
+              />
+            </div>
+            <Button onClick={handleSearch}>Tìm kiếm</Button>
+          </div>
+
+          {/* Filter row */}
+          <div className="flex flex-wrap gap-3">
+            <Select
+              value={filters.status || 'all'}
+              onValueChange={(v) => handleFilterChange('status', v === 'all' ? '' : v)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="PENDING">Chờ xử lý</SelectItem>
+                <SelectItem value="PROCESSED">Đã xử lý</SelectItem>
+                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={filters.paymentStatus || 'all'}
+              onValueChange={(v) => handleFilterChange('paymentStatus', v === 'all' ? '' : v)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Thanh toán" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="PAID">Đã thanh toán</SelectItem>
+                <SelectItem value="UNPAID">Chưa thanh toán</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Input
+              type="date"
+              placeholder="Từ ngày"
+              value={filters.fromDate || ''}
+              onChange={(e) => handleFilterChange('fromDate', e.target.value)}
+              className="w-[150px]"
+            />
+
+            <Input
+              type="date"
+              placeholder="Đến ngày"
+              value={filters.toDate || ''}
+              onChange={(e) => handleFilterChange('toDate', e.target.value)}
+              className="w-[150px]"
+            />
+
+            {activeFiltersCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
+                <X className="h-4 w-4" />
+                Xóa bộ lọc ({activeFiltersCount})
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bookings List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Danh sách đơn hàng</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+          ) : !data?.items?.length ? (
+            <div className="text-center py-12 text-neutral-500">
+              <ShoppingBag className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>Không tìm thấy đơn hàng nào.</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3">
+                {data.items.map((booking) => (
+                  <div
+                    key={booking.id}
+                    className="border rounded-lg p-4 hover:bg-neutral-50 transition-colors"
+                  >
+                    {/* Fixed Grid Layout */}
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Booking Code & Status - Fixed width */}
+                      <div className="col-span-12 sm:col-span-3 lg:col-span-2">
+                        <div className="flex flex-col gap-2">
+                          <span className="font-mono text-sm font-semibold truncate">
+                            #{booking.bookingCode}
+                          </span>
+                          <Badge variant={getStatusDisplay(booking).variant} className="w-fit">
+                            {getStatusDisplay(booking).label}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Customer Info - Fixed width */}
+                      <div className="col-span-12 sm:col-span-4 lg:col-span-3">
+                        <div className="space-y-1 text-sm text-neutral-600">
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{booking.user.fullName}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span>{booking.user.phoneNumber}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Date & Items - Fixed width */}
+                      <div className="col-span-12 sm:col-span-5 lg:col-span-3">
+                        <div className="space-y-1 text-sm text-neutral-600">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="text-xs">{formatShortDateTime(booking.createdAt)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Package className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="text-xs">{booking.itemCount} sản phẩm</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Price - Fixed width */}
+                      <div className="col-span-6 sm:col-span-6 lg:col-span-2 text-left lg:text-right">
+                        <p className="text-lg font-bold text-brand-600">
+                          {formatCurrency(booking.finalAmount)}
+                        </p>
+                        {booking.paymentMethod && (
+                          <p className="text-xs text-neutral-500">
+                            {paymentMethodLabels[booking.paymentMethod] || booking.paymentMethod}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Actions - Fixed width */}
+                      <div className="col-span-6 sm:col-span-6 lg:col-span-2 flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDetails(booking)}
+                          className="whitespace-nowrap"
+                        >
+                          <Eye className="h-4 w-4 lg:mr-1" />
+                          <span className="hidden lg:inline">Chi tiết</span>
+                        </Button>
+                        {(booking.status === 'PENDING' || booking.status === 'MANUAL_REVIEW') && booking.paymentStatus === 'PAID' && (
+                          <Button
+                            size="sm"
+                            onClick={() => openStatusUpdate(booking)}
+                            className="whitespace-nowrap"
+                          >
+                            <CheckCircle className="h-4 w-4 lg:mr-1" />
+                            <span className="hidden lg:inline">Duyệt</span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Items Preview - Full width below */}
+                    <div className="mt-3 pt-3 border-t flex flex-wrap gap-1">
+                      {booking.items.slice(0, 3).map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="text-xs bg-neutral-100 px-2 py-0.5 rounded truncate max-w-[200px]"
+                        >
+                          {item.productName && item.productName !== 'N/A' && item.productName !== 'Sản phẩm không xác định'
+                            ? item.productName
+                            : (item as any).show?.title || (item as any).tour?.title || (item as any).ticketClass?.name || (item as any).ticketTier?.name || (item as any).singerPackage?.name || 'Sản phẩm'}
+                        </span>
+                      ))}
+                      {booking.items.length > 3 && (
+                        <span className="text-xs text-neutral-500">
+                          +{booking.items.length - 3} khác
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {data.meta.totalPages > 1 && (
+                <div className="flex justify-between items-center mt-6 pt-6 border-t">
+                  <p className="text-sm text-neutral-600">
+                    Trang {data.meta.page} / {data.meta.totalPages} ({data.meta.total} đơn hàng)
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFilters((p) => ({ ...p, page: p.page - 1 }))}
+                      disabled={filters.page === 1}
+                    >
+                      Trước
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFilters((p) => ({ ...p, page: p.page + 1 }))}
+                      disabled={filters.page === data.meta.totalPages}
+                    >
+                      Sau
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Details Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Chi tiết đơn hàng
+              {selectedBooking && (
+                <span className="font-mono text-brand-600">#{selectedBooking.bookingCode}</span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {detailsLoading ? (
+            <div className="space-y-4 py-4">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+          ) : bookingDetails ? (
+            <div className="space-y-4">
+              {/* Header with Status and Payment */}
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-brand-50 to-purple-50 rounded-lg border border-brand-100">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={getStatusDisplay(bookingDetails).variant} className="text-sm px-3 py-1">
+                    {getStatusDisplay(bookingDetails).label}
+                  </Badge>
+                  {bookingDetails.paymentMethod && (
+                    <Badge variant="outline" className="text-sm">
+                      <CreditCard className="h-3 w-3 mr-1" />
+                      {paymentMethodLabels[bookingDetails.paymentMethod] || bookingDetails.paymentMethod}
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-brand-600">{formatCurrency(bookingDetails.finalAmount)}</p>
+                  <p className="text-xs text-neutral-500">Tổng thanh toán</p>
+                </div>
+              </div>
+
+              {/* Customer & Items Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Customer Info - Compact */}
+                <div className="lg:col-span-1 bg-white border rounded-lg p-3">
+                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-1.5 text-neutral-700">
+                    <User className="h-3.5 w-3.5" />
+                    Khách hàng
+                  </h3>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <User className="h-3 w-3 text-neutral-400 flex-shrink-0" />
+                      <span className="truncate">{bookingDetails.user.fullName}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="h-3 w-3 text-neutral-400 flex-shrink-0" />
+                      <span>{bookingDetails.user.phoneNumber}</span>
+                    </div>
+                    {bookingDetails.user.email && (
+                      <div className="flex items-center gap-1.5">
+                        <Mail className="h-3 w-3 text-neutral-400 flex-shrink-0" />
+                        <span className="truncate text-xs">{bookingDetails.user.email}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Timestamps */}
+                  <div className="mt-3 pt-3 border-t text-xs text-neutral-500 space-y-1">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{formatShortDateTime(bookingDetails.createdAt)}</span>
+                    </div>
+                    {bookingDetails.paidAt && (
+                      <div className="flex items-center gap-1 text-green-600">
+                        <CheckCircle className="h-3 w-3" />
+                        <span>Đã TT: {formatShortDateTime(bookingDetails.paidAt)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Items - Compact */}
+                <div className="lg:col-span-2 bg-white border rounded-lg p-3">
+                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-1.5 text-neutral-700">
+                    <Package className="h-3.5 w-3.5" />
+                    Sản phẩm ({bookingDetails.items.length})
+                  </h3>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {bookingDetails.items.map((item, index) => (
+                      <div key={item.id} className="border rounded p-2.5 bg-neutral-50 hover:bg-neutral-100 transition-colors">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Badge variant="outline" className="text-xs px-1.5 py-0">
+                                {item.itemTypeLabel || item.itemType}
+                              </Badge>
+                              <span className="text-xs text-neutral-400">#{index + 1}</span>
+                            </div>
+                            <h4 className="font-medium text-sm truncate">
+                              {item.productName && item.productName !== 'N/A' && item.productName !== 'Sản phẩm không xác định'
+                                ? item.productName
+                                : item.show?.title || item.tour?.title || item.ticketClass?.name || item.ticketTier?.name || item.singerPackage?.name || 'Sản phẩm'}
+                            </h4>
+
+                            {/* Compact details */}
+                            <div className="mt-1 space-y-0.5 text-xs text-neutral-600">
+                              {(item.ticketClass || item.ticketTier) && (
+                                <div className="flex items-center gap-1">
+                                  <Ticket className="h-3 w-3" />
+                                  <span>{item.ticketClass?.name || item.ticketTier?.name}</span>
+                                </div>
+                              )}
+                              {item.show && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>{formatShortDateTime(item.show.startDate || item.show.performTime || '')}</span>
+                                  {item.show.stage && (
+                                    <>
+                                      <span className="text-neutral-400">•</span>
+                                      <MapPin className="h-3 w-3" />
+                                      <span className="truncate">{item.show.stage.name}</span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                              {item.tour && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>Khởi hành: {formatShortDateTime(item.tour.departureDate || '')}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-xs text-neutral-500">
+                              {item.quantity} × {formatCurrency(item.unitPrice)}
+                            </p>
+                            <p className="font-semibold text-brand-600 text-sm">
+                              {formatCurrency(item.subtotal)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Payment Summary - Inline */}
+                  <div className="mt-3 pt-3 border-t space-y-1.5 text-sm">
+                    <div className="flex justify-between text-neutral-600">
+                      <span>Tạm tính</span>
+                      <span>{formatCurrency(bookingDetails.totalAmount)}</span>
+                    </div>
+                    {bookingDetails.discountAmount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Giảm giá</span>
+                        <span>-{formatCurrency(bookingDetails.discountAmount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-semibold text-base pt-1.5 border-t">
+                      <span>Tổng cộng</span>
+                      <span className="text-brand-600">{formatCurrency(bookingDetails.finalAmount)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter className="gap-2">
+            {bookingDetails && bookingDetails.status !== 'CANCELLED' && bookingDetails.status !== 'COMPLETED' && (
+              <>
+                {(bookingDetails.status === 'PENDING' || bookingDetails.status === 'MANUAL_REVIEW') && bookingDetails.paymentStatus === 'PAID' && (
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      setDetailsOpen(false);
+                      openStatusUpdate(bookingDetails);
+                    }}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Duyệt đơn
+                  </Button>
+                )}
+                {(bookingDetails.status === 'PENDING' || bookingDetails.status === 'MANUAL_REVIEW') && bookingDetails.paymentStatus === 'UNPAID' && (
+                  <div className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded">
+                    ⚠️ Chỉ có thể duyệt đơn khi khách hàng đã thanh toán
+                  </div>
+                )}
+                <Button
+                  variant="destructive"
+                  onClick={() => handleCancel(bookingDetails)}
+                  disabled={cancelMutation.isPending}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Hủy đơn
+                </Button>
+              </>
+            )}
+            <Button variant="outline" onClick={() => setDetailsOpen(false)}>
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Status Update Dialog */}
+      <Dialog open={statusUpdateOpen} onOpenChange={setStatusUpdateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cập nhật trạng thái đơn hàng</DialogTitle>
+          </DialogHeader>
+
+          {selectedBooking && (
+            <div className="space-y-4">
+              <p className="text-sm text-neutral-600">
+                Đơn hàng: <span className="font-mono font-semibold">#{selectedBooking.bookingCode}</span>
+              </p>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Trạng thái mới</label>
+                <Select value={newStatus} onValueChange={setNewStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CONFIRMED">Đã xử lý</SelectItem>
+                    <SelectItem value="CANCELLED">Hủy đơn</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusUpdateOpen(false)}>
+              Hủy
+            </Button>
+            <Button
+              onClick={handleStatusUpdate}
+              disabled={updateStatusMutation.isPending || !newStatus}
+            >
+              {updateStatusMutation.isPending ? 'Đang xử lý...' : 'Cập nhật'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

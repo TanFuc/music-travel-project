@@ -18,6 +18,7 @@ import {
   LogOut,
   ChevronRight,
   LucideIcon,
+  Phone,
 } from 'lucide-react';
 import { Logo } from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
@@ -99,6 +100,11 @@ const sidebarItems: SidebarItem[] = [
     title: 'Cài đặt',
     href: '/admin/settings',
     icon: Settings,
+  },
+  {
+    title: 'Kênh liên hệ',
+    href: '/admin/contact-channels',
+    icon: Phone,
   },
 ];
 

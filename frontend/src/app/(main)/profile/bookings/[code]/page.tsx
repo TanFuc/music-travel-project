@@ -63,12 +63,15 @@ interface BookingDetail {
   items: Array<{
     id: number;
     itemType: string;
+    itemTypeLabel: string;
+    productName: string;
     itemId: number;
     quantity: number;
     unitPrice: number;
     subtotal: number;
     show?: {
       title: string;
+      description?: string;
       thumbnailUrl?: string;
       startDate: string;
       stage: {
@@ -78,16 +81,29 @@ interface BookingDetail {
     };
     tour?: {
       title: string;
+      description?: string;
+      duration?: string;
       thumbnailUrl?: string;
       departureDate: string;
     };
     singerPackage?: {
       name: string;
+      price: number;
       description?: string;
+      benefits?: string[];
+      colorCode?: string;
     };
     ticketClass?: {
       name: string;
+      price: number;
+      colorCode?: string;
+    };
+    ticketTier?: {
+      name: string;
+      price: number;
       description?: string;
+      benefits?: string;
+      colorCode?: string;
     };
   }>;
 }
@@ -117,19 +133,28 @@ export default function BookingDetailPage() {
 
   const getStatusConfig = () => {
     if (!booking) return { label: '', color: '', icon: Clock };
-    
+
+    // Priority 1: Show payment status if unpaid
     if (booking.paymentStatus === 'UNPAID') {
       return { label: 'Chưa thanh toán', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock };
     }
-    if (booking.paymentStatus === 'PAID' && booking.status === 'PENDING') {
+
+    // Priority 2: Show booking status
+    // Map PENDING and MANUAL_REVIEW to "Chờ xử lý"
+    if (booking.status === 'PENDING' || booking.status === 'MANUAL_REVIEW') {
       return { label: 'Chờ xử lý', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Clock };
     }
+
+    // Map CONFIRMED and COMPLETED to "Đã xử lý"
     if (booking.status === 'CONFIRMED' || booking.status === 'COMPLETED') {
-      return { label: 'Đã duyệt', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: CheckCircle };
+      return { label: 'Đã xử lý', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: CheckCircle };
     }
+
+    // CANCELLED stays as "Đã hủy"
     if (booking.status === 'CANCELLED') {
       return { label: 'Đã hủy', color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle };
     }
+
     return { label: booking.status, color: 'bg-slate-100 text-slate-600 border-slate-200', icon: Clock };
   };
 
@@ -163,7 +188,25 @@ export default function BookingDetailPage() {
 
   const statusConfig = getStatusConfig();
   const StatusIcon = statusConfig.icon;
-  const isApproved = booking.status === 'CONFIRMED' || booking.status === 'COMPLETED';
+  const isProcessed = booking.status === 'CONFIRMED' || booking.status === 'COMPLETED';
+
+  // Helper to get display product name
+  const getDisplayProductName = (item: BookingDetail['items'][0]) => {
+    if (item.productName && item.productName !== 'Sản phẩm không xác định') {
+      return item.productName;
+    }
+    // Fallback to ticket class/tier name
+    if (item.ticketClass) {
+      return `Vé ${item.ticketClass.name}`;
+    }
+    if (item.ticketTier) {
+      return `Vé ${item.ticketTier.name}`;
+    }
+    if (item.singerPackage) {
+      return item.singerPackage.name;
+    }
+    return 'Sản phẩm';
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
@@ -192,7 +235,7 @@ export default function BookingDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Check-in Instructions */}
-            {isApproved && (
+            {isProcessed && (
               <Card className="border-emerald-200 bg-emerald-50">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
@@ -213,50 +256,168 @@ export default function BookingDetailPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
-                  Sản phẩm đã đặt
+                  Sản phẩm đã đặt ({booking.items.length} sản phẩm)
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {booking.items.map((item) => (
-                  <div key={item.id} className="flex gap-4 p-4 bg-slate-50 rounded-lg">
-                    {(item.show?.thumbnailUrl || item.tour?.thumbnailUrl) && (
-                      <img
-                        src={item.show?.thumbnailUrl || item.tour?.thumbnailUrl}
-                        alt="Thumbnail"
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-slate-900">
-                        {item.show?.title || item.tour?.title || item.singerPackage?.name}
-                      </h4>
-                      {item.ticketClass && (
-                        <p className="text-sm text-slate-600 mt-1">Hạng vé: {item.ticketClass.name}</p>
+                {booking.items.map((item, index) => (
+                  <div key={item.id} className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    {/* Header with type badge and product name */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge
+                            variant="outline"
+                            className="text-xs"
+                            style={{
+                              borderColor: item.ticketClass?.colorCode || item.ticketTier?.colorCode || item.singerPackage?.colorCode || '#6366f1',
+                              color: item.ticketClass?.colorCode || item.ticketTier?.colorCode || item.singerPackage?.colorCode || '#6366f1'
+                            }}
+                          >
+                            {item.itemTypeLabel}
+                          </Badge>
+                          <span className="text-xs text-slate-400">#{index + 1}</span>
+                        </div>
+                        <h4 className="font-semibold text-slate-900 text-lg">
+                          {getDisplayProductName(item)}
+                        </h4>
+                      </div>
+                      {(item.show?.thumbnailUrl || item.tour?.thumbnailUrl) && (
+                        <img
+                          src={item.show?.thumbnailUrl || item.tour?.thumbnailUrl}
+                          alt="Thumbnail"
+                          className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                        />
                       )}
+                    </div>
+
+                    {/* Product Details Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      {/* Ticket Class / Tier Info */}
+                      {item.ticketClass && (
+                        <div className="flex items-center gap-2">
+                          <Ticket className="h-4 w-4 text-purple-500" />
+                          <span className="text-slate-600">Hạng vé:</span>
+                          <span
+                            className="font-medium px-2 py-0.5 rounded text-xs"
+                            style={{
+                              backgroundColor: item.ticketClass.colorCode ? `${item.ticketClass.colorCode}20` : '#f1f5f9',
+                              color: item.ticketClass.colorCode || '#475569'
+                            }}
+                          >
+                            {item.ticketClass.name}
+                          </span>
+                        </div>
+                      )}
+
+                      {item.ticketTier && (
+                        <div className="flex items-center gap-2">
+                          <Ticket className="h-4 w-4 text-purple-500" />
+                          <span className="text-slate-600">Hạng vé:</span>
+                          <span
+                            className="font-medium px-2 py-0.5 rounded text-xs"
+                            style={{
+                              backgroundColor: item.ticketTier.colorCode ? `${item.ticketTier.colorCode}20` : '#f1f5f9',
+                              color: item.ticketTier.colorCode || '#475569'
+                            }}
+                          >
+                            {item.ticketTier.name}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Show Details */}
                       {item.show && (
-                        <div className="space-y-1 mt-2">
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <Calendar className="h-3.5 w-3.5 text-purple-500" />
+                        <>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-purple-500" />
+                            <span className="text-slate-600">Thời gian:</span>
                             <span className="font-medium">{formatShortDateTime(item.show.startDate)}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-slate-500">
-                            <MapPin className="h-3.5 w-3.5" />
-                            <span>{item.show.stage.name}</span>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-red-500" />
+                            <span className="text-slate-600">Địa điểm:</span>
+                            <span className="font-medium">{item.show.stage.name}</span>
                           </div>
-                          <p className="text-xs text-slate-400 pl-5">{item.show.stage.address}</p>
-                        </div>
+                          <div className="col-span-full text-xs text-slate-500 pl-6">
+                            {item.show.stage.address}
+                          </div>
+                        </>
                       )}
+
+                      {/* Tour Details */}
                       {item.tour && (
-                        <div className="space-y-1 mt-2">
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <Calendar className="h-3.5 w-3.5 text-purple-500" />
+                        <>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-purple-500" />
+                            <span className="text-slate-600">Khởi hành:</span>
                             <span className="font-medium">{formatShortDateTime(item.tour.departureDate)}</span>
                           </div>
+                          {item.tour.duration && (
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-blue-500" />
+                              <span className="text-slate-600">Thời lượng:</span>
+                              <span className="font-medium">{item.tour.duration}</span>
+                            </div>
+                          )}
+                          {item.tour.description && (
+                            <div className="col-span-full text-xs text-slate-500 mt-1">
+                              {item.tour.description.substring(0, 150)}...
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Singer Package Details */}
+                      {item.singerPackage && (
+                        <>
+                          {item.singerPackage.description && (
+                            <div className="col-span-full text-xs text-slate-600">
+                              {item.singerPackage.description}
+                            </div>
+                          )}
+                          {item.singerPackage.benefits && Array.isArray(item.singerPackage.benefits) && item.singerPackage.benefits.length > 0 && (
+                            <div className="col-span-full">
+                              <p className="text-xs text-slate-500 mb-1">Quyền lợi:</p>
+                              <ul className="text-xs text-slate-600 space-y-0.5">
+                                {(item.singerPackage.benefits as string[]).slice(0, 3).map((benefit, i) => (
+                                  <li key={i} className="flex items-center gap-1">
+                                    <CheckCircle className="h-3 w-3 text-emerald-500" />
+                                    {benefit}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Ticket Tier Benefits */}
+                      {item.ticketTier?.benefits && (
+                        <div className="col-span-full text-xs text-slate-600">
+                          <p className="text-slate-500 mb-1">Quyền lợi:</p>
+                          {item.ticketTier.benefits}
                         </div>
                       )}
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-sm text-slate-600">Số lượng: {item.quantity}</span>
-                        <span className="font-semibold text-brand-600">{formatCurrency(item.subtotal)}</span>
+                    </div>
+
+                    {/* Price Summary */}
+                    <div className="mt-4 pt-3 border-t border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="text-sm text-slate-600">
+                            <span className="font-medium">Đơn giá:</span>
+                            <span className="ml-2 text-slate-900">{formatCurrency(item.unitPrice)}</span>
+                          </div>
+                          <div className="text-sm text-slate-600">
+                            <span className="font-medium">Số lượng:</span>
+                            <span className="ml-2 text-slate-900">{item.quantity}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-slate-500">Thành tiền</p>
+                          <p className="text-lg font-bold text-brand-600">{formatCurrency(item.subtotal)}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -327,7 +488,7 @@ export default function BookingDetailPage() {
                   </div>
                 )}
 
-                {isApproved && (
+                {isProcessed && (
                   <div className="bg-white rounded-lg p-4 border border-emerald-100">
                     <div className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
@@ -396,7 +557,7 @@ export default function BookingDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* QR Code */}
-            {isApproved && qrCodeUrl && (
+            {isProcessed && qrCodeUrl && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-center">QR Code Check-in</CardTitle>
@@ -465,9 +626,9 @@ export default function BookingDetailPage() {
                   <div className="flex gap-3">
                     <div className="flex flex-col items-center">
                       <div className="w-2 h-2 rounded-full bg-emerald-600" />
-                      {isApproved && <div className="w-0.5 h-full bg-slate-200 mt-1" />}
+                      {isProcessed && <div className="w-0.5 h-full bg-slate-200 mt-1" />}
                     </div>
-                    <div className={`flex-1 ${isApproved ? 'pb-4' : ''}`}>
+                    <div className={`flex-1 ${isProcessed ? 'pb-4' : ''}`}>
                       <p className="font-medium text-sm text-emerald-700">Đã thanh toán</p>
                       <p className="text-xs text-slate-500 mt-1">
                         {booking.paidAt ? formatShortDateTime(booking.paidAt) : formatShortDateTime(booking.updatedAt)}
@@ -478,13 +639,13 @@ export default function BookingDetailPage() {
                     </div>
                   </div>
                 )}
-                {isApproved && (
+                {isProcessed && (
                   <div className="flex gap-3">
                     <div className="flex flex-col items-center">
                       <div className="w-2 h-2 rounded-full bg-emerald-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-sm text-emerald-700">Đã duyệt</p>
+                      <p className="font-medium text-sm text-emerald-700">Đã xử lý</p>
                       <p className="text-xs text-slate-500 mt-1">
                         {booking.confirmedAt ? formatShortDateTime(booking.confirmedAt) : formatShortDateTime(booking.updatedAt)}
                       </p>

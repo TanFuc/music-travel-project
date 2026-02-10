@@ -18,6 +18,17 @@ import { get, post } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import PaymentQRModal from '@/components/payment/PaymentQRModal';
+import { PaymentMethodConfig, paymentMethodConfigService } from '@/services/payment-method-config.service';
+
+const PAYMENT_METHOD_INFO: Record<string, { description: string; icon: any }> = {
+  BANK_QR: { description: 'Thanh toán bằng mã QR', icon: QrCode },
+  MOMO: { description: 'Ví điện tử MoMo', icon: CreditCard },
+  VNPAY: { description: 'Cổng thanh toán VNPAY', icon: CreditCard },
+  BANKING: { description: 'Chuyển khoản ngân hàng', icon: Building2 },
+  CASH: { description: 'Thanh toán tại quầy', icon: Banknote },
+  WALLET: { description: 'Thanh toán bằng số dư ví', icon: Wallet },
+  PAYOS: { description: 'Cổng thanh toán PayOS', icon: CreditCard },
+};
 
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -95,44 +106,7 @@ interface Booking {
   items: BookingItem[];
 }
 
-const paymentMethods = [
-  {
-    id: 'BANK_QR',
-    name: 'QR Ngân hàng',
-    description: 'Thanh toán bằng mã QR',
-    icon: QrCode,
-  },
-  {
-    id: 'MOMO',
-    name: 'MoMo',
-    description: 'Ví điện tử MoMo',
-    icon: CreditCard,
-  },
-  {
-    id: 'CASH',
-    name: 'Tiền mặt',
-    description: 'Thanh toán tại quầy',
-    icon: Banknote,
-  },
-  // {
-  //   id: 'WALLET',
-  //   name: 'Ví của tôi',
-  //   description: 'Thanh toán bằng số dư ví',
-  //   icon: Wallet,
-  // },
-  // {
-  //   id: 'VNPAY',
-  //   name: 'VNPAY',
-  //   description: 'Cổng thanh toán VNPAY',
-  //   icon: CreditCard,
-  // },
-  // {
-  //   id: 'BANKING',
-  //   name: 'Chuyển khoản',
-  //   description: 'Chuyển khoản ngân hàng',
-  //   icon: Building2,
-  // },
-];
+
 
 export default function CheckoutPage() {
   usePageTitle();
@@ -166,6 +140,14 @@ export default function CheckoutPage() {
   const [createdBookingCode, setCreatedBookingCode] = useState<string | null>(null);
   const [isLoadingBooking, setIsLoadingBooking] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [paymentConfigs, setPaymentConfigs] = useState<PaymentMethodConfig[]>([]);
+
+  // Fetch payment configs
+  useEffect(() => {
+    paymentMethodConfigService.getAllActive().then(configs => {
+      setPaymentConfigs(configs);
+    }).catch(console.error);
+  }, []);
 
   // Check if we're in "Buy Now" mode (has booking code) or "Cart" mode
   const isBuyNowMode = !!bookingCode;
@@ -218,6 +200,12 @@ export default function CheckoutPage() {
   });
 
   const selectedMethod = watch('paymentMethod');
+  const selectedConfig = paymentConfigs.find(c => c.method === selectedMethod);
+  const currentTotal = isBuyNowMode && booking ? booking.finalAmount : getTotal();
+  const paymentDiscountAmount = selectedConfig && selectedConfig.discountPercentage > 0
+    ? Math.round(currentTotal * (Number(selectedConfig.discountPercentage) / 100))
+    : 0;
+  const finalTotalAmount = currentTotal - paymentDiscountAmount;
 
   const handleValidateVoucher = async () => {
     if (!voucherInput.trim()) {
@@ -250,7 +238,7 @@ export default function CheckoutPage() {
 
   const onSubmit = async (data: CheckoutForm) => {
     console.log('data', data);
-    
+
     // Handle QR payment (Bank QR or Momo): Create booking first (if needed), then show modal
     if (['BANK_QR', 'MOMO'].includes(data.paymentMethod)) {
       setIsProcessing(true);
@@ -413,35 +401,47 @@ export default function CheckoutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {paymentMethods.map((method) => (
-                  <label
-                    key={method.id}
-                    className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg cursor-pointer transition-colors ${selectedMethod === method.id
-                      ? 'border-brand-500 bg-brand-50'
-                      : 'hover:border-neutral-300'
-                      }`}
-                  >
-                    <input
-                      type="radio"
-                      value={method.id}
-                      {...register('paymentMethod')}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${selectedMethod === method.id ? 'bg-brand-500 text-white' : 'bg-neutral-100'
+                {paymentConfigs.map((config) => {
+                  const info = PAYMENT_METHOD_INFO[config.method] || { description: 'Phương thức thanh toán', icon: CreditCard };
+                  const Icon = info.icon;
+
+                  return (
+                    <label
+                      key={config.id}
+                      className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg cursor-pointer transition-colors ${selectedMethod === config.method
+                        ? 'border-brand-500 bg-brand-50'
+                        : 'hover:border-neutral-300'
                         }`}
                     >
-                      <method.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm sm:text-base">{method.name}</h4>
-                      <p className="text-xs sm:text-sm text-neutral-500">{method.description}</p>
-                    </div>
-                    {selectedMethod === method.id && (
-                      <Badge variant="success" className="hidden sm:inline-flex">Đã chọn</Badge>
-                    )}
-                  </label>
-                ))}
+                      <input
+                        type="radio"
+                        value={config.method}
+                        {...register('paymentMethod')}
+                        className="sr-only"
+                      />
+                      <div
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${selectedMethod === config.method ? 'bg-brand-500 text-white' : 'bg-neutral-100'
+                          }`}
+                      >
+                        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-sm sm:text-base">{config.name}</h4>
+                          {Number(config.discountPercentage) > 0 && (
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
+                              Giảm {Number(config.discountPercentage)}%
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs sm:text-sm text-neutral-500">{info.description}</p>
+                      </div>
+                      {selectedMethod === config.method && (
+                        <Badge variant="success" className="hidden sm:inline-flex">Đã chọn</Badge>
+                      )}
+                    </label>
+                  );
+                })}
                 {errors.paymentMethod && (
                   <p className="text-sm text-error-500">{errors.paymentMethod.message}</p>
                 )}
@@ -551,16 +551,16 @@ export default function CheckoutPage() {
                             <div className="flex justify-between items-start">
                               <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-sm text-neutral-900 truncate">
-                                  {isTicket 
-                                    ? (showTitle || 'Vé xem show') 
-                                    : isTour 
+                                  {isTicket
+                                    ? (showTitle || 'Vé xem show')
+                                    : isTour
                                       ? (tourTitle || 'Tour du lịch')
                                       : (packageName || 'Gói ca sĩ')
                                   }
                                 </p>
                                 {/* Item Type Badge */}
-                                <Badge 
-                                  variant="outline" 
+                                <Badge
+                                  variant="outline"
                                   className={`mt-1 text-xs ${isSingerPackage ? 'bg-green-50 text-green-700 border-green-200' : ''}`}
                                 >
                                   {isTicket ? 'Vé xem show' : isTour ? 'Tour' : 'Gói ca sĩ'}
@@ -807,13 +807,19 @@ export default function CheckoutPage() {
                       <span>-{formatCurrency(discount)}</span>
                     </div>
                   )}
+                  {paymentDiscountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-success-600">
+                      <span>Giảm giá thanh toán ({Number(selectedConfig?.discountPercentage)}%):</span>
+                      <span>-{formatCurrency(paymentDiscountAmount)}</span>
+                    </div>
+                  )}
 
                   {/* Total */}
                   <div className="border-t pt-3">
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-lg">Tổng cộng:</span>
                       <span className="font-bold text-xl text-brand-600">
-                        {formatCurrency(isBuyNowMode && booking ? booking.finalAmount : getTotal())}
+                        {formatCurrency(finalTotalAmount)}
                       </span>
                     </div>
                   </div>
@@ -826,7 +832,7 @@ export default function CheckoutPage() {
                   size="lg"
                   disabled={isProcessing || isLoadingBooking}
                 >
-                  {isProcessing ? 'Đang xử lý...' : selectedMethod === 'BANK_QR' ? 'Tạo mã QR thanh toán' : 'Xác nhận thanh toán'}
+                  {isProcessing ? 'Đang xử lý...' : selectedMethod === 'BANK_QR' ? 'Tạo mã QR thanh toán' : `Thanh toán ${formatCurrency(finalTotalAmount)}`}
                 </Button>
 
                 {/* Security Note */}
@@ -844,34 +850,39 @@ export default function CheckoutPage() {
       <PaymentQRModal
         isOpen={isQRModalOpen}
         onClose={() => setIsQRModalOpen(false)}
-        defaultAmount={isBuyNowMode && booking ? booking.finalAmount : getTotal()}
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+        defaultAmount={finalTotalAmount}
         defaultDescription={`Thanh toan don hang Music Travel - ${createdBookingCode || (isBuyNowMode && booking ? booking.bookingCode : 'Cart')}`}
         onSuccess={async () => {
           const code = createdBookingCode || (booking ? booking.bookingCode : '');
           if (code) {
-             try {
-                await post(`/bookings/${code}/confirm-payment`, {});
+            try {
+              const response = await post(`/bookings/${code}/confirm-payment`, {});
+              console.log('✅ Payment confirmed, response:', response);
 
-                // Invalidate relevant queries to refresh profile data
-                await queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
-                await queryClient.invalidateQueries({ queryKey: ['profile'] });
-                await queryClient.invalidateQueries({ queryKey: ['wallet'] });
+              // Invalidate relevant queries to refresh profile data
+              await queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+              await queryClient.invalidateQueries({ queryKey: ['my-show-bookings'] });
+              await queryClient.invalidateQueries({ queryKey: ['my-singer-bookings'] });
+              await queryClient.invalidateQueries({ queryKey: ['profile'] });
+              await queryClient.invalidateQueries({ queryKey: ['wallet'] });
 
-                toast.success('Xác nhận thanh toán thành công! Vui lòng đợi admin duyệt đơn hàng.');
-                clearCart();
+              toast.success('Xác nhận thanh toán thành công! Vui lòng đợi admin duyệt đơn hàng.');
+              clearCart();
 
-                // Close modal before redirect
-                setIsQRModalOpen(false);
+              // Close modal before redirect
+              setIsQRModalOpen(false);
 
-                // Redirect to profile with booking code
-                router.push(`/profile?booking=${code}`);
-             } catch (error) {
-                console.error("Failed to confirm payment status", error);
-                toast.error('Có lỗi khi xác nhận thanh toán.');
-             }
+              // Redirect to profile with booking code
+              router.push(`/profile?booking=${code}`);
+            } catch (error) {
+              console.error("Failed to confirm payment status", error);
+              toast.error('Có lỗi khi xác nhận thanh toán.');
+            }
           } else {
-             clearCart();
-             router.push('/profile');
+            clearCart();
+            router.push('/profile');
           }
         }}
       />

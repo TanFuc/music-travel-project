@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import FloatingContactButtons from '@/components/common/FloatingContactButtons';
 
 // Loading skeleton for page content
 function PageSkeleton() {
@@ -30,6 +31,7 @@ export default function MainLayout({
         </Suspense>
       </main>
       <Footer />
+      <FloatingContactButtons />
     </div>
   );
 }
