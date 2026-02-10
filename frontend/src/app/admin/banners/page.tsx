@@ -91,14 +91,14 @@ export default function AdminBannersPage() {
                     {/* Images */}
                     <div className="flex gap-2 shrink-0">
                       <div className="relative w-32 h-20 bg-neutral-100 rounded-md overflow-hidden border">
-                        <Image src={banner.imageUrl} alt="Desktop" fill className="object-cover" />
+                        <Image src={banner.imageUrl} alt="Desktop" fill sizes="128px" className="object-cover" />
                         <div className="absolute bottom-1 right-1 bg-black/50 p-1 rounded">
                           <Monitor className="h-3 w-3 text-white" />
                         </div>
                       </div>
                       {banner.mobileImageUrl && (
                         <div className="relative w-16 h-20 bg-neutral-100 rounded-md overflow-hidden border">
-                          <Image src={banner.mobileImageUrl} alt="Mobile" fill className="object-cover" />
+                          <Image src={banner.mobileImageUrl} alt="Mobile" fill sizes="64px" className="object-cover" />
                           <div className="absolute bottom-1 right-1 bg-black/50 p-1 rounded">
                             <Smartphone className="h-3 w-3 text-white" />
                           </div>

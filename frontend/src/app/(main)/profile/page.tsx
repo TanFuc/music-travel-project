@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, memo, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -137,47 +137,82 @@ const BookingCard = memo(function BookingCard({ booking }: BookingCardProps) {
   const StatusIcon = statusConfig?.icon || Clock;
   const totalItems = booking.items.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Determine display status based on payment and booking status
+  const getDisplayStatus = () => {
+    if (booking.paymentStatus === 'UNPAID') {
+      return { label: 'Chưa thanh toán', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock };
+    }
+    if (booking.paymentStatus === 'PAID' && booking.status === 'PENDING') {
+      return { label: 'Chờ xử lý', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Clock };
+    }
+    if (booking.status === 'CONFIRMED' || booking.status === 'COMPLETED') {
+      return { label: 'Đã duyệt', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: CheckCircle };
+    }
+    if (booking.status === 'CANCELLED') {
+      return { label: 'Đã hủy', color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle };
+    }
+    return statusConfig || { label: booking.status, color: 'bg-slate-100 text-slate-600 border-slate-200', icon: Clock };
+  };
+
+  const displayStatus = getDisplayStatus();
+  const DisplayStatusIcon = displayStatus.icon;
+  const isApproved = booking.status === 'CONFIRMED' || booking.status === 'COMPLETED';
+
   return (
-    <Link href={`/checkout?code=${booking.bookingCode}`} className="block">
-      <div className="group bg-white rounded-lg border border-slate-200 hover:border-brand-300 hover:shadow-sm transition-all duration-200 overflow-hidden">
-        <div className="p-4 sm:p-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-sm font-semibold text-slate-900 bg-slate-100 px-2 py-1 rounded">
-                  #{booking.bookingCode}
-                </span>
-                <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border ${statusConfig?.color || 'bg-slate-100 text-slate-600'}`}>
-                  <StatusIcon className="h-3 w-3" />
-                  {statusConfig?.label || booking.status}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-slate-500">
-                 <span className="flex items-center gap-1.5">
-                    <History className="h-4 w-4" />
-                    {formatDate(booking.createdAt)}
-                 </span>
-                 <span className="hidden sm:inline w-1 h-1 bg-slate-300 rounded-full" />
-                 <span className="flex items-center gap-1.5">
-                    <Package className="h-4 w-4" />
-                    {totalItems} sản phẩm
-                 </span>
-              </div>
+    <div className="group bg-white rounded-lg border border-slate-200 hover:border-brand-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+      <div className="p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex-1 space-y-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="font-mono text-sm font-semibold text-slate-900 bg-slate-100 px-2 py-1 rounded">
+                #{booking.bookingCode}
+              </span>
+              <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border ${displayStatus.color}`}>
+                <DisplayStatusIcon className="h-3 w-3" />
+                {displayStatus.label}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <History className="h-4 w-4" />
+                {formatDate(booking.createdAt)}
+              </span>
+              <span className="hidden sm:inline w-1 h-1 bg-slate-300 rounded-full" />
+              <span className="flex items-center gap-1.5">
+                <Package className="h-4 w-4" />
+                {totalItems} sản phẩm
+              </span>
             </div>
 
-            <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0">
-               <div className="text-right">
-                  <p className="text-sm text-slate-500 mb-0.5">Tổng tiền</p>
-                  <p className="text-lg font-bold text-brand-600">{formatCurrency(booking.finalAmount)}</p>
-               </div>
-               <span className={`text-xs px-2 py-0.5 rounded border ${paymentConfig?.color} font-medium`}>
-                  {paymentConfig?.label || booking.paymentStatus}
-               </span>
+            {/* Check-in instruction for approved bookings */}
+            {isApproved && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-2">
+                <p className="text-xs text-emerald-700 flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Hướng dẫn sử dụng vé:</strong> Quý khách vui lòng đến quầy soát vé tại địa điểm đăng ký, xuất trình mã đơn hàng hoặc QR code để check-in.
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0">
+            <div className="text-right">
+              <p className="text-sm text-slate-500 mb-0.5">Tổng tiền</p>
+              <p className="text-lg font-bold text-brand-600">{formatCurrency(booking.finalAmount)}</p>
             </div>
+            <Link href={`/profile/bookings/${booking.bookingCode}`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                Xem chi tiết
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 });
 
@@ -188,15 +223,12 @@ const BookingCard = memo(function BookingCard({ booking }: BookingCardProps) {
 export default function ProfilePage() {
   usePageTitle();
   const router = useRouter();
-  const { isAuthenticated, user: authUser, setUser, logout } = useAuthStore();
+  const searchParams = useSearchParams();
+  const { isAuthenticated, user: authUser, setUser, logout, hasHydrated } = useAuthStore();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
-
+  // Fetch data first before using in effects
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: () => get<UserProfile>('/users/me'),
@@ -211,9 +243,26 @@ export default function ProfilePage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: bookings } = useQuery({
-    queryKey: ['my-bookings'],
-    queryFn: () => get<{ items: Booking[] }>('/users/me/bookings'),
+  const { data: showBookings } = useQuery({
+    queryKey: ['my-show-bookings'],
+    queryFn: async () => {
+      console.log('Fetching show bookings...');
+      const result = await get<{ items: Booking[] }>('/users/me/bookings/shows');
+      console.log('Show bookings result:', result);
+      return result;
+    },
+    enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: singerBookings } = useQuery({
+    queryKey: ['my-singer-bookings'],
+    queryFn: async () => {
+      console.log('Fetching singer package bookings...');
+      const result = await get<{ items: Booking[] }>('/users/me/bookings/singer-packages');
+      console.log('Singer bookings result:', result);
+      return result;
+    },
     enabled: isAuthenticated,
     staleTime: 2 * 60 * 1000,
   });
@@ -224,6 +273,39 @@ export default function ProfilePage() {
     enabled: isAuthenticated,
     staleTime: 2 * 60 * 1000,
   });
+
+  useEffect(() => {
+    // Wait for hydration before checking auth to prevent redirect on page refresh
+    if (!hasHydrated) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, hasHydrated, router]);
+
+  // Handle booking query parameter - switch to bookings tab and show success message
+  useEffect(() => {
+    const bookingCode = searchParams?.get('booking');
+    const allBookings = [...(showBookings?.items || []), ...(singerBookings?.items || [])];
+    if (bookingCode && allBookings.length > 0) {
+      // Switch to bookings tab
+      setActiveTab('bookings');
+
+      // Find the booking and show a success message
+      const booking = allBookings.find(b => b.bookingCode === bookingCode);
+      if (booking) {
+        toast.success(`Đơn hàng ${bookingCode} đang chờ xác nhận từ admin!`, {
+          description: 'Bạn có thể theo dõi trạng thái đơn hàng trong lịch sử đơn hàng.',
+          duration: 5000,
+        });
+
+        // Clear the query parameter
+        router.replace('/profile', { scroll: false });
+      }
+    }
+  }, [searchParams, showBookings?.items, singerBookings?.items, router]);
 
   const {
     register,
@@ -275,15 +357,22 @@ export default function ProfilePage() {
   };
 
   const stats = useMemo(() => {
-    if (!bookings?.items) return { total: 0, completed: 0, pending: 0 };
+    const allBookings = [...(showBookings?.items || []), ...(singerBookings?.items || [])];
     return {
-      total: bookings.items.length,
-      completed: bookings.items.filter((b) => b.status === 'COMPLETED' || b.paymentStatus === 'PAID').length,
-      pending: bookings.items.filter((b) => b.status === 'PENDING').length,
+      total: allBookings.length,
+      completed: allBookings.filter((b) => b.status === 'COMPLETED' || b.paymentStatus === 'PAID').length,
+      pending: allBookings.filter((b) => b.status === 'PENDING').length,
     };
-  }, [bookings]);
+  }, [showBookings?.items, singerBookings?.items]);
 
+  // Show loading while hydrating to prevent flash of content
+  if (!hasHydrated) {
+    return <ProfileSkeleton />;
+  }
+
+  // Redirect handled by useEffect above
   if (!isAuthenticated) return null;
+
   if (profileLoading) return <ProfileSkeleton />;
 
   const isAdmin = profile?.role === 'ADMIN' || profile?.role === 'STAFF';
@@ -343,7 +432,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Sticky Tab Navigation */}
         <div className="sticky top-16 z-20 bg-white border-b border-slate-200 shadow-sm">
            <div className="px-4 md:px-8 overflow-x-auto scrollbar-none">
@@ -459,52 +548,93 @@ export default function ProfilePage() {
                      </Button>
                   </div>
                   
-                  {!bookings?.items || bookings.items.length === 0 ? (
-                    <div className="bg-white rounded-xl p-8 text-center border border-dashed border-slate-300">
-                      <Ticket className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                      <p className="text-slate-500 mb-4">Bạn chưa có đơn hàng nào</p>
-                      <Link href="/shows">
-                        <Button>Khám phá sự kiện</Button>
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                       {bookings.items.slice(0, 3).map((booking) => (
-                          <BookingCard key={booking.id} booking={booking} />
-                       ))}
-                    </div>
-                  )}
+                  
+                  {(() => {
+                    const allBookings = [...(showBookings?.items || []), ...(singerBookings?.items || [])];
+                    return !allBookings || allBookings.length === 0 ? (
+                      <div className="bg-white rounded-xl p-8 text-center border border-dashed border-slate-300">
+                        <Ticket className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-500 mb-4">Bạn chưa có đơn hàng nào</p>
+                        <Link href="/shows">
+                          <Button>Khám phá sự kiện</Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                         {allBookings.slice(0, 3).map((booking) => (
+                            <BookingCard key={booking.id} booking={booking} />
+                         ))}
+                      </div>
+                    );
+                  })()}
                </div>
            </TabsContent>
 
            <TabsContent value="bookings" className="mt-0">
-               <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-slate-900">Tất cả đơn hàng</h2>
-                  <Badge variant="outline" className="px-3 py-1 text-slate-600">
-                    Tổng: {stats.total}
-                  </Badge>
-               </div>
+              <div className="flex items-center justify-between mb-6">
+                 <h2 className="text-xl font-bold text-slate-900">Lịch sử đơn hàng</h2>
+              </div>
 
-               {!bookings?.items || bookings.items.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
-                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center shadow-sm mb-4">
-                       <ShoppingBag className="h-10 w-10 text-slate-300" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-900">Chưa có lịch sử mua hàng</h3>
-                    <p className="text-slate-500 max-w-sm text-center mt-2 mb-6">
-                      Bạn chưa thực hiện giao dịch nào. Hãy khám phá các sự kiện hấp dẫn ngay!
-                    </p>
-                    <Link href="/shows">
-                       <Button size="lg" className="bg-brand-600 hover:bg-brand-700">Mua vé ngay</Button>
-                    </Link>
-                  </div>
-               ) : (
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                     {bookings.items.map((booking) => (
-                        <BookingCard key={booking.id} booking={booking} />
-                     ))}
-                  </div>
-               )}
+              <Tabs defaultValue="shows" className="w-full">
+                <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+                  <TabsTrigger value="shows" className="gap-2">
+                    <ShoppingBag className="h-4 w-4" />
+                    Vé xem shows
+                    <Badge variant="secondary" className="ml-1">{showBookings?.items?.length || 0}</Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="singer" className="gap-2">
+                    <Mic className="h-4 w-4" />
+                    Vé đăng ký hát
+                    <Badge variant="secondary" className="ml-1">{singerBookings?.items?.length || 0}</Badge>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="shows" className="mt-0">
+                  {!showBookings?.items || showBookings.items.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+                       <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center shadow-sm mb-4">
+                          <ShoppingBag className="h-10 w-10 text-slate-300" />
+                       </div>
+                       <h3 className="text-lg font-semibold text-slate-900">Chưa có vé xem shows</h3>
+                       <p className="text-slate-500 max-w-sm text-center mt-2 mb-6">
+                         Bạn chưa mua vé xem shows hoặc tour nào. Hãy khám phá các sự kiện hấp dẫn ngay!
+                       </p>
+                       <Link href="/shows">
+                          <Button size="lg" className="bg-brand-600 hover:bg-brand-700">Mua vé ngay</Button>
+                       </Link>
+                     </div>
+                  ) : (
+                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {showBookings.items.map((booking) => (
+                           <BookingCard key={booking.id} booking={booking} />
+                        ))}
+                     </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="singer" className="mt-0">
+                  {!singerBookings?.items || singerBookings.items.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+                       <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center shadow-sm mb-4">
+                          <Mic className="h-10 w-10 text-slate-300" />
+                       </div>
+                       <h3 className="text-lg font-semibold text-slate-900">Chưa có vé đăng ký hát</h3>
+                       <p className="text-slate-500 max-w-sm text-center mt-2 mb-6">
+                         Bạn chưa mua gói đăng ký hát nào. Hãy đăng ký để trở thành ca sĩ ngay!
+                       </p>
+                       <Link href="/register-singer">
+                          <Button size="lg" className="bg-brand-600 hover:bg-brand-700">Đăng ký ngay</Button>
+                       </Link>
+                     </div>
+                  ) : (
+                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {singerBookings.items.map((booking) => (
+                           <BookingCard key={booking.id} booking={booking} />
+                        ))}
+                     </div>
+                  )}
+                </TabsContent>
+              </Tabs>
            </TabsContent>
 
            <TabsContent value="singer-registrations" className="mt-0">

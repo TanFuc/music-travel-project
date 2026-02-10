@@ -6,7 +6,7 @@ import { Link } from '@/components/common/Link';
 import { Heart, MapPin, Calendar, Clock, Ticket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { WishlistButton } from './WishlistButton';
+import { WishlistButton } from '@/components/shows/WishlistButton';
 
 // Memoize formatters outside component to avoid recreation
 const priceFormatter = new Intl.NumberFormat('vi-VN');

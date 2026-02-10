@@ -135,6 +135,7 @@ export function Header() {
                 src="/logo.png"
                 alt="Mãi Cho Hành Tinh Xanh"
                 fill
+                sizes="40px"
                 className="object-cover"
                 priority
               />

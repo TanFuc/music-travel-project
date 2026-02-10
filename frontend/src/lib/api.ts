@@ -25,6 +25,9 @@ api.interceptors.request.use(
     const token = useAuthStore.getState().accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('Sending request with token:', config.url);
+    } else {
+      console.log('Sending request WITHOUT token:', config.url);
     }
 
     // Deduplication: check if identical request is already pending

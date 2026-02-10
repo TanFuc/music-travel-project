@@ -87,7 +87,7 @@ export default function AdminHomeStagesPage() {
                                     <div className="flex flex-col md:flex-row gap-4 items-start">
                                         {/* Image */}
                                         <div className="relative w-40 h-24 bg-neutral-100 rounded-md overflow-hidden border shrink-0">
-                                            <Image src={stage.imageUrl} alt={stage.title} fill className="object-cover" />
+                                            <Image src={stage.imageUrl} alt={stage.title} fill sizes="160px" className="object-cover" />
                                         </div>
 
                                         {/* Content */}

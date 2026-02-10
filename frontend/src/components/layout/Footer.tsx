@@ -53,6 +53,7 @@ export function Footer() {
                   src="/logo.png"
                   alt="Mãi Cho Hành Tinh Xanh"
                   fill
+                  sizes="64px"
                   className="object-cover"
                 />
               </div>

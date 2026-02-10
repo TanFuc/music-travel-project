@@ -19,6 +19,8 @@ import { formatCurrency } from '@/lib/utils';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import PaymentQRModal from '@/components/payment/PaymentQRModal';
 
+import { useQueryClient } from '@tanstack/react-query';
+
 const checkoutSchema = z.object({
   paymentMethod: z.enum(['WALLET', 'MOMO', 'VNPAY', 'BANKING', 'CASH', 'BANK_QR']),
   voucherCode: z.string().optional(),
@@ -136,9 +138,10 @@ export default function CheckoutPage() {
   usePageTitle();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const bookingCode = searchParams.get('code');
 
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, hasHydrated } = useAuthStore();
   const {
     tickets,
     tours,
@@ -169,10 +172,11 @@ export default function CheckoutPage() {
   const isEmpty = !isBuyNowMode && tickets.length === 0 && tours.length === 0 && ticketTiers.length === 0;
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Only redirect if auth state has been rehydrated and user is not authenticated
+    if (hasHydrated && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [hasHydrated, isAuthenticated, router]);
 
   useEffect(() => {
     if (isEmpty && !isBuyNowMode) {
@@ -847,13 +851,24 @@ export default function CheckoutPage() {
           if (code) {
              try {
                 await post(`/bookings/${code}/confirm-payment`, {});
-                toast.success('Xác nhận thanh toán thành công!');
+
+                // Invalidate relevant queries to refresh profile data
+                await queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+                await queryClient.invalidateQueries({ queryKey: ['profile'] });
+                await queryClient.invalidateQueries({ queryKey: ['wallet'] });
+
+                toast.success('Xác nhận thanh toán thành công! Vui lòng đợi admin duyệt đơn hàng.');
+                clearCart();
+
+                // Close modal before redirect
+                setIsQRModalOpen(false);
+
+                // Redirect to profile with booking code
+                router.push(`/profile?booking=${code}`);
              } catch (error) {
                 console.error("Failed to confirm payment status", error);
                 toast.error('Có lỗi khi xác nhận thanh toán.');
              }
-             clearCart();
-             router.push(`/profile?booking=${code}`);
           } else {
              clearCart();
              router.push('/profile');
