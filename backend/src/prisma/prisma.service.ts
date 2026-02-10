@@ -1,5 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { getCorrelationId } from '../common/constants/async-context';
+import { LoggingConfigService } from '../common/config/logging.config';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -19,6 +21,42 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async onModuleInit() {
     await this.$connect();
     this.logger.log('Database connection established');
+
+    // Add query logging middleware
+    const config = LoggingConfigService.getConfig();
+    if (config.enableDbQueryLogging) {
+      this.setupQueryLogging(config.slowQueryThreshold);
+    }
+  }
+
+  private setupQueryLogging(slowQueryThreshold: number) {
+    this.$use(async (params, next) => {
+      const correlationId = getCorrelationId();
+      const before = Date.now();
+
+      const result = await next(params);
+
+      const after = Date.now();
+      const duration = after - before;
+
+      // Log slow queries as warnings
+      if (duration >= slowQueryThreshold) {
+        this.logger.warn(
+          `[${correlationId}] Slow query detected - ${duration}ms\n` +
+          `  model: ${params.model}\n` +
+          `  action: ${params.action}`
+        );
+      } else {
+        // Log all queries as debug
+        this.logger.debug(
+          `[${correlationId}] Query executed - ${duration}ms\n` +
+          `  model: ${params.model}\n` +
+          `  action: ${params.action}`
+        );
+      }
+
+      return result;
+    });
   }
 
   async onModuleDestroy() {

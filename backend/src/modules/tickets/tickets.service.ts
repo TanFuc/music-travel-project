@@ -10,6 +10,8 @@ import { CacheKeys, CachePatterns, CACHE_TTL } from '@/cache/cache-keys.constant
 import { v4 as uuidv4 } from 'uuid';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
+import { EnhancedLoggerService } from '@/common/services/enhanced-logger.service';
+import { LogMethod } from '@/common/decorators/log-method.decorator';
 
 const LOCK_TTL_MINUTES = 10; // Ticket lock expires after 10 minutes
 const QR_PREFIX = 'MTICKET:';
@@ -42,14 +44,16 @@ export interface CheckInResult {
 
 @Injectable()
 export class TicketsService {
-  private readonly logger = new Logger(TicketsService.name);
+  private readonly logger: EnhancedLoggerService;
   private readonly qrSecret: string;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
     private readonly configService: ConfigService,
+    private readonly enhancedLoggerService: EnhancedLoggerService,
   ) {
+    this.logger = this.enhancedLoggerService.createChild(TicketsService.name);
     this.qrSecret =
       this.configService.get<string>('QR_SECRET') || 'default-qr-secret-change-in-production';
   }
@@ -57,13 +61,17 @@ export class TicketsService {
   /**
    * Lock tickets for a user with Redis-backed lock management
    */
+  @LogMethod({ logParams: true, sanitize: true })
   async lockTickets(userId: number, lockTicketsDto: LockTicketsDto) {
     const { ticketIds } = lockTicketsDto;
+
+    this.logger.log('Locking tickets', { userId, ticketCount: ticketIds.length });
 
     // First, release any expired locks
     await this.releaseExpiredLocks();
 
     // Check all tickets are available
+    this.logger.debug('Fetching tickets for locking', { ticketIds });
     const tickets = await this.prisma.ticket.findMany({
       where: {
         id: { in: ticketIds },
@@ -75,6 +83,11 @@ export class TicketsService {
     });
 
     if (tickets.length !== ticketIds.length) {
+      this.logger.warn('Some tickets not found', {
+        userId,
+        requestedCount: ticketIds.length,
+        foundCount: tickets.length,
+      });
       throw new NotFoundException({
         code: ERROR_CODES.TICKET_001,
         message: 'Một số vé không tồn tại.',

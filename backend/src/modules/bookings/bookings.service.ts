@@ -8,19 +8,34 @@ import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.con
 import { Decimal } from '@prisma/client/runtime/library';
 import { CacheService } from '@/cache/cache.service';
 import { CacheKeys, CACHE_TTL } from '@/cache/cache-keys.constant';
+import { EnhancedLoggerService } from '@/common/services/enhanced-logger.service';
+import { LogMethod } from '@/common/decorators/log-method.decorator';
 
 @Injectable()
 export class BookingsService {
-  private readonly logger = new Logger(BookingsService.name);
+  private readonly logger: EnhancedLoggerService;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly ticketsService: TicketsService,
     private readonly toursService: ToursService,
     private readonly cache: CacheService,
-  ) {}
+    private readonly enhancedLoggerService: EnhancedLoggerService,
+  ) {
+    this.logger = this.enhancedLoggerService.createChild(BookingsService.name);
+  }
 
+  @LogMethod({ logParams: true, sanitize: true })
   async create(userId: number, createBookingDto: CreateBookingDto) {
+    this.logger.log('Starting booking creation', {
+      userId,
+      ticketsWithSeatsCount: createBookingDto.ticketsWithSeats?.length ?? 0,
+      ticketIdsCount: createBookingDto.ticketIds?.length ?? 0,
+      ticketTiersCount: createBookingDto.ticketTiers?.length ?? 0,
+      tourItemsCount: createBookingDto.tourItems?.length ?? 0,
+      singerPackagesCount: createBookingDto.singerPackages?.length ?? 0,
+    });
+
     const hasTickets =
       (createBookingDto.ticketsWithSeats?.length ?? 0) > 0 ||
       (createBookingDto.ticketIds?.length ?? 0) > 0;
@@ -28,6 +43,7 @@ export class BookingsService {
     const hasTours = (createBookingDto.tourItems?.length ?? 0) > 0;
     const hasSingerPackages = (createBookingDto.singerPackages?.length ?? 0) > 0;
     if (!hasTickets && !hasTiers && !hasTours && !hasSingerPackages) {
+      this.logger.warn('Booking validation failed - no items provided', { userId });
       throw new BadRequestException({
         code: ERROR_CODES.VAL_001,
         message:
@@ -36,6 +52,7 @@ export class BookingsService {
     }
 
     const bookingCode = this.generateBookingCode();
+    this.logger.debug('Generated booking code', { bookingCode, userId });
     let totalAmount = new Decimal(0);
 
     // Validate and calculate ticket prices (new flow with seats)
@@ -250,7 +267,16 @@ export class BookingsService {
 
     const finalAmount = totalAmount.minus(discountAmount);
 
+    this.logger.debug('Calculated booking amounts', {
+      userId,
+      bookingCode,
+      totalAmount: totalAmount.toString(),
+      discountAmount: discountAmount.toString(),
+      finalAmount: finalAmount.toString(),
+    });
+
     // Create booking with items and assign seats
+    this.logger.debug('Starting database transaction for booking creation', { userId, bookingCode });
     const booking = await this.prisma.$transaction(async (tx) => {
       const newBooking = await tx.booking.create({
         data: {
@@ -330,10 +356,20 @@ export class BookingsService {
       return newBooking;
     });
 
+    this.logger.debug('Transaction completed successfully', { userId, bookingCode });
+
     // Invalidate user bookings cache
     await this.cache.del(CacheKeys.userBookings(userId));
 
-    this.logger.log(`Booking ${booking.bookingCode} created for user ${userId}`);
+    this.logger.log('Booking created successfully', {
+      bookingCode: booking.bookingCode,
+      userId,
+      totalAmount: booking.totalAmount.toString(),
+      discountAmount: booking.discountAmount.toString(),
+      finalAmount: booking.finalAmount.toString(),
+      status: booking.status,
+      itemCount: ticketItems.length + tourItems.length + tierItems.length + singerPackageItems.length,
+    });
 
     return {
       bookingCode: booking.bookingCode,
@@ -345,12 +381,22 @@ export class BookingsService {
     };
   }
 
+  @LogMethod({ logParams: true, sanitize: true })
   async confirmManualPayment(code: string, userId: number) {
+    this.logger.log('Manual payment confirmation requested', {
+      bookingCode: code,
+      userId,
+    });
+
     const booking = await this.prisma.booking.findFirst({
       where: { bookingCode: code, userId },
     });
 
     if (!booking) {
+      this.logger.warn('Booking not found for manual payment confirmation', {
+        bookingCode: code,
+        userId,
+      });
       throw new NotFoundException({
         code: ERROR_CODES.BOOKING_001,
         message: getErrorMessage(ERROR_CODES.BOOKING_001),
@@ -362,12 +408,28 @@ export class BookingsService {
       booking.status !== BookingStatus.PENDING &&
       booking.status !== BookingStatus.MANUAL_REVIEW
     ) {
+       this.logger.warn('Invalid booking status for manual payment confirmation', {
+         bookingCode: code,
+         userId,
+         currentStatus: booking.status,
+       });
        throw new BadRequestException('Trạng thái đơn hàng không hợp lệ để xác nhận thanh toán.');
     }
 
+    // Idempotent - already confirmed
     if (booking.status === BookingStatus.MANUAL_REVIEW) {
+      this.logger.debug('Booking already in manual review status', {
+        bookingCode: code,
+        userId,
+      });
       return booking;
     }
+
+    this.logger.debug('Updating booking status to MANUAL_REVIEW', {
+      bookingCode: code,
+      bookingId: booking.id,
+      userId,
+    });
 
     const updated = await this.prisma.booking.update({
       where: { id: booking.id },
@@ -377,6 +439,15 @@ export class BookingsService {
     });
 
     await this.invalidateBookingCache(code, userId);
+
+    this.logger.log('Manual payment confirmed successfully', {
+      bookingCode: code,
+      bookingId: booking.id,
+      userId,
+      newStatus: updated.status,
+      finalAmount: updated.finalAmount.toString(),
+    });
+
     return updated;
   }
 
@@ -410,17 +481,22 @@ export class BookingsService {
     return bookings;
   }
 
+  @LogMethod({ logParams: true, sanitize: true })
   async findByCode(code: string, userId?: number) {
+    this.logger.debug('Looking up booking by code', { code, userId });
+
     const cacheKey = CacheKeys.bookingByCode(code);
 
     // Try cache first (only for read without userId filter)
     if (!userId) {
       const cached = await this.cache.get(cacheKey);
       if (cached) {
+        this.logger.debug('Booking found in cache', { code });
         return cached;
       }
     }
 
+    this.logger.debug('Fetching booking from database', { code, userId });
     const booking = await this.prisma.booking.findFirst({
       where: {
         bookingCode: code,
@@ -440,24 +516,98 @@ export class BookingsService {
     });
 
     if (!booking) {
+      this.logger.warn('Booking not found', { code, userId });
       throw new NotFoundException({
         code: ERROR_CODES.BOOKING_001,
         message: getErrorMessage(ERROR_CODES.BOOKING_001),
       });
     }
 
+    this.logger.log('Booking retrieved successfully', {
+      code,
+      userId: booking.userId,
+      status: booking.status,
+      finalAmount: booking.finalAmount.toString(),
+    });
+
     // Cache booking for 10 minutes
     await this.cache.set(cacheKey, booking, CACHE_TTL.MEDIUM);
+
 
     return booking;
   }
 
+  @LogMethod({ logParams: true, sanitize: true })
+  async getBookingDetails(code: string, userId?: number) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { bookingCode: code },
+      include: {
+        user: {
+          select: {
+            fullName: true,
+            phoneNumber: true,
+            email: true,
+          },
+        },
+        items: {
+          include: {
+            show: {
+              include: {
+                stage: {
+                  select: {
+                    name: true,
+                    address: true,
+                  },
+                },
+              },
+            },
+            tour: {
+              select: {
+                title: true,
+                thumbnailUrl: true,
+                departureDate: true,
+              },
+            },
+            singerPackage: {
+              select: {
+                name: true,
+                description: true,
+              },
+            },
+            ticketClass: {
+              select: {
+                name: true,
+                description: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    // If userId is provided, verify ownership
+    if (userId && booking.userId !== userId) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    return booking;
+  }
+
+
+  @LogMethod({ logParams: true, sanitize: true })
   async cancel(bookingId: number, userId: number) {
+    this.logger.log('Cancelling booking', { bookingId, userId });
+
     const booking = await this.prisma.booking.findFirst({
       where: { id: bookingId, userId },
     });
 
     if (!booking) {
+      this.logger.warn('Booking not found for cancellation', { bookingId, userId });
       throw new NotFoundException({
         code: ERROR_CODES.BOOKING_001,
         message: getErrorMessage(ERROR_CODES.BOOKING_001),
@@ -465,6 +615,11 @@ export class BookingsService {
     }
 
     if (booking.status === BookingStatus.CANCELLED) {
+      this.logger.warn('Booking already cancelled', {
+        bookingId,
+        bookingCode: booking.bookingCode,
+        userId,
+      });
       throw new BadRequestException({
         code: ERROR_CODES.BOOKING_002,
         message: getErrorMessage(ERROR_CODES.BOOKING_002),
@@ -472,6 +627,12 @@ export class BookingsService {
     }
 
     if (booking.paymentStatus === PaymentStatus.PAID) {
+      this.logger.warn('Cannot cancel paid booking', {
+        bookingId,
+        bookingCode: booking.bookingCode,
+        paymentStatus: booking.paymentStatus,
+        userId,
+      });
       throw new BadRequestException({
         code: ERROR_CODES.BOOKING_003,
         message: getErrorMessage(ERROR_CODES.BOOKING_003),
@@ -479,6 +640,7 @@ export class BookingsService {
     }
 
     // Release locked tickets
+    this.logger.debug('Releasing locked tickets', { bookingId });
     const ticketItems = await this.prisma.bookingItem.findMany({
       where: { bookingId, itemType: BookingItemType.SHOW_TICKET },
     });
@@ -488,6 +650,7 @@ export class BookingsService {
         await this.ticketsService.releaseTicket(userId, item.ticketId);
       }
     }
+    this.logger.debug('Released tickets', { bookingId, ticketCount: ticketItems.length });
 
     await this.prisma.booking.update({
       where: { id: bookingId },
@@ -497,7 +660,12 @@ export class BookingsService {
     // Invalidate caches
     await this.invalidateBookingCache(booking.bookingCode, userId);
 
-    this.logger.log(`Booking ${booking.bookingCode} cancelled by user ${userId}`);
+    this.logger.log('Booking cancelled successfully', {
+      bookingCode: booking.bookingCode,
+      bookingId,
+      userId,
+      releasedTickets: ticketItems.length,
+    });
 
     return { message: 'Đã hủy đơn hàng thành công.' };
   }

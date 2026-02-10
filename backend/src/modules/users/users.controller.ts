@@ -42,6 +42,20 @@ export class UsersController {
     return this.usersService.getBookings(user.sub);
   }
 
+  @Get('me/bookings/shows')
+  @ApiOperation({ summary: 'Get current user show/tour bookings' })
+  @ApiResponse({ status: 200, description: 'User show bookings retrieved successfully' })
+  async getShowBookings(@CurrentUser() user: JwtPayload) {
+    return this.usersService.getShowBookings(user.sub);
+  }
+
+  @Get('me/bookings/singer-packages')
+  @ApiOperation({ summary: 'Get current user singer package bookings' })
+  @ApiResponse({ status: 200, description: 'User singer package bookings retrieved successfully' })
+  async getSingerPackageBookings(@CurrentUser() user: JwtPayload) {
+    return this.usersService.getSingerPackageBookings(user.sub);
+  }
+
   // Admin endpoints
   @Get()
   @Roles('ADMIN')

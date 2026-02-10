@@ -86,6 +86,15 @@ export class BookingsController {
     return this.bookingsService.findByCode(code, user.sub);
   }
 
+  @Get(':code/details')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get detailed booking information' })
+  @ApiResponse({ status: 200, description: 'Booking details retrieved successfully' })
+  async getDetails(@CurrentUser() user: JwtPayload, @Param('code') code: string) {
+    return this.bookingsService.getBookingDetails(code, user.sub);
+  }
+
   @Post(':id/cancel')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

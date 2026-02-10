@@ -245,10 +245,129 @@ export class UsersService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Cache bookings for 5 minutes
-    await this.cache.set(cacheKey, bookings, CACHE_TTL.SHORT);
+    const result = { items: bookings };
 
-    return bookings;
+    // Cache bookings for 5 minutes
+    await this.cache.set(cacheKey, result, CACHE_TTL.SHORT);
+
+    return result;
+  }
+
+  async getShowBookings(userId: number) {
+    const cacheKey = `${CacheKeys.userBookings(userId)}:shows`;
+
+    // Try cache first
+    const cached = await this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        userId,
+        items: {
+          some: {
+            itemType: {
+              in: ['SHOW_TICKET', 'TOUR_SLOT'],
+            },
+          },
+        },
+      },
+      include: {
+        items: {
+          where: {
+            itemType: {
+              in: ['SHOW_TICKET', 'TOUR_SLOT'],
+            },
+          },
+          include: {
+            ticket: {
+              include: {
+                show: {
+                  select: {
+                    id: true,
+                    title: true,
+                    performTime: true,
+                  },
+                },
+                ticketClass: {
+                  select: {
+                    name: true,
+                    price: true,
+                  },
+                },
+              },
+            },
+            tourSchedule: {
+              include: {
+                tour: {
+                  select: {
+                    id: true,
+                    title: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const result = { items: bookings };
+
+    // Cache bookings for 5 minutes
+    await this.cache.set(cacheKey, result, CACHE_TTL.SHORT);
+
+    return result;
+  }
+
+  async getSingerPackageBookings(userId: number) {
+    const cacheKey = `${CacheKeys.userBookings(userId)}:singer`;
+
+    // Try cache first
+    const cached = await this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        userId,
+        items: {
+          some: {
+            itemType: 'SINGER_PACKAGE',
+          },
+        },
+      },
+      include: {
+        items: {
+          where: {
+            itemType: 'SINGER_PACKAGE',
+          },
+          include: {
+            singerPackage: {
+              select: {
+                id: true,
+                name: true,
+                nameEn: true,
+                price: true,
+                description: true,
+                benefits: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const result = { items: bookings };
+
+    // Cache bookings for 5 minutes
+    await this.cache.set(cacheKey, result, CACHE_TTL.SHORT);
+
+    return result;
   }
 
   /**

@@ -20,6 +20,8 @@ import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.con
 import { MoMoGateway, MoMoWebhookPayload } from './gateways/momo.gateway';
 import { VNPayGateway, VNPayReturnParams } from './gateways/vnpay.gateway';
 import { PayOSGateway, PayOSWebhookPayload } from './gateways/payos.gateway';
+import { EnhancedLoggerService } from '@/common/services/enhanced-logger.service';
+import { LogMethod } from '@/common/decorators/log-method.decorator';
 
 export interface CheckoutResult {
   transactionId?: number;
@@ -33,7 +35,7 @@ export interface CheckoutResult {
 
 @Injectable()
 export class PaymentsService {
-  private readonly logger = new Logger(PaymentsService.name);
+  private readonly logger: EnhancedLoggerService;
   private readonly appUrl: string;
 
   constructor(
@@ -45,15 +47,25 @@ export class PaymentsService {
     private readonly momoGateway: MoMoGateway,
     private readonly vnpayGateway: VNPayGateway,
     private readonly payosGateway: PayOSGateway,
+    private readonly enhancedLoggerService: EnhancedLoggerService,
   ) {
+    this.logger = this.enhancedLoggerService.createChild(PaymentsService.name);
     this.appUrl = this.configService.get<string>('APP_URL') || 'http://localhost:3000';
   }
 
+  @LogMethod({ logParams: true, sanitize: true })
   async checkout(
     userId: number,
     checkoutDto: CheckoutDto,
     ipAddress?: string,
   ): Promise<CheckoutResult> {
+    this.logger.log('Processing checkout', {
+      userId,
+      bookingCode: checkoutDto.bookingCode,
+      paymentMethod: checkoutDto.paymentMethod,
+      ipAddress,
+    });
+
     const booking = await this.prisma.booking.findFirst({
       where: {
         bookingCode: checkoutDto.bookingCode,
@@ -67,6 +79,10 @@ export class PaymentsService {
     });
 
     if (!booking) {
+      this.logger.warn('Checkout failed - booking not found', {
+        userId,
+        bookingCode: checkoutDto.bookingCode,
+      });
       throw new NotFoundException({
         code: ERROR_CODES.BOOKING_001,
         message: getErrorMessage(ERROR_CODES.BOOKING_001),
@@ -74,9 +90,15 @@ export class PaymentsService {
     }
 
     const amount = Number(booking.finalAmount);
+    this.logger.debug('Booking found for checkout', {
+      bookingId: booking.id,
+      amount,
+      paymentMethod: checkoutDto.paymentMethod,
+    });
 
     // Handle wallet payment
     if (checkoutDto.paymentMethod === PaymentMethod.WALLET) {
+      this.logger.debug('Processing wallet payment', { userId, bookingId: booking.id, amount });
       return this.processWalletPayment(userId, booking.id, amount, booking.bookingCode);
     }
 
@@ -288,12 +310,16 @@ export class PaymentsService {
     };
   }
 
+  @LogMethod({ logParams: false, sanitize: true })
   async handleWebhook(
     gateway: string,
     payload: Record<string, unknown>,
     _headers?: Record<string, string>,
   ) {
-    this.logger.log(`Received webhook from ${gateway}`);
+    this.logger.log('Received payment webhook', {
+      gateway,
+      payloadKeys: Object.keys(payload),
+    });
 
     switch (gateway.toLowerCase()) {
       case 'momo':
@@ -652,7 +678,15 @@ export class PaymentsService {
   /**
    * Create a refund for a booking
    */
+  @LogMethod({ logParams: true, sanitize: true })
   async createRefund(userId: number, refundDto: CreateRefundDto) {
+    this.logger.log('Processing refund request', {
+      userId,
+      bookingCode: refundDto.bookingCode,
+      amount: refundDto.amount,
+      refundMethod: refundDto.refundMethod,
+    });
+
     // Find booking
     const booking = await this.prisma.booking.findFirst({
       where: {
@@ -671,6 +705,10 @@ export class PaymentsService {
     });
 
     if (!booking) {
+      this.logger.warn('Refund failed - paid booking not found', {
+        userId,
+        bookingCode: refundDto.bookingCode,
+      });
       throw new NotFoundException({
         code: ERROR_CODES.BOOKING_001,
         message: 'Không tìm thấy đơn hàng đã thanh toán.',
@@ -684,8 +722,21 @@ export class PaymentsService {
 
     const remainingAmount = Number(booking.finalAmount) - totalRefunded;
 
+    this.logger.debug('Calculated refund amounts', {
+      bookingId: booking.id,
+      finalAmount: booking.finalAmount,
+      totalRefunded,
+      remainingAmount,
+      requestedAmount: refundDto.amount,
+    });
+
     // Validate refund amount
     if (refundDto.amount > remainingAmount) {
+      this.logger.warn('Refund amount exceeds remaining amount', {
+        bookingId: booking.id,
+        requestedAmount: refundDto.amount,
+        remainingAmount,
+      });
       throw new BadRequestException({
         code: ERROR_CODES.PAYMENT_005,
         message: `Số tiền hoàn không được vượt quá ${remainingAmount} VND.`,

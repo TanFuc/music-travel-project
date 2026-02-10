@@ -9,6 +9,8 @@ import { ERROR_CODES, getErrorMessage } from '@/common/constants/error-codes.con
 import { JwtPayload } from '@/common/decorators/current-user.decorator';
 import { CacheService } from '@/cache/cache.service';
 import { CacheKeys, CACHE_TTL } from '@/cache/cache-keys.constant';
+import { EnhancedLoggerService } from '@/common/services/enhanced-logger.service';
+import { LogMethod } from '@/common/decorators/log-method.decorator';
 
 export interface TokenResponse {
   accessToken: string;
@@ -28,19 +30,31 @@ export interface AuthResponse extends TokenResponse {
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
+  private readonly logger: EnhancedLoggerService;
 
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly cache: CacheService,
-  ) {}
+    private readonly enhancedLoggerService: EnhancedLoggerService,
+  ) {
+    this.logger = this.enhancedLoggerService.createChild(AuthService.name);
+  }
 
+  @LogMethod({ logParams: true, sanitize: true })
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
+    this.logger.log('Starting user registration', {
+      phoneNumber: registerDto.phoneNumber,
+      fullName: registerDto.fullName,
+    });
+
     // Check if phone number already exists
     const existingUser = await this.usersService.findByPhoneNumber(registerDto.phoneNumber);
     if (existingUser) {
+      this.logger.warn('Registration failed - phone number already exists', {
+        phoneNumber: registerDto.phoneNumber,
+      });
       throw new ConflictException({
         code: ERROR_CODES.USER_002,
         message: getErrorMessage(ERROR_CODES.USER_002),
@@ -48,9 +62,11 @@ export class AuthService {
     }
 
     // Hash password
+    this.logger.debug('Hashing password');
     const passwordHash = await bcrypt.hash(registerDto.password, 10);
 
     // Create user
+    this.logger.debug('Creating user record');
     const user = await this.usersService.create({
       phoneNumber: registerDto.phoneNumber,
       passwordHash,
@@ -58,8 +74,15 @@ export class AuthService {
     });
 
     // Generate tokens
+    this.logger.debug('Generating authentication tokens', { userId: user.id });
     const tokens = await this.generateTokens({
       sub: user.id,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+    });
+
+    this.logger.log('User registered successfully', {
+      userId: user.id,
       phoneNumber: user.phoneNumber,
       role: user.role,
     });
@@ -76,10 +99,16 @@ export class AuthService {
     };
   }
 
+  @LogMethod({ logParams: true, sanitize: true })
   async login(loginDto: LoginDto): Promise<AuthResponse> {
+    this.logger.log('Login attempt', { phoneNumber: loginDto.phoneNumber });
+
     const user = await this.usersService.findByPhoneNumber(loginDto.phoneNumber);
 
     if (!user) {
+      this.logger.warn('Login failed - user not found', {
+        phoneNumber: loginDto.phoneNumber,
+      });
       throw new UnauthorizedException({
         code: ERROR_CODES.AUTH_001,
         message: getErrorMessage(ERROR_CODES.AUTH_001),
@@ -88,6 +117,10 @@ export class AuthService {
 
     // Check if user is active
     if (!user.isActive) {
+      this.logger.warn('Login failed - user account inactive', {
+        userId: user.id,
+        phoneNumber: loginDto.phoneNumber,
+      });
       throw new UnauthorizedException({
         code: ERROR_CODES.AUTH_004,
         message: getErrorMessage(ERROR_CODES.AUTH_004),
@@ -95,8 +128,13 @@ export class AuthService {
     }
 
     // Verify password
+    this.logger.debug('Verifying password', { userId: user.id });
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash);
     if (!isPasswordValid) {
+      this.logger.warn('Login failed - invalid password', {
+        userId: user.id,
+        phoneNumber: loginDto.phoneNumber,
+      });
       throw new UnauthorizedException({
         code: ERROR_CODES.AUTH_001,
         message: getErrorMessage(ERROR_CODES.AUTH_001),
@@ -104,13 +142,18 @@ export class AuthService {
     }
 
     // Generate tokens
+    this.logger.debug('Generating tokens for successful login', { userId: user.id });
     const tokens = await this.generateTokens({
       sub: user.id,
       phoneNumber: user.phoneNumber,
       role: user.role,
     });
 
-    this.logger.log(`User ${user.id} logged in successfully`);
+    this.logger.log('User logged in successfully', {
+      userId: user.id,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+    });
 
     return {
       ...tokens,
@@ -124,26 +167,41 @@ export class AuthService {
     };
   }
 
+  @LogMethod({ logParams: false, sanitize: true })
   async refreshToken(refreshToken: string): Promise<TokenResponse> {
+    this.logger.log('Token refresh attempt');
+
     try {
+      this.logger.debug('Verifying refresh token');
       const payload = this.jwtService.verify(refreshToken, {
         secret: this.configService.get<string>('app.jwt.refreshSecret'),
       });
 
+      this.logger.debug('Looking up user from token payload', { userId: payload.sub });
       const user = await this.usersService.findById(payload.sub);
       if (!user || !user.isActive) {
+        this.logger.warn('Token refresh failed - user not found or inactive', {
+          userId: payload.sub,
+        });
         throw new UnauthorizedException({
           code: ERROR_CODES.AUTH_002,
           message: getErrorMessage(ERROR_CODES.AUTH_002),
         });
       }
 
-      return this.generateTokens({
+      this.logger.debug('Generating new tokens', { userId: user.id });
+      const tokens = await this.generateTokens({
         sub: user.id,
         phoneNumber: user.phoneNumber,
         role: user.role,
       });
-    } catch {
+
+      this.logger.log('Token refreshed successfully', { userId: user.id });
+      return tokens;
+    } catch (error) {
+      this.logger.error('Token refresh failed', error?.stack, {
+        error: error?.message || 'Unknown error',
+      });
       throw new UnauthorizedException({
         code: ERROR_CODES.AUTH_002,
         message: getErrorMessage(ERROR_CODES.AUTH_002),
@@ -151,18 +209,23 @@ export class AuthService {
     }
   }
 
+  @LogMethod({ logParams: true, sanitize: true })
   async logout(userId: number, accessToken?: string): Promise<{ message: string }> {
+    this.logger.log('Logout request', { userId });
+
     // Invalidate user session cache
+    this.logger.debug('Invalidating user session cache', { userId });
     await this.cache.del(CacheKeys.userSession(userId));
     await this.cache.del(CacheKeys.userProfile(userId));
 
     // Optionally blacklist the token if provided
     if (accessToken) {
+      this.logger.debug('Blacklisting access token', { userId });
       const tokenKey = CacheKeys.tokenBlacklist(accessToken);
       await this.cache.set(tokenKey, true, CACHE_TTL.TOKEN_BLACKLIST);
     }
 
-    this.logger.log(`User ${userId} logged out`);
+    this.logger.log('User logged out successfully', { userId });
     return { message: 'Đăng xuất thành công.' };
   }
 
