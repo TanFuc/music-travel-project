@@ -89,12 +89,26 @@ export class PaymentsService {
       });
     }
 
-    const amount = Number(booking.finalAmount);
+    let amount = Number(booking.finalAmount);
     this.logger.debug('Booking found for checkout', {
       bookingId: booking.id,
-      amount,
+      originalAmount: amount,
       paymentMethod: checkoutDto.paymentMethod,
     });
+
+    // Apply Payment Method Discount
+    const paymentConfig = await this.prisma.paymentMethodConfig.findFirst({
+      where: {
+        method: checkoutDto.paymentMethod,
+        isActive: true
+      }
+    });
+
+    if (paymentConfig && Number(paymentConfig.discountPercentage) > 0) {
+      const discount = Math.round(amount * (Number(paymentConfig.discountPercentage) / 100));
+      amount -= discount;
+      this.logger.log(`Applied payment discount: ${discount} (${paymentConfig.discountPercentage}%) for method ${checkoutDto.paymentMethod}`);
+    }
 
     // Handle wallet payment
     if (checkoutDto.paymentMethod === PaymentMethod.WALLET) {
@@ -174,6 +188,7 @@ export class PaymentsService {
           break;
 
         case PaymentMethod.BANKING:
+        case PaymentMethod.BANK_QR:
           // For bank transfer, return bank account info instead of redirect URL
           return {
             transactionId: transaction.id,

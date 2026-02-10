@@ -380,6 +380,8 @@ export class UsersService {
       CacheKeys.userSession(userId),
       CacheKeys.userWallet(userId),
       CacheKeys.userBookings(userId),
+      `${CacheKeys.userBookings(userId)}:shows`,
+      `${CacheKeys.userBookings(userId)}:singer`,
     ]);
   }
 }

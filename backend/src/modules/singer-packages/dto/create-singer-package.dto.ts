@@ -26,6 +26,12 @@ export class CreateSingerPackageDto {
   @Min(0)
   price: number;
 
+  @ApiProperty({ description: 'Giá gốc trước giảm', required: false, example: 2000000 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  originalPrice?: number;
+
   @ApiProperty({ description: 'Mô tả gói', required: false })
   @IsOptional()
   @IsString()

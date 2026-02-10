@@ -14,11 +14,17 @@ export class CreateTicketTierDto {
   @MaxLength(100)
   nameEn?: string;
 
-  @ApiProperty({ example: 350000, description: 'Giá vé' })
   @IsNumber()
   @Min(0)
   @Type(() => Number)
   price: number;
+
+  @ApiPropertyOptional({ example: 400000, description: 'Giá gốc trước giảm' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  originalPrice?: number;
 
   @ApiPropertyOptional({
     example: 'Mỗi cá nhân là một "hạt mầm" lan tỏa lối sống xanh.',
@@ -85,7 +91,7 @@ export class CreateTicketTierDto {
   isActive?: boolean;
 }
 
-export class UpdateTicketTierDto extends PartialType(CreateTicketTierDto) {}
+export class UpdateTicketTierDto extends PartialType(CreateTicketTierDto) { }
 
 export class TicketTierQueryDto {
   @ApiPropertyOptional({ example: 1, description: 'Trang' })

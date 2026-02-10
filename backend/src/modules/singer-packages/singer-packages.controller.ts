@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  Put,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SingerPackagesService } from './singer-packages.service';
@@ -35,7 +36,7 @@ interface AuthenticatedRequest extends FastifyRequest {
 @ApiTags('singer-packages')
 @Controller('singer-packages')
 export class SingerPackagesController {
-  constructor(private readonly singerPackagesService: SingerPackagesService) {}
+  constructor(private readonly singerPackagesService: SingerPackagesService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -100,6 +101,20 @@ export class SingerPackagesController {
   ) {
     const userId = req.user?.id;
     return this.singerPackagesService.update(id, updateDto, userId);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'STAFF')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cập nhật gói đăng ký' })
+  @ApiResponse({ status: 200, description: 'Gói đăng ký đã được cập nhật' })
+  async updatePut(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateSingerPackageDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.update(id, updateDto, req);
   }
 
   @Delete(':id')

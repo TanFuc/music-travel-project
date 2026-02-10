@@ -9,7 +9,7 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TicketTiersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // ============================================================================
   // ADMIN OPERATIONS
@@ -21,6 +21,7 @@ export class TicketTiersService {
         name: dto.name,
         nameEn: dto.nameEn,
         price: dto.price,
+        originalPrice: dto.originalPrice,
         description: dto.description,
         benefits: dto.benefits,
         targetAudience: dto.targetAudience,
@@ -183,6 +184,7 @@ export class TicketTiersService {
         name: true,
         nameEn: true,
         price: true,
+        originalPrice: true,
         description: true,
         benefits: true,
         targetAudience: true,
@@ -211,6 +213,7 @@ export class TicketTiersService {
         name: true,
         nameEn: true,
         price: true,
+        originalPrice: true,
         description: true,
         benefits: true,
         targetAudience: true,

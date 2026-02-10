@@ -449,7 +449,7 @@ export class TicketsService {
    * Get all ticket tiers
    */
   async getTicketTiers() {
-    const cacheKey = 'ticket_tiers_all';
+    const cacheKey = 'ticket_tiers_all_v2';
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
 
@@ -558,11 +558,11 @@ export class TicketsService {
       ticketTier: ticket.ticketTier,
       seat: ticket.physicalSeat
         ? {
-            zone: ticket.physicalSeat.zoneName,
-            row: ticket.physicalSeat.rowName,
-            number: ticket.physicalSeat.seatNumber,
-            type: ticket.physicalSeat.type,
-          }
+          zone: ticket.physicalSeat.zoneName,
+          row: ticket.physicalSeat.rowName,
+          number: ticket.physicalSeat.seatNumber,
+          type: ticket.physicalSeat.type,
+        }
         : null,
     }));
   }
