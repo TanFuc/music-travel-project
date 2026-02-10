@@ -5,6 +5,7 @@ export interface SingerPackage {
   name: string;
   nameEn?: string;
   price: number;
+  originalPrice?: number;
   description?: string;
   benefits?: string[];
   colorCode?: string;
@@ -23,6 +24,7 @@ export interface CreateSingerPackageDto {
   name: string;
   nameEn?: string;
   price: number;
+  originalPrice?: number;
   description?: string;
   benefits?: string[];
   colorCode?: string;
@@ -32,7 +34,7 @@ export interface CreateSingerPackageDto {
   isActive?: boolean;
 }
 
-export interface UpdateSingerPackageDto extends Partial<CreateSingerPackageDto> {}
+export interface UpdateSingerPackageDto extends Partial<CreateSingerPackageDto> { }
 
 export interface SingerPackageFilterDto {
   page?: number;
