@@ -37,6 +37,7 @@ interface TicketTier {
   name: string;
   nameEn?: string | null;
   price: number;
+  originalPrice?: number | null;
   description?: string | null;
   benefits?: string | null;
   targetAudience?: string | null;
@@ -282,9 +283,8 @@ export default function AdminTicketTiersPage() {
                 return (
                   <div
                     key={tier.id}
-                    className={`border rounded-lg p-4 transition-all ${
-                      !tier.isActive ? 'bg-neutral-50 opacity-60' : 'hover:border-brand-300'
-                    }`}
+                    className={`border rounded-lg p-4 transition-all ${!tier.isActive ? 'bg-neutral-50 opacity-60' : 'hover:border-brand-300'
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       {/* Info */}
@@ -306,6 +306,11 @@ export default function AdminTicketTiersPage() {
                             <span className="font-bold text-brand-600 ml-2">
                               {formatCurrency(tier.price)}
                             </span>
+                            {tier.originalPrice && tier.originalPrice > tier.price && (
+                              <span className="text-sm text-neutral-400 line-through ml-2">
+                                {formatCurrency(tier.originalPrice)}
+                              </span>
+                            )}
                           </div>
                           <div>
                             <span className="text-neutral-500">Đã bán:</span>
@@ -319,11 +324,10 @@ export default function AdminTicketTiersPage() {
                           <div>
                             <span className="text-neutral-500">Còn lại:</span>
                             <span
-                              className={`font-semibold ml-2 ${
-                                tier.totalQuantity > 0 && available < 10
+                              className={`font-semibold ml-2 ${tier.totalQuantity > 0 && available < 10
                                   ? 'text-orange-500'
                                   : 'text-green-600'
-                              }`}
+                                }`}
                             >
                               {tier.totalQuantity > 0 ? available : '∞'}
                             </span>

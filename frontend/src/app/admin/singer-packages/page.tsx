@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -275,9 +275,16 @@ export default function SingerPackagesPage() {
                             {pkg.isActive ? 'Hoạt động' : 'Ngừng'}
                           </Badge>
                         </div>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.price)}
-                        </p>
+                        <div className="flex flex-col">
+                          {pkg.originalPrice && pkg.originalPrice > pkg.price && (
+                            <span className="text-sm font-medium text-neutral-500 line-through">
+                              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.originalPrice)}
+                            </span>
+                          )}
+                          <p className="text-2xl font-bold text-blue-600">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.price)}
+                          </p>
+                        </div>
                         {pkg.description && (
                           <p className="text-gray-600 text-sm">{pkg.description}</p>
                         )}
@@ -393,6 +400,7 @@ function PackageDialog({ open, onOpenChange, onSubmit, isLoading, title, initial
     name: '',
     nameEn: '',
     price: 0,
+    originalPrice: 0,
     description: '',
     benefits: [],
     colorCode: '',
@@ -405,12 +413,13 @@ function PackageDialog({ open, onOpenChange, onSubmit, isLoading, title, initial
   const [benefitsText, setBenefitsText] = useState('');
 
   // Update form when initialData changes
-  useState(() => {
+  useEffect(() => {
     if (initialData) {
       setFormData({
         name: initialData.name,
         nameEn: initialData.nameEn || '',
         price: initialData.price,
+        originalPrice: initialData.originalPrice || 0,
         description: initialData.description || '',
         benefits: initialData.benefits || [],
         colorCode: initialData.colorCode || '',
@@ -425,6 +434,7 @@ function PackageDialog({ open, onOpenChange, onSubmit, isLoading, title, initial
         name: '',
         nameEn: '',
         price: 0,
+        originalPrice: 0,
         description: '',
         benefits: [],
         colorCode: '',
@@ -494,6 +504,20 @@ function PackageDialog({ open, onOpenChange, onSubmit, isLoading, title, initial
                 required
               />
             </div>
+            <div>
+              <Label htmlFor="originalPrice">Giá gốc (VNĐ)</Label>
+              <Input
+                id="originalPrice"
+                type="number"
+                min="0"
+                value={formData.originalPrice || 0}
+                onChange={(e) => setFormData(prev => ({ ...prev, originalPrice: Number(e.target.value) }))}
+              />
+              <p className="text-xs text-neutral-500 mt-1">Để trống nếu không giảm giá</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="displayOrder">Thứ tự hiển thị</Label>
               <Input

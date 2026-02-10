@@ -19,6 +19,7 @@ const ticketTierSchema = z.object({
   name: z.string().min(3, 'Tên vé phải có ít nhất 3 ký tự'),
   nameEn: z.string().optional().nullable(),
   price: z.number({ required_error: 'Vui lòng nhập giá vé' }).min(0, 'Giá không được âm'),
+  originalPrice: z.number().min(0).optional().nullable(),
   description: z.string().optional().nullable(),
   benefits: z.string().optional().nullable(),
   targetAudience: z.string().optional().nullable(),
@@ -37,6 +38,7 @@ interface TicketTier {
   name: string;
   nameEn?: string | null;
   price: number;
+  originalPrice?: number | null;
   description?: string | null;
   benefits?: string | null;
   targetAudience?: string | null;
@@ -75,6 +77,7 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
       name: '',
       nameEn: '',
       price: 0,
+      originalPrice: 0,
       description: '',
       benefits: '',
       targetAudience: '',
@@ -97,6 +100,7 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
         name: initialData.name,
         nameEn: initialData.nameEn || '',
         price: Number(initialData.price),
+        originalPrice: initialData.originalPrice ? Number(initialData.originalPrice) : 0,
         description: initialData.description || '',
         benefits: initialData.benefits || '',
         targetAudience: initialData.targetAudience || '',
@@ -112,6 +116,7 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
         name: '',
         nameEn: '',
         price: 0,
+        originalPrice: 0,
         description: '',
         benefits: '',
         targetAudience: '',
@@ -215,6 +220,18 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
                 />
                 {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
               </div>
+
+              <div>
+                <Label htmlFor="originalPrice">Giá gốc (VNĐ)</Label>
+                <Input
+                  id="originalPrice"
+                  type="number"
+                  {...register('originalPrice', { valueAsNumber: true })}
+                  placeholder="400000"
+                  className="mt-1"
+                />
+                <p className="text-xs text-neutral-500 mt-1">Để trống nếu không có giảm giá</p>
+              </div>
             </div>
 
             {/* Description & Benefits */}
@@ -260,9 +277,8 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
                   <button
                     key={color}
                     type="button"
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${
-                      selectedColor === color ? 'border-gray-900 scale-110' : 'border-transparent'
-                    }`}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColor === color ? 'border-gray-900 scale-110' : 'border-transparent'
+                      }`}
                     style={{ backgroundColor: color }}
                     onClick={() => setValue('colorCode', color)}
                   />
