@@ -38,6 +38,9 @@ export const ERROR_CODES = {
   PAYMENT_001: 'PAYMENT_001',
   PAYMENT_002: 'PAYMENT_002',
   PAYMENT_003: 'PAYMENT_003',
+  PAYMENT_004: 'PAYMENT_004',
+  PAYMENT_005: 'PAYMENT_005',
+  PAYMENT_006: 'PAYMENT_006',
 
   // Stage
   STAGE_001: 'STAGE_001',
@@ -79,8 +82,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   USER_003: 'Email đã được sử dụng.',
 
   // Show & Ticket
-  SHOW_001: 'Không tìm thấy sự kiện.',
-  SHOW_002: 'Sự kiện đã kết thúc hoặc bị hủy.',
+  SHOW_001: 'Không tìm thấy show diễn.',
+  SHOW_002: 'Show diễn đã kết thúc hoặc bị hủy.',
   TICKET_001: 'Vé đã được bán hoặc đang giữ.',
   TICKET_002: 'Thời gian giữ vé đã hết. Vui lòng chọn lại.',
   TICKET_003: 'Không đủ vé cho yêu cầu của bạn.',
@@ -106,6 +109,9 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   PAYMENT_001: 'Thanh toán thất bại. Vui lòng thử lại.',
   PAYMENT_002: 'Số dư ví không đủ.',
   PAYMENT_003: 'Mã giảm giá không hợp lệ hoặc đã hết hạn.',
+  PAYMENT_004: 'Số tiền thanh toán không khớp. Vui lòng liên hệ hỗ trợ.',
+  PAYMENT_005: 'Hoàn tiền thất bại. Vui lòng thử lại.',
+  PAYMENT_006: 'Đơn hàng đã được thanh toán trước đó.',
 
   // Stage
   STAGE_001: 'Sân khấu không tồn tại.',

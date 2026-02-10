@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatDate, formatCurrency } from '@/lib/utils';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface Booking {
     id: number;
@@ -29,6 +30,7 @@ const statusColors: Record<string, 'default' | 'success' | 'warning' | 'destruct
 };
 
 export default function AdminBookingsPage() {
+    usePageTitle();
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState<string>('');
 

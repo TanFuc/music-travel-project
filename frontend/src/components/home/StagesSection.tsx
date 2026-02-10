@@ -11,7 +11,7 @@ interface HomeStage {
   title: string;
   imageUrl: string;
   description?: string;
-  location?: string;
+  location?: string | { name: string };
 }
 
 export function StagesSection() {
@@ -22,17 +22,19 @@ export function StagesSection() {
   });
 
   return (
-    <section className="py-16 bg-brand-50/50">
+    <section className="py-12 md:py-16 bg-brand-50/50">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="mb-10">
-          <h2 className="section-title flex items-center gap-3">
-            <span className="text-3xl">🏛️</span>
-            CÁC SÂN KHẤU
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Khám phá những địa điểm biểu diễn độc đáo trên khắp Việt Nam
-          </p>
+        <div className="mb-12 text-center">
+            <div className="inline-flex items-center justify-center p-3 mb-4 rounded-2xl bg-brand-100/50 text-2xl animate-bounce-slow">
+              🏛️
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display font-black text-gray-900 mb-4 tracking-tight">
+              CÁC SÂN KHẤU <span className="text-brand-600">NỔI BẬT</span>
+            </h2>
+            <p className="text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
+               Khám phá những không gian âm nhạc đẳng cấp, nơi những giai điệu thăng hoa giữa thiên nhiên hùng vĩ và kiến trúc độc đáo.
+            </p>
         </div>
 
         {/* Grid */}
@@ -49,40 +51,47 @@ export function StagesSection() {
             {stages.map((stage, index) => (
               <div
                 key={stage.id}
-                className="group relative overflow-hidden rounded-2xl glass-card animate-fadeIn opacity-0"
-                style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
+                className="group relative overflow-hidden rounded-[2rem] shadow-xl hover:shadow-2xl hover:shadow-brand-500/20 transition-all duration-500 bg-white"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
-                {/* Image */}
-                <div className="relative aspect-[16/9] overflow-hidden">
-                  <Image
-                    src={stage.imageUrl}
-                    alt={stage.title}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
+                {/* Image Container */}
+                <div className="relative aspect-[4/3] w-full overflow-hidden">
+                   <Image
+                      src={stage.imageUrl}
+                      alt={stage.title}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                   />
+                   {/* Gradient Overlay */}
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
+                   
+                   {/* Content Overlay */}
+                   <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+                      <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                          {/* Location Badge */}
+                          {stage.location && (
+                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-xs font-bold text-white mb-3">
+                                <MapPin className="w-3.5 h-3.5" />
+                                <span className="uppercase tracking-wider">
+                                   {typeof stage.location === 'string' ? stage.location : stage.location.name}
+                                </span>
+                             </div>
+                          )}
+                          
+                          <h3 className="text-2xl md:text-3xl font-display font-bold text-white mb-2 leading-tight">
+                             {stage.title}
+                          </h3>
+                          
+                          <p className="text-white/80 text-sm line-clamp-2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                             {stage.description || 'Một không gian tuyệt vời để thưởng thức âm nhạc và nghệ thuật.'}
+                          </p>
 
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-
-                  {/* Content */}
-                  <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                    <h3 className="font-display font-bold text-2xl text-white mb-2">
-                      {stage.title}
-                    </h3>
-
-                    {stage.location && (
-                      <div className="flex items-center gap-2 text-white/90 text-sm mb-2">
-                        <MapPin className="w-4 h-4 text-brand-400" />
-                        <span>{stage.location}</span>
+                          <div className="flex items-center gap-2 text-brand-300 text-sm font-bold uppercase tracking-wider group/link">
+                             Xem chi tiết
+                             <ArrowRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
+                          </div>
                       </div>
-                    )}
-
-                    {stage.description && (
-                      <p className="text-white/80 text-sm line-clamp-2">
-                        {stage.description}
-                      </p>
-                    )}
-                  </div>
+                   </div>
                 </div>
               </div>
             ))}

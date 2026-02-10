@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -23,6 +24,11 @@ import { PerformanceModule } from './modules/performance/performance.module';
 import { BranchesModule } from './modules/branches/branches.module';
 import { SearchModule } from './modules/search/search.module';
 import { HomeStagesModule } from './modules/home-stages/home-stages.module';
+import { TicketTiersModule } from './modules/ticket-tiers/ticket-tiers.module';
+import { TicketVerificationModule } from './modules/ticket-verification/ticket-verification.module';
+import { ShowActivityModule } from './modules/show-activity/show-activity.module';
+import { SingersModule } from './modules/singers/singers.module';
+import { SingerPackagesModule } from './modules/singer-packages/singer-packages.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
@@ -44,6 +50,9 @@ import cloudinaryConfig from './config/cloudinary.config';
         limit: 100,
       },
     ]),
+
+    // Scheduling (Cron jobs)
+    ScheduleModule.forRoot(),
 
     // Database
     PrismaModule,
@@ -72,6 +81,11 @@ import cloudinaryConfig from './config/cloudinary.config';
     BranchesModule,
     SearchModule,
     HomeStagesModule,
+    TicketTiersModule,
+    TicketVerificationModule,
+    ShowActivityModule,
+    SingersModule,
+    SingerPackagesModule,
   ],
 })
 export class AppModule { }

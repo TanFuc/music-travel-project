@@ -292,21 +292,34 @@ export class AdminController {
   }
 
   // ============================================================================ 
-  // TICKETS CRUD
-  // ============================================================================
   @Get('tickets/:id')
   @ApiOperation({ summary: 'Get ticket by ID' })
   async getTicketById(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.getTicketById(id);
   }
 
+  @Get('tickets/search/:code')
+  @ApiOperation({ summary: 'Find ticket by serial/code' })
+  async getTicketByCode(@Param('code') code: string) {
+    return this.adminService.getTicketByCode(code);
+  }
+
   @Patch('tickets/:id/status')
   @ApiOperation({ summary: 'Update ticket status' })
   async updateTicketStatus(
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: { status: 'AVAILABLE' | 'LOCKED' | 'SOLD' },
+    @Body() data: { status: 'AVAILABLE' | 'LOCKED' | 'SOLD' | 'USED' | 'CANCELLED' },
   ) {
     return this.adminService.updateTicketStatus(id, data.status);
+  }
+
+  @Patch('tickets/check-in/:code')
+  @ApiOperation({ summary: 'Check in ticket by code' })
+  async checkInTicket(
+    @Param('code') code: string,
+    @Body() data: { showId: number },
+  ) {
+    return this.adminService.checkInTicket(code, data.showId);
   }
 
   // ============================================================================

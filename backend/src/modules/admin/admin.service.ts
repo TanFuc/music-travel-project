@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { $Enums } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
@@ -324,6 +325,7 @@ export class AdminService {
         include: {
           stage: { include: { location: true } },
           artists: { include: { artist: true } },
+          ticketClasses: true,
           _count: { select: { tickets: true } },
         },
       }),
@@ -347,7 +349,7 @@ export class AdminService {
       include: {
         stage: { include: { location: true } },
         artists: { include: { artist: true } },
-        tickets: { include: { ticketClass: true } },
+        ticketClasses: true,
         _count: { select: { tickets: true } },
       },
     });
@@ -376,8 +378,15 @@ export class AdminService {
       title: string;
       description: string;
       stageId: number;
+      branchId: number | null;
       performTime: Date;
+      checkInTime: Date | null;
       status: 'UPCOMING' | 'ONGOING' | 'ENDED' | 'CANCELLED';
+      seatSelectionEnabled: boolean;
+      properties: any;
+      metaTitle: string;
+      metaDescription: string;
+      metaKeywords: string;
     }>,
   ) {
     const show = await this.prisma.show.findUnique({ where: { id } });
@@ -769,20 +778,64 @@ export class AdminService {
       include: {
         show: true,
         ticketClass: true,
+        ticketTier: true,
         physicalSeat: true,
+        booking: { include: { user: true } },
       },
     });
     if (!ticket) throw new Error('Ticket not found');
     return ticket;
   }
 
-  async updateTicketStatus(id: number, status: 'AVAILABLE' | 'LOCKED' | 'SOLD') {
+  async getTicketByCode(code: string) {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { ticketCode: code },
+      include: {
+        show: true,
+        ticketClass: true,
+        ticketTier: true,
+        physicalSeat: { include: { stage: { include: { location: true } } } },
+        booking: { include: { user: true } },
+        redeemedShow: true,
+      },
+    });
+    if (!ticket) throw new Error('Không tìm thấy vé');
+    return ticket;
+  }
+
+  async updateTicketStatus(id: number, status: 'AVAILABLE' | 'LOCKED' | 'SOLD' | 'USED' | 'CANCELLED') {
     const ticket = await this.prisma.ticket.findUnique({ where: { id } });
     if (!ticket) throw new Error('Ticket not found');
 
+    const updateData: any = { status };
+    if (status === 'USED') {
+      updateData.isCheckedIn = true;
+      updateData.checkedInAt = new Date();
+    }
+
     return this.prisma.ticket.update({
       where: { id },
-      data: { status },
+      data: updateData,
+    });
+  }
+
+  async checkInTicket(code: string, showId: number) {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { ticketCode: code },
+    });
+
+    if (!ticket) throw new Error('Không tìm thấy vé');
+    if (ticket.status === $Enums.TicketStatus.USED) throw new Error('Vé đã được sử dụng');
+    if (ticket.status === $Enums.TicketStatus.CANCELLED) throw new Error('Vé đã bị hủy');
+
+    return this.prisma.ticket.update({
+      where: { ticketCode: code },
+      data: {
+        status: $Enums.TicketStatus.USED,
+        isCheckedIn: true,
+        checkedInAt: new Date(),
+        redeemedShowId: showId,
+      },
     });
   }
 
@@ -912,7 +965,9 @@ export class AdminService {
         include: {
           show: { select: { id: true, title: true } },
           ticketClass: true,
+          ticketTier: true,
           physicalSeat: true,
+          redeemedShow: { select: { id: true, title: true } },
         },
       }),
       this.prisma.ticket.count({ where }),

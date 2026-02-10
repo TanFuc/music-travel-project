@@ -7,6 +7,7 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { NormalizeBookingBodyPipe } from './modules/bookings/pipes/normalize-booking-body.pipe';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -51,8 +52,9 @@ async function bootstrap() {
     },
   });
 
-  // Global pipes
+  // Global pipes: normalize booking body first (array -> { tourItems }), then validate
   app.useGlobalPipes(
+    new NormalizeBookingBodyPipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,

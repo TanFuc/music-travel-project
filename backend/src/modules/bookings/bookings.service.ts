@@ -18,15 +18,26 @@ export class BookingsService {
     private readonly ticketsService: TicketsService,
     private readonly toursService: ToursService,
     private readonly cache: CacheService,
-  ) {}
+  ) { }
 
   async create(userId: number, createBookingDto: CreateBookingDto) {
+    const hasTickets = (createBookingDto.ticketsWithSeats?.length ?? 0) > 0 || (createBookingDto.ticketIds?.length ?? 0) > 0;
+    const hasTiers = (createBookingDto.ticketTiers?.length ?? 0) > 0;
+    const hasTours = (createBookingDto.tourItems?.length ?? 0) > 0;
+    const hasSingerPackages = (createBookingDto.singerPackages?.length ?? 0) > 0;
+    if (!hasTickets && !hasTiers && !hasTours && !hasSingerPackages) {
+      throw new BadRequestException({
+        code: ERROR_CODES.VAL_001,
+        message: 'Đơn hàng phải có ít nhất một mục: vé (ticketsWithSeats/ticketIds), loại vé (ticketTiers), tour (tourItems), hoặc gói ca sĩ (singerPackages).',
+      });
+    }
+
     const bookingCode = this.generateBookingCode();
     let totalAmount = new Decimal(0);
 
     // Validate and calculate ticket prices (new flow with seats)
     const ticketItems: { ticketId: number; price: Decimal; physicalSeatId?: number }[] = [];
-    
+
     // Handle new flow: ticketsWithSeats (includes seat selection)
     if (createBookingDto.ticketsWithSeats?.length) {
       const ticketIds = createBookingDto.ticketsWithSeats.map(t => t.ticketId);
@@ -36,7 +47,7 @@ export class BookingsService {
           holderUserId: userId,
           status: 'LOCKED',
         },
-        include: { 
+        include: {
           ticketClass: true,
           show: true,
         },
@@ -55,12 +66,12 @@ export class BookingsService {
         if (!ticket) continue;
 
         // If seat selection is enabled and seat is provided, validate it
-        if (ticket.show.seatSelectionEnabled && ticketWithSeat.physicalSeatId) {
+        if (ticket.show?.seatSelectionEnabled && ticketWithSeat.physicalSeatId) {
           // Check if seat exists and belongs to the stage
           const seat = await this.prisma.physicalSeat.findFirst({
             where: {
               id: ticketWithSeat.physicalSeatId,
-              stageId: ticket.show.stageId,
+              stageId: ticket.show?.stageId,
             },
           });
 
@@ -89,12 +100,12 @@ export class BookingsService {
           }
         }
 
-        ticketItems.push({ 
-          ticketId: ticket.id, 
-          price: ticket.ticketClass.price,
-          physicalSeatId: ticketWithSeat.physicalSeatId 
+        ticketItems.push({
+          ticketId: ticket.id,
+          price: (ticket.ticketClass?.price as unknown as Decimal) || new Decimal(0),
+          physicalSeatId: ticketWithSeat.physicalSeatId
         });
-        totalAmount = totalAmount.plus(ticket.ticketClass.price);
+        totalAmount = totalAmount.plus((ticket.ticketClass?.price as unknown as Decimal) || 0);
       }
     }
     // Handle old flow: simple ticketIds (backward compatibility)
@@ -116,8 +127,8 @@ export class BookingsService {
       }
 
       for (const ticket of tickets) {
-        ticketItems.push({ ticketId: ticket.id, price: ticket.ticketClass.price });
-        totalAmount = totalAmount.plus(ticket.ticketClass.price);
+        ticketItems.push({ ticketId: ticket.id, price: (ticket.ticketClass?.price as unknown as Decimal) || new Decimal(0) });
+        totalAmount = totalAmount.plus((ticket.ticketClass?.price as unknown as Decimal) || 0);
       }
     }
 
@@ -135,6 +146,64 @@ export class BookingsService {
             scheduleId: item.scheduleId,
             quantity: item.quantity,
             price: schedule.price,
+          });
+          totalAmount = totalAmount.plus(itemTotal);
+        }
+      }
+    }
+
+    // Validate and calculate ticket tiers (Open Ticket Flow)
+    const tierItems: { tierId: number; quantity: number; price: Decimal }[] = [];
+    if (createBookingDto.ticketTiers?.length) {
+      const tierIds = createBookingDto.ticketTiers.map(t => t.tierId);
+      const tiers = await this.prisma.ticketTier.findMany({
+        where: { id: { in: tierIds }, isActive: true },
+      });
+
+      if (tiers.length !== tierIds.length) {
+        throw new BadRequestException({
+          code: ERROR_CODES.TICKET_001,
+          message: 'Một số loại vé không tồn tại hoặc ngừng hoạt động.',
+        });
+      }
+
+      for (const item of createBookingDto.ticketTiers) {
+        const tier = tiers.find(t => t.id === item.tierId);
+        if (tier) {
+          const itemTotal = tier.price.mul(item.quantity);
+          tierItems.push({
+            tierId: item.tierId,
+            quantity: item.quantity,
+            price: tier.price
+          });
+          totalAmount = totalAmount.plus(itemTotal);
+        }
+      }
+    }
+
+    // Validate and calculate singer packages
+    const singerPackageItems: { packageId: string; quantity: number; price: Decimal }[] = [];
+    if (createBookingDto.singerPackages?.length) {
+      const packageIds = createBookingDto.singerPackages.map(p => p.packageId);
+      const packages = await this.prisma.singerPackageTemplate.findMany({
+        where: { id: { in: packageIds }, isActive: true },
+      });
+
+      if (packages.length !== packageIds.length) {
+        throw new BadRequestException({
+          code: ERROR_CODES.VAL_001,
+          message: 'Một số gói ca sĩ không tồn tại hoặc ngừng hoạt động.',
+        });
+      }
+
+      for (const item of createBookingDto.singerPackages) {
+        const pkg = packages.find(p => p.id === item.packageId);
+        if (pkg) {
+          const itemTotal = pkg.price.mul(item.quantity);
+          singerPackageItems.push({
+            packageId: item.packageId,
+            quantity: item.quantity,
+            price: pkg.price
           });
           totalAmount = totalAmount.plus(itemTotal);
         }
@@ -226,6 +295,32 @@ export class BookingsService {
         });
       }
 
+      // Create ticket tier booking items
+      for (const item of tierItems) {
+        await tx.bookingItem.create({
+          data: {
+            bookingId: newBooking.id,
+            itemType: BookingItemType.SHOW_TICKET, // Or reusing SHOW_TICKET type, but with null ticketId
+            ticketTierId: item.tierId,
+            quantity: item.quantity,
+            originalPrice: item.price,
+          }
+        });
+      }
+
+      // Create singer package booking items
+      for (const item of singerPackageItems) {
+        await tx.bookingItem.create({
+          data: {
+            bookingId: newBooking.id,
+            itemType: BookingItemType.SINGER_PACKAGE,
+            singerPackageId: item.packageId,
+            quantity: item.quantity,
+            originalPrice: item.price,
+          }
+        });
+      }
+
       return newBooking;
     });
 
@@ -260,6 +355,8 @@ export class BookingsService {
           include: {
             ticket: { include: { show: true, ticketClass: true } },
             tourSchedule: { include: { tour: true } },
+            ticketTier: true,
+            singerPackage: true,
           },
         },
       },
@@ -293,6 +390,8 @@ export class BookingsService {
           include: {
             ticket: { include: { show: true, ticketClass: true, physicalSeat: true } },
             tourSchedule: { include: { tour: true } },
+            ticketTier: true,
+            singerPackage: true,
           },
         },
         transactions: true,

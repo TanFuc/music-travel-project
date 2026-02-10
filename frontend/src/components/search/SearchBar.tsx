@@ -19,6 +19,7 @@ import { searchService, SearchType, SearchResults } from '@/services/search.serv
 import { branchService } from '@/services/branch.service';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { Link } from '@/components/common/Link';
+import { useDebounce } from '@/hooks/usePerformance';
 
 interface SearchBarProps {
   className?: string;
@@ -30,6 +31,7 @@ interface SearchBarProps {
 export function SearchBar({ className, showFilters = true, onClose, isExpanded = false }: SearchBarProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [type, setType] = useState<SearchType>('all');
   const [branchId, setBranchId] = useState<string>('');
   const [showResults, setShowResults] = useState(false);
@@ -56,6 +58,10 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const debouncedSetQuery = useDebounce((value: string) => {
+    setDebouncedQuery(value);
+  }, 300);
+
   // Fetch branches for filter
   const { data: branches = [] } = useQuery({
     queryKey: ['branches'],
@@ -63,17 +69,17 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
     staleTime: 10 * 60 * 1000,
   });
 
-  // Debounced search
+  // Search results (debounced by debouncedQuery)
   const { data: results, isLoading } = useQuery({
-    queryKey: ['search', query, type, branchId],
+    queryKey: ['search', debouncedQuery, type, branchId],
     queryFn: () =>
       searchService.search({
-        q: query,
+        q: debouncedQuery,
         type,
         branchId: branchId ? Number(branchId) : undefined,
         limit: 5,
       }),
-    enabled: query.length >= 2,
+    enabled: debouncedQuery.length >= 2,
     staleTime: 30 * 1000,
   });
 
@@ -94,8 +100,11 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
-    if (e.target.value.length >= 2) {
+    const value = e.target.value;
+    setQuery(value);
+    debouncedSetQuery(value);
+
+    if (value.length >= 2) {
       setShowResults(true);
     } else {
       setShowResults(false);
@@ -104,6 +113,7 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
 
   const clearSearch = () => {
     setQuery('');
+    setDebouncedQuery('');
     setShowResults(false);
     inputRef.current?.focus();
   };
@@ -384,7 +394,7 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
                     variant="ghost"
                     className="w-full text-brand-600 hover:text-brand-700 hover:bg-brand-50"
                     onClick={() => {
-                      handleSearch({ preventDefault: () => {} } as React.FormEvent);
+                      handleSearch({ preventDefault: () => { } } as React.FormEvent);
                     }}
                   >
                     Xem tất cả kết quả cho "{query}"

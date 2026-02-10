@@ -20,4 +20,19 @@ export class TourFilterDto extends PaginationDto {
   @Type(() => Number)
   @IsInt()
   branchId?: number;
+
+  @ApiPropertyOptional({ example: 'da-lat', description: 'Filter by location slug' })
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiPropertyOptional({ example: 'sai-gon', description: 'Filter by departure location slug' })
+  @IsOptional()
+  @IsString()
+  departure?: string;
+
+  @ApiPropertyOptional({ example: 'da-lat', description: 'Filter by destination location slug' })
+  @IsOptional()
+  @IsString()
+  destination?: string;
 }

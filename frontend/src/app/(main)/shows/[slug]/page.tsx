@@ -1,38 +1,35 @@
-'use client';
+/**
+ * Show Detail Page - ISR (Incremental Static Regeneration)
+ * Server Component with revalidation every 5 minutes
+ *
+ * Features:
+ * - generateStaticParams to pre-render top 20 shows at build time
+ * - generateMetadata for dynamic SEO
+ * - Reduced client-side JavaScript bundle
+ * - Better SEO with server-rendered content
+ */
 
-import { useQuery } from '@tanstack/react-query';
-import { useParams, useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import { Link } from '@/components/common/Link';
-import { ArrowLeft, Calendar, MapPin, Clock, Users, Ticket, ExternalLink, Navigation } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/common/LoadingSkeleton';
-import { get } from '@/lib/api';
-import { formatCurrency, formatDateTime } from '@/lib/utils';
-import { useCartStore } from '@/stores/cart.store';
-import { toast } from 'sonner';
-import { useState, useCallback } from 'react';
-import { GeneralAdmissionView } from '@/components/shows/GeneralAdmissionView';
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
+import { Metadata } from 'next';
+import { ShowDetailServer } from '@/components/server/ShowDetailServer';
+import { TicketBookingClient } from '@/components/client/TicketBookingClient';
+import { ShowDetailSkeleton } from '@/components/server/Skeletons';
+import { fetchServer } from '@/lib/api-server';
 
-// Dynamic imports for heavy components - improves initial page load
-const SeatMap = dynamic(() => import('@/components/shows/SeatMap').then(mod => ({ default: mod.SeatMap })), {
-  loading: () => (
-    <div className="flex items-center justify-center p-12 min-h-[400px]">
-      <div className="flex flex-col items-center gap-3">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
-        <p className="text-sm text-muted-foreground">Đang tải sơ đồ...</p>
-      </div>
-    </div>
-  ),
-  ssr: false,
-});
+// ISR - Revalidate every 5 minutes
+export const revalidate = 300;
 
-const LocationMap = dynamic(() => import('@/components/maps/LocationMap').then(mod => ({ default: mod.LocationMap })), {
-  loading: () => <Skeleton className="h-[300px] w-full rounded-lg" />,
-  ssr: false,
-});
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+// Types
+interface Artist {
+  id: number;
+  name: string;
+  bio: string | null;
+  socialLinks: Record<string, string> | null;
+  isHeadline: boolean;
+}
 
 interface TicketClass {
   id: number;
@@ -42,14 +39,6 @@ interface TicketClass {
   availableCount: number;
 }
 
-interface Artist {
-  id: number;
-  name: string;
-  bio: string | null;
-  socialLinks: Record<string, string> | null;
-  isHeadline: boolean;
-}
-
 interface ShowDetail {
   id: number;
   title: string;
@@ -57,9 +46,10 @@ interface ShowDetail {
   description: string | null;
   performTime: string;
   checkInTime: string | null;
+  thumbnailUrl?: string | null;
   status: string;
   branch: { id: number; name: string } | null;
-  seatSelectionEnabled: boolean; // false = General Admission mode
+  seatSelectionEnabled: boolean;
   properties: Record<string, unknown> | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -73,394 +63,149 @@ interface ShowDetail {
     location: {
       id: number;
       name: string;
-      latitude?: number;
-      longitude?: number;
     };
   };
   artists: Artist[];
   ticketClasses: TicketClass[];
 }
 
-const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'success' | 'warning'> = {
-  UPCOMING: 'success',
-  ONGOING: 'warning',
-  ENDED: 'secondary',
-  CANCELLED: 'destructive',
-};
+// Pre-generate top 20 shows at build time
+export async function generateStaticParams() {
+  try {
+    const response = await fetch(`${API_URL}/shows?limit=20&status=UPCOMING&sortBy=performTime&order=asc`);
 
-const statusLabels: Record<string, string> = {
-  UPCOMING: 'Sắp diễn ra',
-  ONGOING: 'Đang diễn ra',
-  ENDED: 'Đã kết thúc',
-  CANCELLED: 'Đã hủy',
-};
+    if (!response.ok) {
+      return [];
+    }
 
-export default function ShowDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const slug = params.slug as string;
-  const addTicket = useCartStore((state) => state.addTicket);
-  const [selectedClass, setSelectedClass] = useState<number | null>(null);
-  const [showSeatMap, setShowSeatMap] = useState(true); // Show by default
-  const [lockedSeats, setLockedSeats] = useState<{ lockId: string; expiresAt: Date } | null>(null);
+    const data = await response.json();
+    const shows = data.data || data.items || [];
 
-  const { data: show, isLoading, error } = useQuery({
-    queryKey: ['show', slug],
-    queryFn: () => get<ShowDetail>(`/shows/${slug}`),
-    enabled: !!slug,
-  });
+    return shows.map((show: { slug: string }) => ({
+      slug: show.slug,
+    }));
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return [];
+  }
+}
 
-  const handleSeatsSelected = useCallback((ticketIds: number[], totalPrice: number) => {
-    // Seats selected but not yet locked
-    console.log(`Selected ${ticketIds.length} seats, total: ${totalPrice}`);
-  }, []);
+// Dynamic metadata for SEO
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  try {
+    const show = await fetchShowData(params.slug);
 
-  const handleLockSuccess = (lockId: string, expiresAt: Date) => {
-    setLockedSeats({ lockId, expiresAt });
-    toast.success('Đã giữ chỗ thành công! Vui lòng thanh toán trong 10 phút.');
-    // Optionally redirect to checkout
-    // router.push(`/checkout?lockId=${lockId}`);
-  };
+    if (!show) {
+      return {
+        title: 'Show Not Found | Music Travel',
+      };
+    }
 
-  const handleAddToCart = (ticketClass: TicketClass) => {
-    if (!show) return;
+    const title = show.metaTitle || `${show.title} | Music Travel`;
+    const description =
+      show.metaDescription ||
+      show.description?.replace(/<[^>]*>/g, '').substring(0, 160) ||
+      `Tham gia ${show.title} tại ${show.stage.name}`;
 
-    addTicket({
-      ticketId: Date.now(),
-      showId: show.id,
-      showTitle: show.title,
-      ticketClassId: ticketClass.id,
-      ticketClassName: ticketClass.name || 'Chung',
-      price: ticketClass.price,
+    return {
+      title,
+      description,
+      openGraph: {
+        title: show.title,
+        description,
+        type: 'website',
+        images: show.thumbnailUrl ? [show.thumbnailUrl] : [],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: show.title,
+        description,
+        images: show.thumbnailUrl ? [show.thumbnailUrl] : [],
+      },
+    };
+  } catch (error) {
+    return {
+      title: 'Show | Music Travel',
+    };
+  }
+}
+
+// Fetch show data on server
+async function fetchShowData(slug: string): Promise<ShowDetail | null> {
+  try {
+    const show = await fetchServer<ShowDetail>(`/shows/${slug}`, {
+      revalidate: 300,
+      tags: [`show-${slug}`],
     });
-
-    toast.success('Đã thêm vé vào giỏ hàng!');
-    setSelectedClass(ticketClass.id);
-    setTimeout(() => setSelectedClass(null), 1000);
-  };
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <p className="text-error-500 mb-4">Không thể tải thông tin sự kiện.</p>
-          <Link href="/shows">
-            <Button variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Quay lại danh sách
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
+    return show;
+  } catch (error) {
+    console.error(`Error fetching show ${slug}:`, error);
+    return null;
   }
+}
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Skeleton className="h-8 w-48 mb-6" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="h-64 w-full rounded-xl" />
-            <Skeleton className="h-32 w-full" />
-          </div>
-          <div>
-            <Skeleton className="h-96 w-full rounded-xl" />
-          </div>
-        </div>
-      </div>
-    );
+export default async function ShowDetailPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const show = await fetchShowData(params.slug);
+
+  if (!show) {
+    notFound();
   }
-
-  if (!show) return null;
 
   const isBookable = show.status === 'UPCOMING' || show.status === 'ONGOING';
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Back Button */}
-      <Link href="/shows" prefetch={false} className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-4 sm:mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Quay lại danh sách
-      </Link>
+    <div className="bg-neutral-50 min-h-screen pb-20">
+      <Suspense fallback={<ShowDetailSkeleton />}>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Hero Banner - rendered by ShowDetailServer */}
+          <ShowDetailServer show={show} />
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Hero Section */}
-          <div className="relative rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 text-white p-6 sm:p-8 md:p-12">
-            <div className="relative z-10">
-              <Badge variant={statusColors[show.status]} className="mb-3 sm:mb-4">
-                {statusLabels[show.status]}
-              </Badge>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-3 sm:mb-4">{show.title}</h1>
-              <div className="flex flex-wrap gap-3 sm:gap-4 text-sm sm:text-base text-white/90">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  <span>{formatDateTime(show.performTime)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  <span>{show.stage.name}{show.branch ? ` - ${show.branch.name}` : ''}</span>
+        {/* Re-structure: Main content and sidebar */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Column - Show Details (from ShowDetailServer) */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Content rendered by ShowDetailServer above */}
+            </div>
+
+            {/* Right Sidebar - Sticky Booking Card */}
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-24 space-y-6">
+                {/* Booking Card - Client Component */}
+                <TicketBookingClient
+                  showId={show.id}
+                  showTitle={show.title}
+                  ticketClasses={show.ticketClasses}
+                  isBookable={isBookable}
+                />
+
+                {/* Need Help? */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-100 text-center">
+                  <p className="font-bold text-gray-900 mb-2">Bạn cần hỗ trợ?</p>
+                  <p className="text-sm text-neutral-500 mb-4">
+                    Liên hệ với chúng tôi để được tư vấn thêm về show diễn
+                  </p>
+                  <a
+                    href="tel:0912946549"
+                    className="text-brand-600 font-bold text-lg hover:underline"
+                  >
+                    0912 946 549
+                  </a>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Description */}
-          {show.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Giới thiệu</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div
-                  className="prose prose-neutral max-w-none"
-                  dangerouslySetInnerHTML={{ __html: show.description }}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Artists */}
-          {show.artists.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Nghệ sĩ biểu diễn
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {show.artists.map((artist) => (
-                    <div
-                      key={artist.id}
-                      className="flex items-center gap-4 p-4 bg-neutral-50 rounded-lg"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center">
-                        <Users className="h-6 w-6 text-brand-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">
-                          {artist.name}
-                          {artist.isHeadline && (
-                            <Badge variant="secondary" className="ml-2">
-                              Headline
-                            </Badge>
-                          )}
-                        </h4>
-                        {artist.bio && (
-                          <p className="text-sm text-neutral-600 line-clamp-2">{artist.bio}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Venue Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Địa điểm tổ chức
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-semibold">{show.stage.name}</h4>
-                <p className="text-neutral-600">{show.stage.address}</p>
-                <p className="text-sm text-neutral-500">{show.stage.location.name}</p>
-              </div>
-
-              {/* Google Maps Integration */}
-              {(show.stage.latitude && show.stage.longitude) ? (
-                <LocationMap
-                  latitude={show.stage.latitude}
-                  longitude={show.stage.longitude}
-                  title={show.stage.name}
-                  address={show.stage.address || undefined}
-                  height="300px"
-                  className="mt-4"
-                />
-              ) : show.stage.mapLink ? (
-                <a
-                  href={show.stage.mapLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-brand-500 hover:text-brand-600"
-                >
-                  <Navigation className="mr-1 h-4 w-4" />
-                  Xem bản đồ
-                  <ExternalLink className="ml-1 h-4 w-4" />
-                </a>
-              ) : null}
-
-              {/* Directions Link */}
-              {show.stage.latitude && show.stage.longitude && (
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${show.stage.latitude},${show.stage.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-brand-500 hover:text-brand-600 mt-2"
-                >
-                  <Navigation className="h-4 w-4" />
-                  Chỉ đường đến địa điểm
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              )}
-
-              {show.checkInTime && (
-                <div className="flex items-center gap-2 text-sm text-neutral-600 mt-3">
-                  <Clock className="h-4 w-4" />
-                  <span>Mở cửa check-in: {formatDateTime(show.checkInTime)}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Seat Map / General Admission Section */}
-          {isBookable && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Ticket className="h-5 w-5" />
-                    {show.seatSelectionEnabled ? 'Sơ đồ chỗ ngồi' : 'Chọn vé'}
-                  </CardTitle>
-                  {show.seatSelectionEnabled && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowSeatMap(!showSeatMap)}
-                    >
-                      {showSeatMap ? 'Ẩn sơ đồ' : 'Xem sơ đồ'}
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {show.seatSelectionEnabled ? (
-                  // Seat Selection Mode - Show seat map
-                  <>
-                    {showSeatMap && (
-                      <>
-                        <SeatMap
-                          showId={show.id}
-                          onSeatsSelected={handleSeatsSelected}
-                          onLockSuccess={handleLockSuccess}
-                          maxSelectable={10}
-                          className="rounded-xl border"
-                        />
-                        {lockedSeats && (
-                          <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                            <p className="text-green-700 dark:text-green-300 font-medium">
-                              Đã giữ chỗ thành công! Vui lòng hoàn tất thanh toán.
-                            </p>
-                            <Link href={`/checkout?lockId=${lockedSeats.lockId}`} prefetch={false}>
-                              <Button className="mt-2">
-                                Tiến hành thanh toán
-                              </Button>
-                            </Link>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {!showSeatMap && (
-                      <p className="text-neutral-500 text-center py-4">
-                        Nhấn "Xem sơ đồ" để chọn chỗ ngồi của bạn.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  // General Admission Mode - Show zone selection
-                  <GeneralAdmissionView
-                    showId={show.id}
-                    ticketClasses={show.ticketClasses}
-                    onSelectTicketClass={(ticketClass, quantity) => {
-                      // Add tickets to cart
-                      for (let i = 0; i < quantity; i++) {
-                        handleAddToCart(ticketClass);
-                      }
-                    }}
-                    maxQuantity={10}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
-
-        {/* Ticket Selection Sidebar */}
-        <div>
-          <Card className="lg:sticky lg:top-24">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Ticket className="h-5 w-5" />
-                Chọn vé
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!isBookable ? (
-                <div className="text-center py-4">
-                  <p className="text-neutral-500">Sự kiện này không còn mở bán vé.</p>
-                </div>
-              ) : show.ticketClasses.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-neutral-500">Chưa có thông tin vé.</p>
-                </div>
-              ) : (
-                <>
-                  {show.ticketClasses.map((ticketClass) => (
-                    <div
-                      key={ticketClass.id}
-                      className="border rounded-lg p-4 space-y-3"
-                      style={{
-                        borderLeftColor: ticketClass.colorCode || '#22C55E',
-                        borderLeftWidth: '4px',
-                      }}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-semibold">{ticketClass.name || 'Vé chung'}</h4>
-                          <p className="text-sm text-neutral-500">
-                            Còn {ticketClass.availableCount} vé
-                          </p>
-                        </div>
-                        <span className="text-lg font-bold text-brand-600">
-                          {formatCurrency(ticketClass.price)}
-                        </span>
-                      </div>
-                      <Button
-                        className="w-full"
-                        disabled={ticketClass.availableCount === 0 || selectedClass === ticketClass.id}
-                        onClick={() => handleAddToCart(ticketClass)}
-                      >
-                        {ticketClass.availableCount === 0
-                          ? 'Hết vé'
-                          : selectedClass === ticketClass.id
-                            ? 'Đã thêm!'
-                            : 'Thêm vào giỏ'}
-                      </Button>
-                    </div>
-                  ))}
-
-                  <div className="border-t pt-4">
-                    <Link href="/cart" prefetch={false}>
-                      <Button variant="outline" className="w-full">
-                        Xem giỏ hàng
-                      </Button>
-                    </Link>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      </Suspense>
     </div>
   );
 }

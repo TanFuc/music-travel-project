@@ -8,25 +8,34 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import { TicketVerificationModal } from '@/components/admin/TicketVerificationModal';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 interface Ticket {
     id: number;
     ticketCode: string;
     status: string;
-    show: { title: string };
-    ticketClass: { name: string; price: number };
+    show: { title: string } | null;
+    ticketTier: { name: string; price: number } | null;
+    ticketClass: { name: string; price: number } | null;
     physicalSeat: { zoneName: string; rowName: string; seatNumber: string } | null;
+    isCheckedIn: boolean;
+    checkedInAt: string | null;
 }
 
 const statusColors: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
     AVAILABLE: 'success',
     LOCKED: 'warning',
     SOLD: 'default',
+    USED: 'default',
+    CANCELLED: 'destructive',
 };
 
 export default function AdminTicketsPage() {
+    usePageTitle();
     const [page, setPage] = useState(1);
+    const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
     const { data, isLoading } = useQuery({
         queryKey: ['admin-tickets', page],
@@ -40,7 +49,16 @@ export default function AdminTicketsPage() {
                     <h1 className="text-xl sm:text-2xl font-bold">Quản lý vé</h1>
                     <p className="text-sm sm:text-base text-neutral-600 mt-1">{data?.meta?.total || 0} vé</p>
                 </div>
+                <Button className="gap-2 w-full sm:w-auto bg-brand-600 hover:bg-brand-700" onClick={() => setIsVerifyOpen(true)}>
+                    <QrCode className="h-4 w-4" />
+                    Soát vé & Check-in
+                </Button>
             </div>
+
+            <TicketVerificationModal
+                isOpen={isVerifyOpen}
+                onClose={() => setIsVerifyOpen(false)}
+            />
 
             <Card>
                 <CardHeader>
@@ -61,7 +79,7 @@ export default function AdminTicketsPage() {
                                         <thead>
                                             <tr className="border-b">
                                                 <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm">Mã vé</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm">Sự kiện</th>
+                                                <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm">Show diễn</th>
                                                 <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm hidden md:table-cell">Loại vé</th>
                                                 <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm hidden lg:table-cell">Vị trí</th>
                                                 <th className="text-left py-3 px-4 font-semibold text-xs sm:text-sm">Giá</th>
@@ -80,18 +98,24 @@ export default function AdminTicketsPage() {
                                                     <td className="py-3 px-4">
                                                         <div className="flex items-center gap-2 min-w-0">
                                                             <Music className="h-4 w-4 text-neutral-400 flex-shrink-0 hidden sm:block" />
-                                                            <span className="text-xs sm:text-sm truncate">{ticket.show.title}</span>
+                                                            <span className="text-xs sm:text-sm truncate">
+                                                                {ticket.show?.title || (ticket.status === 'USED' ? 'Redeemed' : 'Chưa định danh')}
+                                                            </span>
                                                         </div>
                                                     </td>
                                                     <td className="py-3 px-4 text-xs sm:text-sm hidden md:table-cell">
-                                                        <span className="truncate block max-w-[150px]">{ticket.ticketClass.name}</span>
+                                                        <span className="truncate block max-w-[150px]">
+                                                            {ticket.ticketTier?.name || ticket.ticketClass?.name || 'Vãng lai'}
+                                                        </span>
                                                     </td>
                                                     <td className="py-3 px-4 text-xs sm:text-sm hidden lg:table-cell">
                                                         {ticket.physicalSeat
                                                             ? `${ticket.physicalSeat.zoneName} - ${ticket.physicalSeat.rowName}${ticket.physicalSeat.seatNumber}`
                                                             : 'N/A'}
                                                     </td>
-                                                    <td className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">{formatCurrency(ticket.ticketClass.price)}</td>
+                                                    <td className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">
+                                                        {formatCurrency(ticket.ticketTier?.price || ticket.ticketClass?.price || 0)}
+                                                    </td>
                                                     <td className="py-3 px-4">
                                                         <Badge variant={statusColors[ticket.status]} className="text-xs">{ticket.status}</Badge>
                                                     </td>

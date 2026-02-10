@@ -1,23 +1,21 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
 import { upload } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Link as LinkIcon } from 'lucide-react';
 
 interface ImageUploadProps {
   value?: string;
   onChange: (url: string) => void;
   folder?: string;
-  className?: string;
+  className?: string; // Applied to the outer container
   aspectRatio?: 'square' | 'video' | 'portrait' | 'any';
   label?: string;
+  isCompact?: boolean; // Prop to force compact mode/rounded mode if needed
 }
 
 export function ImageUpload({
@@ -27,10 +25,11 @@ export function ImageUpload({
   className,
   aspectRatio = 'any',
   label,
+  isCompact = false,
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [urlInput, setUrlInput] = useState('');
-  const [activeTab, setActiveTab] = useState<string>('upload');
+  const [mode, setMode] = useState<'upload' | 'url'>('upload');
 
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,17 +66,19 @@ export function ImageUpload({
     if (!urlInput) return;
     onChange(urlInput);
     setUrlInput('');
+    setMode('upload'); // Reset mode after submit
   };
 
   const handleRemove = useCallback(() => {
     onChange('');
+    setMode('upload');
   }, [onChange]);
 
   const ratioClass = {
     square: 'aspect-square',
     video: 'aspect-video',
     portrait: 'aspect-[3/4]',
-    any: 'min-h-[220px]',
+    any: 'min-h-[200px]',
   }[aspectRatio];
 
   return (
@@ -85,41 +86,50 @@ export function ImageUpload({
       {label && <label className="text-sm font-medium text-neutral-700">{label}</label>}
 
       <div className={cn(
-        'relative border rounded-xl overflow-hidden transition-all bg-neutral-50/50',
+        'relative border overflow-hidden transition-all bg-neutral-50/50 group',
+        // Ensure inner container fills the parent if parent has fixed size
+        'w-full h-full',
+        // Apply default radius if not seemingly handled by parent class in a specific way
+        // Simple heuristic: if className doesn't mention rounded-full, we add rounded-xl
+        !className?.includes('rounded-full') && 'rounded-xl',
         value ? 'border-brand-200' : 'border-neutral-200',
         ratioClass
       )}>
         {value ? (
-          <>
+          <div className="relative w-full h-full">
             <img
               src={value}
               alt="Uploaded"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               <Button
                 type="button"
                 variant="destructive"
                 size="icon"
                 onClick={handleRemove}
-                className="h-10 w-10 rounded-full shadow-lg"
+                className="h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-lg"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
-          </>
+          </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
-            <div className="px-4 pt-3">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="upload" className="text-xs">Tải lên</TabsTrigger>
-                <TabsTrigger value="url" className="text-xs">Dán URL</TabsTrigger>
-              </TabsList>
+          <div className="w-full h-full">
+            {/* Mode Toggle - Small & Discrete */}
+            <div className="absolute top-2 right-2 z-20">
+               <button 
+                 type="button"
+                 onClick={() => setMode(mode === 'upload' ? 'url' : 'upload')}
+                 className="p-1.5 rounded-full bg-white/80 hover:bg-white text-neutral-500 hover:text-brand-600 shadow-sm border border-neutral-100 transition-all opacity-0 group-hover:opacity-100"
+                 title={mode === 'upload' ? "Dán URL ảnh" : "Tải tệp lên"}
+               >
+                 {mode === 'upload' ? <LinkIcon className="h-3.5 w-3.5" /> : <Upload className="h-3.5 w-3.5" />}
+               </button>
             </div>
 
-            <div className="flex-1 relative">
-              <TabsContent value="upload" className="absolute inset-0 m-0">
-                <label className="absolute inset-0 cursor-pointer flex flex-col items-center justify-center gap-3 p-4 hover:bg-neutral-100/50 transition-colors">
+            {mode === 'upload' ? (
+              <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-neutral-100/50 transition-colors p-3 text-center">
                   <input
                     type="file"
                     className="sr-only"
@@ -129,48 +139,55 @@ export function ImageUpload({
                   />
                   {isUploading ? (
                     <>
-                      <Loader2 className="h-10 w-10 text-brand-500 animate-spin" />
-                      <p className="text-sm text-neutral-500 font-medium">Đang tải lên...</p>
+                      <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 text-brand-500 animate-spin mb-2" />
+                      <p className="text-xs text-neutral-500 font-medium animate-pulse">Đang xử lý...</p>
                     </>
                   ) : (
                     <>
-                      <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 shadow-sm border border-brand-100">
-                        <Upload className="h-6 w-6" />
+                      <div className={cn(
+                        "rounded-full bg-brand-50 flex items-center justify-center text-brand-600 shadow-sm border border-brand-100 mb-2 transition-transform group-hover:scale-110",
+                        isCompact ? "w-8 h-8" : "w-10 h-10"
+                      )}>
+                        <Upload className={cn(isCompact ? "h-4 w-4" : "h-5 w-5")} />
                       </div>
-                      <div className="text-center">
-                        <p className="text-sm text-neutral-700 font-medium">Nhấn để tải ảnh lên</p>
-                        <p className="text-xs text-neutral-500 mt-1">PNG, JPG tối đa 10MB</p>
-                      </div>
+                      
+                      {!isCompact && (
+                        <div className="space-y-1">
+                          <p className="text-xs sm:text-sm text-neutral-700 font-medium line-clamp-1">
+                             Tải ảnh lên
+                          </p>
+                          <p className="hidden sm:block text-[10px] sm:text-xs text-neutral-500">
+                             Max 10MB
+                          </p>
+                        </div>
+                      )}
                     </>
                   )}
-                </label>
-              </TabsContent>
-
-              <TabsContent value="url" className="absolute inset-0 m-0 flex flex-col items-center justify-center p-6 gap-3">
-                <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 mb-1">
-                  <LinkIcon className="h-6 w-6" />
-                </div>
-                <div className="w-full space-y-2">
-                  <Input
-                    placeholder="https://example.com/image.jpg"
-                    className="bg-white"
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
-                  />
-                  <Button
-                    type="button"
-                    className="w-full"
-                    size="sm"
-                    disabled={!urlInput}
-                    onClick={handleUrlSubmit}
-                  >
-                    Xác nhận URL
-                  </Button>
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
+              </label>
+            ) : (
+              <div className="flex flex-col items-center justify-center w-full h-full p-4 bg-white/50">
+                 <div className="w-full max-w-[200px] space-y-2">
+                    <Input
+                      placeholder="https://..."
+                      className="h-8 text-xs bg-white"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full h-7 text-xs"
+                      disabled={!urlInput}
+                      onClick={handleUrlSubmit}
+                    >
+                      Xác nhận
+                    </Button>
+                 </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

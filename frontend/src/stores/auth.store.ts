@@ -39,21 +39,44 @@ export const useAuthStore = create<AuthState>()(
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken, isAuthenticated: true }),
 
-      login: (user, accessToken, refreshToken) =>
+      login: (user, accessToken, refreshToken) => {
+        const currentUser = useAuthStore.getState().user;
+        
+        // If logging in as a different user, clear the cart
+        if (typeof window !== 'undefined' && currentUser && currentUser.id !== user.id) {
+          localStorage.removeItem('cart-storage');
+          window.dispatchEvent(new Event('cart-clear'));
+        }
+        
         set({
           user,
           accessToken,
           refreshToken,
           isAuthenticated: true,
-        }),
+        });
+        
+        // Set userId in cart to track cart ownership
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('cart-set-user', { detail: { userId: user.id } }));
+        }
+      },
 
-      logout: () =>
+      logout: () => {
+        // Clear auth state
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
-        }),
+        });
+        
+        // Clear cart when logging out to prevent data leakage between users
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('cart-storage');
+          // Dispatch custom event to notify cart store to clear its state
+          window.dispatchEvent(new Event('cart-clear'));
+        }
+      },
     }),
     {
       name: 'auth-storage',
@@ -69,10 +92,18 @@ export const useAuthStore = create<AuthState>()(
           if ('requestIdleCallback' in window) {
             (window as Window).requestIdleCallback(() => {
               state?.setHasHydrated(true);
+              // Set userId in cart if user is logged in
+              if (state?.user) {
+                window.dispatchEvent(new CustomEvent('cart-set-user', { detail: { userId: state.user.id } }));
+              }
             });
           } else {
             setTimeout(() => {
               state?.setHasHydrated(true);
+              // Set userId in cart if user is logged in
+              if (state?.user) {
+                window.dispatchEvent(new CustomEvent('cart-set-user', { detail: { userId: state.user.id } }));
+              }
             }, 0);
           }
         } else {

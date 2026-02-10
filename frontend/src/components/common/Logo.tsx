@@ -17,10 +17,10 @@ const sizeClasses = {
 
 export function Logo({ size = 'md', showText = true, className }: LogoProps) {
   return (
-    <Link href="/" className={cn('flex items-center gap-2 group', className)}>
+    <Link href="/" className={cn('flex items-center gap-2 sm:gap-3 group flex-shrink-0', className)}>
       <div
         className={cn(
-          'relative rounded-full overflow-hidden bg-white',
+          'relative rounded-full overflow-hidden bg-white flex-shrink-0',
           'shadow-md border-2 border-brand-500/30',
           'transition-all duration-300',
           'group-hover:border-brand-500/50 group-hover:shadow-lg group-hover:scale-105',
@@ -37,7 +37,9 @@ export function Logo({ size = 'md', showText = true, className }: LogoProps) {
         />
       </div>
       {showText && (
-        <span className="font-display text-lg font-bold text-brand-600">Music & Travel</span>
+        <span className="font-display text-base sm:text-lg font-bold text-brand-600 whitespace-nowrap">
+          Music & Travel
+        </span>
       )}
     </Link>
   );

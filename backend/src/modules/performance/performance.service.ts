@@ -138,13 +138,22 @@ export class PerformanceService {
       throw new BadRequestException('Guest name and phone are required');
     }
 
-    // Create registration
+    // Auto-assign queue number - find the highest queue number for this show and add 1
+    const highestQueue = await this.prisma.performanceRegistration.findFirst({
+      where: { showId: dto.showId },
+      orderBy: { queueNumber: 'desc' },
+      select: { queueNumber: true },
+    });
+    const nextQueueNumber = (highestQueue?.queueNumber || 0) + 1;
+
+    // Create registration with queue number
     const registration = await this.prisma.performanceRegistration.create({
       data: {
         showId: dto.showId,
         stageId: dto.stageId,
         qrCodeId: dto.qrCodeId,
         userId,
+        queueNumber: nextQueueNumber,
         guestName: dto.guestName,
         guestEmail: dto.guestEmail,
         guestPhone: dto.guestPhone,
@@ -295,7 +304,10 @@ export class PerformanceService {
   }
 
   async cancelRegistration(id: number, userId?: number) {
-    const registration = await this.prisma.performanceRegistration.findUnique({ where: { id } });
+    const registration = await this.prisma.performanceRegistration.findUnique({
+      where: { id },
+      include: { show: true },
+    });
 
     if (!registration) {
       throw new NotFoundException('Registration not found');
@@ -311,10 +323,24 @@ export class PerformanceService {
       throw new BadRequestException('Can only cancel pending registrations');
     }
 
-    // Update registration status
+    // Check 30-minute cancellation deadline before show start time
+    const showStartTime = new Date(registration.show.performTime);
+    const cancellationDeadline = new Date(showStartTime.getTime() - 30 * 60 * 1000); // 30 minutes before
+    const now = new Date();
+
+    if (now > cancellationDeadline) {
+      throw new BadRequestException(
+        'Cannot cancel registration less than 30 minutes before the show starts',
+      );
+    }
+
+    // Update registration status with cancelledAt timestamp
     const updated = await this.prisma.performanceRegistration.update({
       where: { id },
-      data: { status: 'CANCELLED' },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+      },
     });
 
     // Decrement registration count
@@ -324,5 +350,208 @@ export class PerformanceService {
     });
 
     return updated;
+  }
+
+  // ============================================================================
+  // PUBLIC QUEUE DISPLAY
+  // ============================================================================
+
+  async getPublicQueue(showId: number) {
+    const show = await this.prisma.show.findUnique({
+      where: { id: showId },
+      include: { stage: { include: { location: true } } },
+    });
+
+    if (!show) {
+      throw new NotFoundException('Show not found');
+    }
+
+    const registrations = await this.prisma.performanceRegistration.findMany({
+      where: {
+        showId,
+        status: { in: ['PENDING', 'APPROVED', 'PERFORMED'] },
+      },
+      orderBy: { queueNumber: 'asc' },
+      select: {
+        id: true,
+        queueNumber: true,
+        songTitle: true,
+        artistName: true,
+        performanceType: true,
+        duration: true,
+        status: true,
+        guestName: true,
+        registeredAt: true,
+        performedAt: true,
+      },
+    });
+
+    // Find current performer (status = PERFORMED and no performedAt means currently performing)
+    const currentPerformer = registrations.find((r) => r.status === 'PERFORMED' && !r.performedAt);
+
+    // Calculate estimated wait times based on average duration (default 5 minutes per performance)
+    const avgDuration = 5; // minutes
+    const queue = registrations.map((reg, index) => {
+      const waitingBefore = registrations
+        .slice(0, index)
+        .filter((r) => r.status === 'PENDING' || r.status === 'APPROVED').length;
+
+      return {
+        ...reg,
+        // Privacy: only show first name and last initial for guests
+        performerName: reg.guestName
+          ? `${reg.guestName.split(' ')[0]} ${reg.guestName.split(' ').pop()?.charAt(0) || ''}.`
+          : reg.artistName || 'Anonymous',
+        estimatedWaitMinutes: waitingBefore * avgDuration,
+        isCurrentlyPerforming: currentPerformer?.id === reg.id,
+      };
+    });
+
+    return {
+      show: {
+        id: show.id,
+        title: show.title,
+        performTime: show.performTime,
+        stage: show.stage,
+      },
+      totalRegistrations: registrations.length,
+      currentPerformer: currentPerformer
+        ? {
+            queueNumber: currentPerformer.queueNumber,
+            songTitle: currentPerformer.songTitle,
+          }
+        : null,
+      queue,
+    };
+  }
+
+  async getQueuePosition(showId: number, registrationId: number) {
+    const registration = await this.prisma.performanceRegistration.findFirst({
+      where: { id: registrationId, showId },
+    });
+
+    if (!registration) {
+      throw new NotFoundException('Registration not found');
+    }
+
+    // Handle case where queueNumber is null
+    if (registration.queueNumber === null) {
+      throw new BadRequestException('Registration has no queue number assigned');
+    }
+
+    const ahead = await this.prisma.performanceRegistration.count({
+      where: {
+        showId,
+        queueNumber: { lt: registration.queueNumber },
+        status: { in: ['PENDING', 'APPROVED'] },
+      },
+    });
+
+    const total = await this.prisma.performanceRegistration.count({
+      where: {
+        showId,
+        status: { in: ['PENDING', 'APPROVED', 'PERFORMED'] },
+      },
+    });
+
+    return {
+      queueNumber: registration.queueNumber,
+      position: ahead + 1,
+      peopleAhead: ahead,
+      totalInQueue: total,
+      estimatedWaitMinutes: ahead * 5, // 5 min average per performance
+      status: registration.status,
+    };
+  }
+
+  // ============================================================================
+  // ADMIN QUEUE MANAGEMENT
+  // ============================================================================
+
+  async updatePerformanceStatus(
+    id: number,
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'PERFORMED',
+    adminId: number,
+  ) {
+    const registration = await this.prisma.performanceRegistration.findUnique({ where: { id } });
+
+    if (!registration) {
+      throw new NotFoundException('Registration not found');
+    }
+
+    const updateData: any = {
+      status,
+      reviewedBy: adminId,
+      reviewedAt: new Date(),
+    };
+
+    // Set performedAt when marking as PERFORMED
+    if (status === 'PERFORMED' && !registration.performedAt) {
+      updateData.performedAt = new Date();
+    }
+
+    // Set cancelledAt when marking as CANCELLED
+    if (status === 'CANCELLED' && !registration.cancelledAt) {
+      updateData.cancelledAt = new Date();
+    }
+
+    return this.prisma.performanceRegistration.update({
+      where: { id },
+      data: updateData,
+      include: {
+        show: true,
+        stage: true,
+      },
+    });
+  }
+
+  async callNextPerformer(showId: number, adminId: number) {
+    // Find the next pending/approved registration
+    const nextUp = await this.prisma.performanceRegistration.findFirst({
+      where: {
+        showId,
+        status: { in: ['PENDING', 'APPROVED'] },
+      },
+      orderBy: { queueNumber: 'asc' },
+    });
+
+    if (!nextUp) {
+      throw new BadRequestException('No more performers in queue');
+    }
+
+    return this.updatePerformanceStatus(nextUp.id, 'PERFORMED', adminId);
+  }
+
+  async markNoShow(id: number, adminId: number) {
+    const registration = await this.prisma.performanceRegistration.findUnique({ where: { id } });
+
+    if (!registration) {
+      throw new NotFoundException('Registration not found');
+    }
+
+    return this.prisma.performanceRegistration.update({
+      where: { id },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        reviewNote: 'No show - did not appear when called',
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+      },
+    });
+  }
+
+  async reorderQueue(showId: number, registrationIds: number[]) {
+    // Update queue numbers based on new order
+    const updates = registrationIds.map((id, index) =>
+      this.prisma.performanceRegistration.update({
+        where: { id },
+        data: { queueNumber: index + 1 },
+      }),
+    );
+
+    await this.prisma.$transaction(updates);
+
+    return this.getRegistrations({ showId });
   }
 }

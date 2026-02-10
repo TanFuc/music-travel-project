@@ -1,0 +1,304 @@
+/**
+ * Server-side API utilities for Server Components
+ * Uses native fetch with Next.js caching and ISR support
+ */
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+interface FetchOptions {
+  revalidate?: number | false;
+  tags?: string[];
+  cache?: RequestCache;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T | null;
+  message: string;
+  code: string;
+  timestamp: string;
+  path: string;
+}
+
+interface PaginatedApiResponse<T> extends ApiResponse<T[]> {
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+/**
+ * Server-side fetch wrapper with Next.js caching
+ */
+export async function fetchServer<T>(
+  endpoint: string,
+  options: FetchOptions = {}
+): Promise<T> {
+  const { revalidate = 180, tags, cache } = options;
+
+  const url = `${API_URL}${endpoint}`;
+
+  try {
+    const fetchOptions: RequestInit & { next?: { revalidate?: number | false; tags?: string[] } } = {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    // Configure caching
+    if (cache) {
+      fetchOptions.cache = cache;
+    } else if (revalidate !== undefined) {
+      fetchOptions.next = {
+        revalidate,
+        tags,
+      };
+    }
+
+    const response = await fetch(url, fetchOptions);
+
+    if (!response.ok) {
+      console.error(`API Error: ${response.status} ${response.statusText} for ${url}`);
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Handle wrapped API response format
+    if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+      const apiResponse = data as ApiResponse<T> & { meta?: PaginatedApiResponse<T>['meta'] };
+
+      if (!apiResponse.success) {
+        throw new Error(apiResponse.message || 'API Error');
+      }
+
+      // Return paginated format if meta exists
+      if (apiResponse.meta) {
+        return { items: apiResponse.data, meta: apiResponse.meta } as T;
+      }
+
+      return apiResponse.data as T;
+    }
+
+    return data as T;
+  } catch (error) {
+    console.error(`Failed to fetch ${endpoint}:`, error);
+    throw error;
+  }
+}
+
+// ============================================
+// Specific API functions for Server Components
+// ============================================
+
+// Banner Types
+export interface Banner {
+  id: number;
+  title: string;
+  imageUrl: string;
+  mobileImageUrl?: string;
+  actionLink: string;
+}
+
+// Show Types
+export interface Show {
+  id: number;
+  title: string;
+  slug: string;
+  description?: string;
+  thumbnailUrl?: string;
+  performTime: string;
+  status: string;
+  stage: {
+    id: number;
+    name: string;
+    branch?: { name: string };
+    location?: { name: string };
+  };
+  minPrice: number | null;
+  availableTickets?: number;
+  badges?: ('HOT' | 'VIP' | 'NEW' | 'SOLD_OUT' | 'SOON')[];
+  ticketClasses?: TicketClass[];
+  ticketTiers?: TicketTier[];
+  seatSelectionEnabled?: boolean;
+}
+
+export interface TicketClass {
+  id: number;
+  name: string;
+  price: number;
+  description?: string;
+  available: number;
+}
+
+export interface TicketTier {
+  id: number;
+  name: string;
+  price: number;
+  description?: string;
+  available: number;
+}
+
+// Tour Types
+export interface Tour {
+  id: number;
+  title: string;
+  slug: string;
+  description?: string;
+  thumbnailUrl?: string;
+  duration: string;
+  departureLoc: { name: string };
+  destinationLoc: { name: string };
+  minPrice: number | null;
+  nextSchedule?: {
+    startDate: string;
+    price: number;
+    availableSlots: number;
+  };
+}
+
+// Stage Types
+export interface HomeStage {
+  id: number;
+  title: string;
+  imageUrl: string;
+  description?: string;
+  location?: string | { name: string };
+}
+
+// Location Types
+export interface Location {
+  id: number;
+  name: string;
+  slug: string;
+  showCount?: number;
+}
+
+// Paginated Response
+export interface PaginatedData<T> {
+  items: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// ============================================
+// API Service Functions
+// ============================================
+
+export const serverAPI = {
+  // Banners
+  banners: {
+    getHomeBanners: () =>
+      fetchServer<Banner[]>('/banners?position=HOME_MAIN_SLIDER&isActive=true', {
+        revalidate: 300,
+        tags: ['banners'],
+      }),
+  },
+
+  // Shows
+  shows: {
+    getAll: (params?: Record<string, string | number>) => {
+      const searchParams = new URLSearchParams();
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          searchParams.set(key, String(value));
+        });
+      }
+      return fetchServer<PaginatedData<Show>>(`/shows?${searchParams}`, {
+        revalidate: 180,
+        tags: ['shows'],
+      });
+    },
+
+    getBySlug: (slug: string) =>
+      fetchServer<Show>(`/shows/${slug}`, {
+        revalidate: 300,
+        tags: [`show-${slug}`],
+      }),
+
+    getHomeShows: (locationFilter?: string) => {
+      const params = new URLSearchParams({
+        limit: '100',
+        status: 'UPCOMING',
+      });
+      if (locationFilter) {
+        params.append('location', locationFilter);
+      }
+      return fetchServer<PaginatedData<Show>>(`/shows?${params}`, {
+        revalidate: 180,
+        tags: ['shows', 'home-shows'],
+      });
+    },
+  },
+
+  // Tours
+  tours: {
+    getAll: (params?: Record<string, string | number>) => {
+      const searchParams = new URLSearchParams();
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          searchParams.set(key, String(value));
+        });
+      }
+      return fetchServer<PaginatedData<Tour>>(`/tours?${searchParams}`, {
+        revalidate: 180,
+        tags: ['tours'],
+      });
+    },
+
+    getBySlug: (slug: string) =>
+      fetchServer<Tour>(`/tours/${slug}`, {
+        revalidate: 300,
+        tags: [`tour-${slug}`],
+      }),
+
+    getHomeTours: () =>
+      fetchServer<PaginatedData<Tour>>('/tours?limit=2', {
+        revalidate: 300,
+        tags: ['tours', 'home-tours'],
+      }),
+  },
+
+  // Stages
+  stages: {
+    getHomeStages: () =>
+      fetchServer<HomeStage[]>('/home-stages?activeOnly=true', {
+        revalidate: 300,
+        tags: ['stages', 'home-stages'],
+      }),
+  },
+
+  // Locations
+  locations: {
+    getAll: () =>
+      fetchServer<Location[]>('/locations', {
+        revalidate: 3600,
+        tags: ['locations'],
+      }),
+  },
+
+  // Search
+  search: {
+    query: (q: string, type?: string) => {
+      const params = new URLSearchParams({ q });
+      if (type && type !== 'all') {
+        params.set('type', type);
+      }
+      return fetchServer<{
+        shows: Show[];
+        tours: Tour[];
+        stages: HomeStage[];
+      }>(`/search?${params}`, {
+        cache: 'no-store', // Always fresh for search
+      });
+    },
+  },
+};
+
+export default serverAPI;

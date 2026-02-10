@@ -58,6 +58,7 @@ api.interceptors.response.use(
 
     const axiosError = error as AxiosError;
     const originalRequest = axiosError.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const responseData = axiosError.response?.data as any;
 
     // Remove from pending requests on error
     if (originalRequest) {
@@ -65,8 +66,13 @@ api.interceptors.response.use(
       pendingRequests.delete(requestKey);
     }
 
-    // Handle 401 - try to refresh token
-    if (axiosError.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    // Check for session expired (status 401 or AUTH_002 error code)
+    const isSessionExpired =
+      axiosError.response?.status === 401 ||
+      responseData?.code === 'AUTH_002';
+
+    // Handle session expired - try to refresh token
+    if (isSessionExpired && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -81,12 +87,18 @@ api.interceptors.response.use(
 
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
+        } else {
+          // No refresh token - must login
+          throw new Error('No refresh token');
         }
-      } catch {
-        // Refresh failed - logout user
+      } catch (refreshError) {
+        // Refresh failed or no refresh token - logout user and redirect
         useAuthStore.getState().logout();
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          // Avoid redirecting if already on login page to prevent infinite loop
+          if (window.location.pathname !== '/login') {
+            window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+          }
         }
       }
     }
@@ -130,9 +142,14 @@ export async function get<T>(url: string): Promise<T> {
       // Check if response is wrapped in ApiResponse format
       if (response.data && typeof response.data === 'object' && 'data' in response.data && 'success' in response.data) {
         const apiResponse = response.data as ApiResponse<T> & { meta?: { page: number; limit: number; total: number; totalPages: number } };
+
+        if (!apiResponse.success) {
+          throw new Error(apiResponse.message || 'API Error');
+        }
+
         // Check if this is a paginated response (has meta at root level)
         if ('meta' in apiResponse && apiResponse.meta) {
-          // Return as paginated format: { items: data, meta: meta }
+          // Return as paginated format: { items: data, meta: apiResponse.meta }
           return { items: apiResponse.data, meta: apiResponse.meta } as T;
         }
         return apiResponse.data as T;

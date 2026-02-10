@@ -91,7 +91,7 @@ export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
   const currentBanner = banners[currentIndex];
 
   return (
-    <section className="relative h-screen w-full overflow-hidden">
+    <section className="relative h-[85vh] md:h-screen w-full overflow-hidden bg-neutral-900">
       {/* Background Image with Ken Burns Effect */}
       {banners.map((banner, index) => (
         <div
@@ -111,53 +111,54 @@ export function HeroBanner({ banners: propBanners }: HeroBannerProps) {
             )}
             priority={index === 0}
             loading={index === 0 ? 'eager' : 'lazy'}
+            decoding="async"
             sizes="100vw"
             quality={75}
           />
         </div>
       ))}
 
-      {/* Gradient Overlay - Bright green theme */}
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-500/20 via-brand-600/40 to-brand-700/60" />
+      {/* Lighter Gradient Overlay for readability but keeping it airy */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80 opacity-90" />
 
       {/* Particles Background */}
-      <div className="particles-bg" />
+      <div className="particles-bg opacity-30" />
 
       {/* Content */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center pt-header">
         <div className="container mx-auto px-4 text-center">
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-brand-200 shadow-lg">
-              <span className="text-brand-500">✨</span>
-              <span className="text-sm font-medium text-brand-700">Show Đặc Biệt</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 shadow-xl animate-fadeIn stagger-1">
+              <span className="text-brand-400">✨</span>
+              <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-widest">Show Đặc Biệt</span>
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-black text-white leading-[1.1] tracking-tight animate-fadeIn stagger-2">
               {currentBanner.title}
             </h1>
 
             {/* Details */}
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm">
-                <MapPin className="w-5 h-5 text-brand-600" />
-                <span className="text-brand-800 font-medium">Thung Lũng Mây - Đà Lạt</span>
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 animate-fadeIn stagger-3">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10">
+                <MapPin className="w-4 h-4 text-brand-400" />
+                <span className="text-white text-xs sm:text-sm font-semibold">Thung Lũng Mây - Đà Lạt</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 backdrop-blur-sm">
-                <Calendar className="w-5 h-5 text-brand-600" />
-                <span className="text-brand-800 font-medium">29/12/2024 | 20:00</span>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10">
+                <Calendar className="w-4 h-4 text-brand-400" />
+                <span className="text-white text-xs sm:text-sm font-semibold">29/12/2024 | 20:00</span>
               </div>
             </div>
 
             {/* CTA Button */}
-            <div className="pt-4">
+            <div className="pt-4 sm:pt-8 animate-fadeIn stagger-4">
               <Link
                 href={currentBanner.actionLink}
-                className="btn-neon inline-flex items-center gap-2 text-lg"
+                className="btn-neon inline-flex items-center gap-3 text-base sm:text-lg px-8 py-4 sm:px-10 sm:py-5 rounded-2xl shadow-2xl active:scale-95 transition-transform"
               >
-                <span>💳</span>
-                <span>ĐẶT VÉ NGAY - Từ 350,000đ</span>
+                <span>ĐẶT VÉ NGAY</span>
+                <ChevronRight className="w-5 h-5" />
               </Link>
             </div>
           </div>

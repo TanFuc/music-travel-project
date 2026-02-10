@@ -1,19 +1,29 @@
-'use client';
+/**
+ * Tour Detail Page - ISR (Incremental Static Regeneration)
+ * Server Component with revalidation every 5 minutes
+ *
+ * Features:
+ * - generateStaticParams to pre-render top 20 tours at build time
+ * - generateMetadata for dynamic SEO
+ * - Reduced client-side JavaScript bundle
+ * - Better SEO with server-rendered content
+ */
 
-import { useQuery } from '@tanstack/react-query';
-import { useParams } from 'next/navigation';
-import { Link } from '@/components/common/Link';
-import { ArrowLeft, Calendar, MapPin, Clock, Users, CreditCard } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/common/LoadingSkeleton';
-import { get } from '@/lib/api';
-import { formatCurrency, formatDate } from '@/lib/utils';
-import { useCartStore } from '@/stores/cart.store';
-import { toast } from 'sonner';
-import { useState } from 'react';
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
+import { Metadata } from 'next';
+import { TourDetailServer } from '@/components/server/TourDetailServer';
+import { TourSchedulesClient } from '@/components/client/TourSchedulesClient';
+import { TourBookingClient } from '@/components/client/TourBookingClient';
+import { TourDetailSkeleton } from '@/components/server/Skeletons';
+import { fetchServer } from '@/lib/api-server';
 
+// ISR - Revalidate every 5 minutes
+export const revalidate = 300;
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+// Types
 interface TourSchedule {
   id: number;
   startDate: string;
@@ -44,297 +54,134 @@ interface TourDetail {
   schedules: TourSchedule[];
 }
 
-const scheduleStatusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'success' | 'warning'> = {
-  OPEN: 'success',
-  CLOSED: 'secondary',
-  CANCELLED: 'destructive',
-};
+// Pre-generate top 20 tours at build time
+export async function generateStaticParams() {
+  try {
+    const response = await fetch(
+      `${API_URL}/tours?limit=20&sortBy=createdAt&order=desc`
+    );
 
-const scheduleStatusLabels: Record<string, string> = {
-  OPEN: 'Còn chỗ',
-  CLOSED: 'Đã đóng',
-  CANCELLED: 'Đã hủy',
-};
+    if (!response.ok) {
+      return [];
+    }
 
-export default function TourDetailPage() {
-  const params = useParams();
-  const slug = params.slug as string;
-  const addTour = useCartStore((state) => state.addTour);
-  const [selectedSchedule, setSelectedSchedule] = useState<number | null>(null);
-  const [quantity, setQuantity] = useState(1);
+    const data = await response.json();
+    const tours = data.data || data.items || [];
 
-  const { data: tour, isLoading, error } = useQuery({
-    queryKey: ['tour', slug],
-    queryFn: () => get<TourDetail>(`/tours/${slug}`),
-    enabled: !!slug,
-  });
+    return tours.map((tour: { slug: string }) => ({
+      slug: tour.slug,
+    }));
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return [];
+  }
+}
 
-  const handleAddToCart = (schedule: TourSchedule) => {
-    if (!tour) return;
+// Dynamic metadata for SEO
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  try {
+    const tour = await fetchTourData(params.slug);
 
-    addTour({
-      scheduleId: schedule.id,
-      tourId: tour.id,
-      tourTitle: tour.title,
-      startDate: schedule.startDate,
-      price: schedule.price,
-      quantity,
+    if (!tour) {
+      return {
+        title: 'Tour Not Found | Music Travel',
+      };
+    }
+
+    const title = tour.metaTitle || `${tour.title} | Music Travel`;
+    const description =
+      tour.metaDescription ||
+      tour.description?.replace(/<[^>]*>/g, '').substring(0, 160) ||
+      `Khám phá ${tour.title} cùng Music Travel`;
+
+    const thumbnailUrl = (tour.properties?.thumbnailUrl ||
+      tour.properties?.bannerUrl) as string;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title: tour.title,
+        description,
+        type: 'website',
+        images: thumbnailUrl ? [thumbnailUrl] : [],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: tour.title,
+        description,
+        images: thumbnailUrl ? [thumbnailUrl] : [],
+      },
+    };
+  } catch (error) {
+    return {
+      title: 'Tour | Music Travel',
+    };
+  }
+}
+
+// Fetch tour data on server
+async function fetchTourData(slug: string): Promise<TourDetail | null> {
+  try {
+    const tour = await fetchServer<TourDetail>(`/tours/${slug}`, {
+      revalidate: 300,
+      tags: [`tour-${slug}`],
     });
-
-    toast.success('Đã thêm tour vào giỏ hàng!');
-    setSelectedSchedule(schedule.id);
-    setTimeout(() => setSelectedSchedule(null), 1000);
-  };
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <p className="text-error-500 mb-4">Không thể tải thông tin tour.</p>
-          <Link href="/tours">
-            <Button variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Quay lại danh sách
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
+    return tour;
+  } catch (error) {
+    console.error(`Error fetching tour ${slug}:`, error);
+    return null;
   }
+}
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Skeleton className="h-8 w-48 mb-6" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="h-64 w-full rounded-xl" />
-            <Skeleton className="h-32 w-full" />
-          </div>
-          <div>
-            <Skeleton className="h-96 w-full rounded-xl" />
-          </div>
-        </div>
-      </div>
-    );
+export default async function TourDetailPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const tour = await fetchTourData(params.slug);
+
+  if (!tour) {
+    notFound();
   }
-
-  if (!tour) return null;
-
-  const openSchedules = tour.schedules.filter((s) => s.status === 'OPEN');
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Back Button */}
-      <Link href="/tours" className="inline-flex items-center text-neutral-600 hover:text-brand-500 mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Quay lại danh sách
-      </Link>
+    <div className="bg-neutral-50 min-h-screen pb-20">
+      <Suspense fallback={<TourDetailSkeleton />}>
+        {/* Hero Banner - rendered by TourDetailServer */}
+        <TourDetailServer tour={tour} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Hero Section */}
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-brand-400 to-brand-600 text-white p-8 md:p-12">
-            <div className="relative z-10">
-              <h1 className="text-3xl md:text-4xl font-display font-bold mb-4">{tour.title}</h1>
-              <div className="flex flex-wrap gap-4 text-white/90">
-                {tour.duration && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    <span>{tour.duration}</span>
-                  </div>
-                )}
-                {tour.destinationLoc && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    <span>
-                      {tour.departureLoc?.name} &rarr; {tour.destinationLoc.name}{tour.branch ? ` (${tour.branch.name})` : ''}
-                    </span>
-                  </div>
-                )}
+        {/* Main content and sidebar */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Column - Tour Details and Schedules */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Schedules Section - Client Component */}
+              <TourSchedulesClient
+                tourId={tour.id}
+                tourTitle={tour.title}
+                schedules={tour.schedules}
+              />
+            </div>
+
+            {/* Right Sidebar - Sticky Booking Card */}
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-24 space-y-6">
+                {/* Booking Widget and Support Card - Client Component */}
+                <TourBookingClient
+                  tourId={tour.id}
+                  tourTitle={tour.title}
+                  schedules={tour.schedules}
+                />
               </div>
             </div>
           </div>
-
-          {/* Description */}
-          {tour.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Giới thiệu chương trình</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div
-                  className="prose prose-neutral max-w-none"
-                  dangerouslySetInnerHTML={{ __html: tour.description }}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Tour Highlights */}
-          {tour.properties && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Điểm nổi bật</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(tour.properties).map(([key, value]) => (
-                    <div key={key} className="flex items-start gap-3 p-3 bg-neutral-50 rounded-lg">
-                      <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
-                        <span className="text-brand-600 text-sm font-bold">
-                          {key.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm">{key}</h4>
-                        <p className="text-sm text-neutral-600">{String(value)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* All Schedules */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Lịch khởi hành
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {tour.schedules.length === 0 ? (
-                <p className="text-neutral-500 text-center py-4">Chưa có lịch khởi hành.</p>
-              ) : (
-                <div className="space-y-3">
-                  {tour.schedules.map((schedule) => {
-                    const remaining = schedule.capacity - schedule.bookedCount;
-                    const isAvailable = schedule.status === 'OPEN' && remaining > 0;
-
-                    return (
-                      <div
-                        key={schedule.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{formatDate(schedule.startDate)}</span>
-                            <Badge variant={scheduleStatusColors[schedule.status]}>
-                              {scheduleStatusLabels[schedule.status]}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-neutral-600">
-                            <span className="flex items-center gap-1">
-                              <Users className="h-4 w-4" />
-                              Còn {remaining}/{schedule.capacity} chỗ
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <CreditCard className="h-4 w-4" />
-                              {formatCurrency(schedule.price)}/người
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          disabled={!isAvailable || selectedSchedule === schedule.id}
-                          onClick={() => handleAddToCart(schedule)}
-                        >
-                          {!isAvailable
-                            ? 'Hết chỗ'
-                            : selectedSchedule === schedule.id
-                              ? 'Đã thêm!'
-                              : 'Đặt ngay'}
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
-
-        {/* Booking Sidebar */}
-        <div>
-          <Card className="sticky top-24">
-            <CardHeader>
-              <CardTitle>Đặt tour</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {openSchedules.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-neutral-500">Hiện tại không có lịch khởi hành nào.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Số người</label>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        disabled={quantity <= 1}
-                      >
-                        -
-                      </Button>
-                      <span className="w-12 text-center font-semibold">{quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setQuantity(quantity + 1)}
-                        disabled={quantity >= 10}
-                      >
-                        +
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Chọn lịch khởi hành</label>
-                    <div className="space-y-2">
-                      {openSchedules.slice(0, 3).map((schedule) => {
-                        const remaining = schedule.capacity - schedule.bookedCount;
-
-                        return (
-                          <button
-                            key={schedule.id}
-                            className="w-full p-3 border rounded-lg text-left hover:border-brand-500 transition-colors"
-                            onClick={() => handleAddToCart(schedule)}
-                            disabled={remaining < quantity}
-                          >
-                            <div className="flex justify-between items-center">
-                              <span className="font-medium">{formatDate(schedule.startDate)}</span>
-                              <span className="text-brand-600 font-bold">
-                                {formatCurrency(schedule.price * quantity)}
-                              </span>
-                            </div>
-                            <p className="text-xs text-neutral-500">
-                              Còn {remaining} chỗ | {quantity} người
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <Link href="/cart" prefetch={false}>
-                      <Button variant="outline" className="w-full">
-                        Xem giỏ hàng
-                      </Button>
-                    </Link>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      </Suspense>
     </div>
   );
 }

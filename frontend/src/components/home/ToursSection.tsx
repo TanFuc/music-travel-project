@@ -45,17 +45,20 @@ export function ToursSection() {
   };
 
   return (
-    <section className="py-16">
+    <section className="py-12 md:py-16">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="mb-10 text-center">
-          <h2 className="section-title flex items-center justify-center gap-3">
-            <span className="text-3xl">🌄</span>
-            TOUR DU LỊCH KẾT HỢP SHOW
-          </h2>
-          <p className="mt-2 text-gray-600 max-w-2xl mx-auto">
-            Đến Đà Lạt - Xem show - Trải nghiệm trọn vẹn. Combo tour + vé show tiết kiệm đến 30%
-          </p>
+        <div className="mb-12 text-center">
+            <div className="inline-flex items-center justify-center p-3 mb-4 rounded-2xl bg-orange-100 text-2xl animate-bounce-slow">
+              🌄
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display font-black text-gray-900 mb-4 tracking-tight">
+              TOUR DU LỊCH <span className="text-orange-500">KẾT HỢP SHOW</span>
+            </h2>
+            <p className="text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Trải nghiệm trọn vẹn: Du lịch khám phá kết hợp thưởng thức show diễn đỉnh cao. 
+              <span className="font-semibold text-orange-600 ml-1">Combo tiết kiệm đến 30%</span>
+            </p>
         </div>
 
         {/* Tours List */}
@@ -68,75 +71,69 @@ export function ToursSection() {
             <p className="text-gray-500 text-lg">Chưa có tour nào</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {tours.map((tour, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {tours.map((tour) => (
               <Link
                 key={tour.id}
                 href={`/tours/${tour.slug}`}
-                className="group block glass-card card-hover overflow-hidden animate-fadeIn opacity-0"
-                style={{ animationDelay: `${index * 0.15}s`, animationFillMode: 'forwards' }}
+                className="group flex flex-col h-full bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300"
               >
-                <div className="flex flex-col lg:flex-row">
-                  {/* Image */}
-                  <div className="relative lg:w-1/3 aspect-video lg:aspect-auto overflow-hidden">
-                    <Image
-                      src={tour.thumbnailUrl || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop'}
-                      alt={tour.title}
-                      fill
-                      loading="lazy"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
+                {/* Image Section */}
+                <div className="relative aspect-[16/9] overflow-hidden">
+                  <Image
+                    src={tour.thumbnailUrl || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'}
+                    alt={tour.title}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute top-4 left-4">
+                     <span className="px-3 py-1.5 rounded-lg bg-orange-500/90 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider shadow-lg">
+                        Combo Hot
+                     </span>
+                  </div>
+                  <div className="absolute bottom-4 right-4">
+                     <span className="px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-orange-400" />
+                        {tour.duration}
+                     </span>
+                  </div>
+                </div>
+
+                {/* Content Section */}
+                <div className="flex-1 p-6 md:p-8 flex flex-col">
+                  <h3 className="font-display font-bold text-xl text-gray-900 mb-3 group-hover:text-orange-600 transition-colors line-clamp-2">
+                    {tour.title}
+                  </h3>
+                  
+                  <div className="flex flex-col gap-2 mb-6">
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="w-6 h-6 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                         <MapPin className="w-3.5 h-3.5 text-orange-500" />
+                      </div>
+                      <span className="font-medium">Khởi hành:</span>
+                      <span className="text-gray-900">{tour.departureLoc.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="w-6 h-6 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                         <MapPin className="w-3.5 h-3.5 text-orange-600" />
+                      </div>
+                       <span className="font-medium">Điểm đến:</span>
+                       <span className="text-gray-900">{tour.destinationLoc.name}</span>
+                    </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="flex-1 p-6 lg:p-8 flex flex-col justify-between">
+                  <div className="mt-auto pt-6 border-t border-dashed border-gray-200 flex items-center justify-between">
                     <div>
-                      <h3 className="font-display font-bold text-xl lg:text-2xl text-gray-900 group-hover:text-brand-600 transition-colors mb-4">
-                        {tour.title}
-                      </h3>
-
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <MapPin className="w-4 h-4 text-brand-400" />
-                          <span>Từ: {tour.departureLoc.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <MapPin className="w-4 h-4 text-accent-500" />
-                          <span>Đến: {tour.destinationLoc.name}</span>
-                        </div>
-                        {tour.nextSchedule && (
-                          <>
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Calendar className="w-4 h-4 text-brand-400" />
-                              <span>{formatDate(tour.nextSchedule.startDate)}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Users className="w-4 h-4 text-brand-400" />
-                              <span>Còn {tour.nextSchedule.availableSlots} slot</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="mt-3 flex items-center gap-2 text-gray-600 text-sm">
-                        <Clock className="w-4 h-4 text-brand-400" />
-                        <span>{tour.duration}</span>
+                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">Giá trọn gói từ</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black text-orange-600">
+                          {tour.minPrice ? formatPrice(tour.minPrice) : 'Liên hệ'}
+                        </span>
+                        <span className="text-xs font-bold text-gray-400">₫</span>
                       </div>
                     </div>
-
-                    <div className="mt-6 flex items-center justify-between">
-                      <div>
-                        <span className="text-gray-500 text-sm">Giá từ</span>
-                        <div className="font-accent font-bold text-2xl text-brand-600">
-                          {tour.minPrice ? `${formatPrice(tour.minPrice)}đ` : 'Liên hệ'}
-                          <span className="text-gray-500 text-sm font-normal">/người</span>
-                        </div>
-                      </div>
-
-                      <span className="px-6 py-3 rounded-xl btn-primary inline-flex items-center gap-2 font-semibold">
-                        ĐẶT TOUR
-                        <ArrowRight className="w-4 h-4" />
-                      </span>
+                    <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-colors duration-300">
+                      <ArrowRight className="w-5 h-5" />
                     </div>
                   </div>
                 </div>
@@ -149,10 +146,10 @@ export function ToursSection() {
         <div className="mt-10 text-center">
           <Link
             href="/tours"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl btn-ghost text-gray-700 font-medium group"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl btn-ghost text-sm text-gray-700 font-medium group"
           >
             XEM TẤT CẢ TOUR
-            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
       </div>
