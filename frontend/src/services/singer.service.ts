@@ -79,8 +79,18 @@ export const singerService = {
   },
 
   // Admin endpoints
-  getAll: (filter?: SingerRegistrationFilter) =>
-    get<SingerRegistrationResponse>('/singers', { params: filter }),
+  getAll: (filter?: SingerRegistrationFilter) => {
+    const params = new URLSearchParams();
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.set(key, String(value));
+        }
+      });
+    }
+    const queryString = params.toString();
+    return get<SingerRegistrationResponse>(`/singers${queryString ? `?${queryString}` : ''}`);
+  },
 
   getById: (id: string) =>
     get<SingerRegistration>(`/singers/${id}`),

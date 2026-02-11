@@ -67,16 +67,9 @@ export default function BankQRPayment({
       const blob = await paymentService.generateQRImage(paymentData);
       const filename = `qr-${qrData.bankCode}-${Date.now()}.png`;
       paymentService.downloadQRImage(blob, filename);
-      toast({
-        title: 'Thành công',
-        description: 'Đã tải xuống mã QR',
-      });
+      toast.success('Đã tải xuống mã QR');
     } catch (err) {
-      toast({
-        title: 'Lỗi',
-        description: 'Không thể tải xuống hình ảnh',
-        variant: 'destructive',
-      });
+      toast.error('Không thể tải xuống hình ảnh');
     } finally {
       setDownloadingImage(false);
     }
@@ -86,11 +79,11 @@ export default function BankQRPayment({
     if (!qrData) return;
 
     const success = await paymentService.copyToClipboard(qrData.qrContent);
-    toast({
-      title: success ? 'Thành công' : 'Lỗi',
-      description: success ? 'Đã sao chép mã QR' : 'Không thể sao chép',
-      variant: success ? 'default' : 'destructive',
-    });
+    if (success) {
+      toast.success('Đã sao chép mã QR');
+    } else {
+      toast.error('Không thể sao chép');
+    }
   };
 
   const handleShare = async () => {
@@ -98,10 +91,7 @@ export default function BankQRPayment({
 
     const success = await paymentService.shareQR(qrData);
     if (!success) {
-      toast({
-        title: 'Thông báo',
-        description: 'Trình duyệt không hỗ trợ chia sẻ',
-      });
+      toast.info('Trình duyệt không hỗ trợ chia sẻ');
     }
   };
 
@@ -109,10 +99,7 @@ export default function BankQRPayment({
     if (!qrData?.deeplink) return;
 
     paymentService.openBankApp(qrData.deeplink);
-    toast({
-      title: 'Đang mở ứng dụng',
-      description: 'Chuyển hướng đến ứng dụng ngân hàng...',
-    });
+    toast.info('Chuyển hướng đến ứng dụng ngân hàng...');
   };
 
   const simulatePaymentSuccess = () => {
@@ -162,10 +149,7 @@ export default function BankQRPayment({
         amount={qrData.amount}
         bankName={qrData.bankName}
         onDownloadReceipt={() => {
-          toast({
-            title: 'Thông báo',
-            description: 'Tính năng tải biên lai đang được phát triển',
-          });
+          toast.info('Tính năng tải biên lai đang được phát triển');
         }}
         onShare={() => {
           paymentService.shareQR(qrData);
@@ -183,20 +167,17 @@ export default function BankQRPayment({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Thanh toán QR</CardTitle>
-            <Badge 
-              variant={paymentStatus === 'success' ? 'default' : 'secondary'}
-              className={paymentStatus === 'success' ? 'bg-green-500' : ''}
-            >
+            <Badge variant="secondary">
               {paymentStatus === 'pending' && (
                 <>
                   <Clock className="h-3 w-3 mr-1" />
                   Chờ thanh toán
                 </>
               )}
-              {paymentStatus === 'success' && (
+              {paymentStatus === 'failed' && (
                 <>
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Thành công
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Thất bại
                 </>
               )}
             </Badge>

@@ -11,24 +11,24 @@ function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        // 2 minutes - shorter stale time for faster perceived updates
-        staleTime: 2 * 60 * 1000,
+        // 5 minutes - increased for better caching and fewer API calls
+        staleTime: 5 * 60 * 1000,
         // 30 minutes - keep unused data in cache
         gcTime: 30 * 60 * 1000,
-        // Disable retry to prevent duplicate requests
-        retry: false,
+        // Retry once for better resilience
+        retry: 1,
         // Don't refetch on window focus (reduces API calls)
         refetchOnWindowFocus: false,
-        // Only refetch on reconnect if data is stale
-        refetchOnReconnect: false,
+        // Refetch on reconnect for fresh data after network recovery
+        refetchOnReconnect: 'always',
         // Use previous data while fetching new data (prevents loading flicker)
         placeholderData: (previousData: unknown) => previousData,
-        // Use online mode for immediate fetching (faster than offlineFirst)
+        // Use online mode for immediate fetching
         networkMode: 'online',
       },
       mutations: {
         retry: 0,
-        // Use online mode for mutations too
+        // Use online mode for mutations
         networkMode: 'online',
       },
     },

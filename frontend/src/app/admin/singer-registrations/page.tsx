@@ -108,7 +108,7 @@ export default function SingerRegistrationsPage() {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      page: key !== 'page' ? 1 : value // Reset to page 1 when changing filters
+      page: key !== 'page' ? 1 : Number(value) // Reset to page 1 when changing filters
     }));
   };
 

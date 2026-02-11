@@ -39,13 +39,14 @@ interface SearchParams {
   page?: string;
 }
 
-// Extended Tour type for the listing page
-interface TourListItem extends Tour {
+// Extended Tour type for the listing page (omit nextSchedule and redefine)
+interface TourListItem extends Omit<Tour, 'nextSchedule'> {
   branch: { id: number; name: string } | null;
   nextSchedule: {
     id: number;
     startDate: string;
     price: number;
+    availableSlots?: number;
   } | null;
 }
 

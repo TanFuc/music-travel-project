@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { formatDateTime } from '@/lib/utils';
-import Link from 'next/link';
+import { Link } from '@/components/common/Link';
 import {
   BarChart3,
   Users,

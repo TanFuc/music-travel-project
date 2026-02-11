@@ -20,12 +20,13 @@ interface ShowCardProps {
   slug: string;
   thumbnailUrl?: string;
   performTime: string;
+  status?: string;
   stage: {
     name: string;
-    location: { name: string } | string;
+    location?: { name: string } | string;
   };
   minPrice: number | null;
-  availableTickets: number;
+  availableTickets?: number;
   badges?: ('HOT' | 'VIP' | 'NEW' | 'SOLD_OUT' | 'SOON')[];
   artists?: {
     name: string;
@@ -74,7 +75,7 @@ export const ShowCard = React.memo(function ShowCard({
 
   // Memoize derived values
   const isSoldOut = useMemo(() => badges.includes('SOLD_OUT'), [badges]);
-  const isLowStock = useMemo(() => availableTickets > 0 && availableTickets < 20, [availableTickets]);
+  const isLowStock = useMemo(() => (availableTickets ?? 0) > 0 && (availableTickets ?? 0) < 20, [availableTickets]);
 
   const locationName = useMemo(() =>
     typeof stage.location === 'string'

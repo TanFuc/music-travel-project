@@ -8,9 +8,11 @@ import { WebVitals } from '@/components/common/WebVitals';
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+  weight: ['400', '500', '600', '700'], // Reduced from 9 weights to 4 for faster loading
   variable: '--font-be-vietnam',
   display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'arial'],
 });
 
 export const metadata: Metadata = {

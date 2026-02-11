@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
 import { Ticket as TicketIcon, Music, QrCode } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,8 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { TicketVerificationModal } from '@/components/admin/TicketVerificationModal';
 import { usePageTitle } from '@/hooks/usePageTitle';
+
+// Dynamic import for heavy modal - only loads when opened
+const TicketVerificationModal = dynamic(
+  () => import('@/components/admin/TicketVerificationModal').then(mod => ({ default: mod.TicketVerificationModal })),
+  { loading: () => null, ssr: false }
+);
 
 interface Ticket {
     id: number;

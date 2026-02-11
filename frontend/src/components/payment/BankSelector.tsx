@@ -35,11 +35,7 @@ export default function BankSelector({
       const banksData = await paymentService.getSupportedBanks();
       setBanks(banksData);
     } catch (error) {
-      toast({
-        title: 'Lỗi',
-        description: 'Không thể tải danh sách ngân hàng',
-        variant: 'destructive',
-      });
+      toast.error('Không thể tải danh sách ngân hàng');
     } finally {
       setLoading(false);
     }

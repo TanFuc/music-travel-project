@@ -191,7 +191,51 @@ export interface PaginatedData<T> {
 // API Service Functions
 // ============================================
 
+// Admin Types
+export interface DashboardStats {
+  users: { total: number; newThisMonth: number };
+  shows: { total: number; upcoming: number };
+  tours: { total: number; activeSchedules: number };
+  bookings: { total: number; pendingCount: number; totalRevenue: number; revenueThisMonth: number };
+}
+
+export interface BookingItem {
+  id: number;
+  itemType: string;
+  quantity: number;
+  originalPrice: number;
+  ticket?: { id: number; show?: { id: number; title: string } };
+  tourSchedule?: { id: number; tour?: { id: number; title: string } };
+}
+
+export interface RecentBooking {
+  id: number;
+  bookingCode: string;
+  user: { fullName: string; phoneNumber: string };
+  totalAmount: number;
+  finalAmount: number;
+  status: string;
+  paymentStatus: string;
+  createdAt: string;
+  items: BookingItem[];
+}
+
 export const serverAPI = {
+  // Admin Dashboard
+  admin: {
+    getDashboardStats: () =>
+      fetchServer<DashboardStats>('/admin/dashboard', {
+        revalidate: 60, // 1 minute cache
+        tags: ['admin-stats'],
+      }),
+
+    getRecentBookings: (limit = 10) =>
+      fetchServer<{ items: RecentBooking[] }>(`/admin/recent-bookings?limit=${limit}`, {
+        revalidate: 30, // 30 seconds cache
+        tags: ['admin-bookings'],
+      }),
+  },
+
   // Banners
   banners: {
     getHomeBanners: () =>

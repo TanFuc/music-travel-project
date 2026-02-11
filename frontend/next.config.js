@@ -41,7 +41,12 @@ const nextConfig = {
       '@radix-ui/react-avatar',
       '@radix-ui/react-toast',
       '@radix-ui/react-separator',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-switch',
       '@tanstack/react-query',
+      'framer-motion',
+      'date-fns',
     ],
     // Optimize CSS
     optimizeCss: true,
@@ -57,6 +62,9 @@ const nextConfig = {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
     },
+    'date-fns': {
+      transform: 'date-fns/{{member}}',
+    },
   },
 
   // Compiler optimizations (not supported by Turbopack yet)
@@ -64,10 +72,76 @@ const nextConfig = {
     ? {}
     : {
       compiler: {
-        // Remove console.log in production
-        removeConsole: process.env.NODE_ENV === 'production',
+        // Remove console.log in production (keep error and warn)
+        removeConsole: process.env.NODE_ENV === 'production' ? {
+          exclude: ['error', 'warn'],
+        } : false,
       },
     }),
+
+  // Webpack optimizations for better code splitting
+  webpack: (config, { dev, isServer }) => {
+    // Production optimizations for client-side bundle
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: 'deterministic',
+        runtimeChunk: 'single',
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // React/Next.js framework
+            framework: {
+              name: 'framework',
+              test: /[\\/]node_modules[\\/](react|react-dom|next|scheduler)[\\/]/,
+              priority: 40,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
+            // UI libraries (Radix UI, Framer Motion, Lucide)
+            ui: {
+              name: 'ui',
+              test: /[\\/]node_modules[\\/](@radix-ui|framer-motion|lucide-react)[\\/]/,
+              priority: 30,
+              reuseExistingChunk: true,
+            },
+            // Heavy libraries (Konva, QR, Chart) - lazy loaded
+            heavy: {
+              name: 'heavy',
+              test: /[\\/]node_modules[\\/](konva|react-konva|qrcode|chart\.js|react-chartjs-2)[\\/]/,
+              priority: 25,
+              reuseExistingChunk: true,
+            },
+            // Form libraries (React Hook Form, Zod)
+            forms: {
+              name: 'forms',
+              test: /[\\/]node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/,
+              priority: 22,
+              reuseExistingChunk: true,
+            },
+            // Common vendor code
+            vendor: {
+              name: 'vendor',
+              test: /[\\/]node_modules[\\/]/,
+              priority: 20,
+              reuseExistingChunk: true,
+            },
+            // Common app code used in multiple places
+            common: {
+              name: 'common',
+              minChunks: 2,
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
+          },
+        },
+      };
+    }
+    return config;
+  },
 
   // API rewrites
   async rewrites() {

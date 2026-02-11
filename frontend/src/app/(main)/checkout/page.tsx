@@ -17,8 +17,14 @@ import { useAuthStore } from '@/stores/auth.store';
 import { get, post } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import PaymentQRModal from '@/components/payment/PaymentQRModal';
+import dynamic from 'next/dynamic';
 import { PaymentMethodConfig, paymentMethodConfigService } from '@/services/payment-method-config.service';
+
+// Dynamic import for heavy QR modal - only loads when opened
+const PaymentQRModal = dynamic(
+  () => import('@/components/payment/PaymentQRModal'),
+  { ssr: false }
+);
 
 const PAYMENT_METHOD_INFO: Record<string, { description: string; icon: any }> = {
   BANK_QR: { description: 'Thanh toán bằng mã QR', icon: QrCode },
@@ -848,8 +854,6 @@ export default function CheckoutPage() {
 
       {/* QR Payment Modal */}
       <PaymentQRModal
-        isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
         isOpen={isQRModalOpen}
         onClose={() => setIsQRModalOpen(false)}
         defaultAmount={finalTotalAmount}
