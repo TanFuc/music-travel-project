@@ -8,31 +8,39 @@ datasource db {
 }
 
 model User {
-  id                        Int                  @id @default(autoincrement())
-  phoneNumber               String               @unique @map("phone_number") @db.VarChar(15)
-  passwordHash              String               @map("password_hash") @db.VarChar(255)
-  fullName                  String               @map("full_name") @db.VarChar(100)
-  email                     String?              @db.VarChar(100)
-  avatarUrl                 String?              @map("avatar_url") @db.VarChar(500)
-  role                      UserRole             @default(USER)
+  id                        Int                   @id @default(autoincrement())
+  phoneNumber               String                @unique @map("phone_number") @db.VarChar(15)
+  passwordHash              String                @map("password_hash") @db.VarChar(255)
+  fullName                  String                @map("full_name") @db.VarChar(100)
+  email                     String?               @db.VarChar(100)
+  avatarUrl                 String?               @map("avatar_url") @db.VarChar(500)
+  role                      UserRole              @default(USER)
+  referralCode              String?               @unique @map("referral_code") @db.VarChar(20)
+  isCollaborator            Boolean               @default(false) @map("is_collaborator")
+  referredByCode            String?               @map("referred_by_code") @db.VarChar(20)
   settings                  Json?
-  isActive                  Boolean              @default(true) @map("is_active")
-  createdAt                 DateTime             @default(now()) @map("created_at")
-  updatedAt                 DateTime             @updatedAt @map("updated_at")
-  deletedAt                 DateTime?            @map("deleted_at")
+  isActive                  Boolean               @default(true) @map("is_active")
+  createdAt                 DateTime              @default(now()) @map("created_at")
+  updatedAt                 DateTime              @updatedAt @map("updated_at")
+  deletedAt                 DateTime?             @map("deleted_at")
   bookings                  Booking[]
   carts                     Cart[]
   notifications             Notification[]
   reviews                   Review[]
-  activityLogs              ShowActivityLog[]    @relation("ActivityActor")
-  ticketVerificationsHolder TicketVerification[] @relation("TicketHolder")
-  ticketVerificationsStaff  TicketVerification[] @relation("VerifiedByStaff")
+  activityLogs              ShowActivityLog[]     @relation("ActivityActor")
+  ticketVerificationsHolder TicketVerification[]  @relation("TicketHolder")
+  ticketVerificationsStaff  TicketVerification[]  @relation("VerifiedByStaff")
   wallet                    UserWallet?
   wishlists                 Wishlist[]
   singerRegistrations       SingerRegistration[]
+  ownedVouchers             Voucher[]             @relation("VoucherOwner")
+  withdrawalRequests        WithdrawalRequest[]
+  complaints                Complaint[]
+  auditLogs                 AuditLog[]
 
   @@index([phoneNumber])
   @@index([email])
+  @@index([referralCode])
   @@map("users")
 }
 
@@ -244,6 +252,7 @@ model Ticket {
   physicalSeatId      Int?                 @map("physical_seat_id")
   status              TicketStatus         @default(AVAILABLE)
   lockedAt            DateTime?            @map("locked_at")
+  suspendedAt         DateTime?            @map("suspended_at")
   holderUserId        Int?                 @map("holder_user_id")
   bookingId           Int?                 @map("booking_id")
   isCheckedIn         Boolean              @default(false) @map("is_checked_in")
@@ -372,8 +381,11 @@ model Voucher {
   isActive          Boolean             @default(true) @map("is_active")
   createdAt         DateTime            @default(now()) @map("created_at")
   createdBy         Int?                @map("created_by")
+  ownerId           Int?                @map("owner_id")
+  owner             User?               @relation("VoucherOwner", fields: [ownerId], references: [id])
   bookings          Booking[]
 
+  @@index([ownerId])
   @@map("vouchers")
 }
 
@@ -602,15 +614,25 @@ model Notification {
 model AuditLog {
   id          BigInt   @id @default(autoincrement())
   userId      Int?     @map("user_id")
-  action      String?  @db.VarChar(50)
+  action      String   @db.VarChar(50)
+  entity      String   @db.VarChar(50)
+  entityId    String?  @map("entity_id") @db.VarChar(100)
   targetTable String?  @map("target_table") @db.VarChar(50)
   targetId    Int?     @map("target_id")
   oldValue    Json?    @map("old_value")
   newValue    Json?    @map("new_value")
   ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  userAgent   String?  @map("user_agent") @db.VarChar(500)
+  module      String?  @db.VarChar(50)
   createdAt   DateTime @default(now()) @map("created_at")
+  user        User?    @relation(fields: [userId], references: [id])
 
   @@index([targetTable, targetId])
+  @@index([entity, entityId])
+  @@index([action])
+  @@index([userId])
+  @@index([module])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 
@@ -758,6 +780,7 @@ enum UserRole {
   ADMIN
   STAFF
   PARTNER
+  COLLABORATOR
 }
 
 enum WalletStatus {
@@ -770,6 +793,8 @@ enum WalletTransactionType {
   PAYMENT
   REFUND
   WITHDRAW
+  COMMISSION
+  WITHDRAWAL
 }
 
 enum MediaType {
@@ -802,6 +827,7 @@ enum TicketStatus {
   SOLD
   USED
   CANCELLED
+  SUSPENDED
 }
 
 enum TourScheduleStatus {
@@ -1054,4 +1080,94 @@ model ContactChannel {
   @@index([isActive])
   @@index([displayOrder])
   @@map("contact_channels")
+}
+
+// Collaborator Content for CTV information page
+model CollaboratorContent {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(200)
+  content   String   @db.Text
+  bannerUrl String?  @map("banner_url") @db.VarChar(500)
+  benefits  Json?
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedBy Int?     @map("updated_by")
+
+  @@map("collaborator_content")
+}
+
+// Withdrawal requests from collaborators
+model WithdrawalRequest {
+  id            Int                     @id @default(autoincrement())
+  userId        Int                     @map("user_id")
+  amount        Decimal                 @db.Decimal(15, 2)
+  bankName      String                  @map("bank_name") @db.VarChar(100)
+  accountNumber String                  @map("account_number") @db.VarChar(30)
+  accountHolder String                  @map("account_holder") @db.VarChar(100)
+  status        WithdrawalRequestStatus @default(PENDING)
+  adminNote     String?                 @map("admin_note") @db.Text
+  processedBy   Int?                    @map("processed_by")
+  processedAt   DateTime?               @map("processed_at")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+  user          User                    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("withdrawal_requests")
+}
+
+// FAQ for smart support
+model SupportQuestion {
+  id           Int      @id @default(autoincrement())
+  question     String   @db.VarChar(500)
+  answer       String   @db.Text
+  category     String   @db.VarChar(50)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdBy    Int?     @map("created_by")
+  updatedBy    Int?     @map("updated_by")
+
+  @@index([category])
+  @@index([isActive])
+  @@index([displayOrder])
+  @@map("support_questions")
+}
+
+// Customer complaints
+model Complaint {
+  id          Int             @id @default(autoincrement())
+  userId      Int?            @map("user_id")
+  orderId     Int?            @map("order_id")
+  content     String          @db.Text
+  status      ComplaintStatus @default(NEW)
+  adminReply  String?         @map("admin_reply") @db.Text
+  repliedBy   Int?            @map("replied_by")
+  repliedAt   DateTime?       @map("replied_at")
+  guestName   String?         @map("guest_name") @db.VarChar(100)
+  guestEmail  String?         @map("guest_email") @db.VarChar(100)
+  guestPhone  String?         @map("guest_phone") @db.VarChar(20)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  user        User?           @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("complaints")
+}
+
+enum WithdrawalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ComplaintStatus {
+  NEW
+  PROCESSING
+  RESOLVED
 }

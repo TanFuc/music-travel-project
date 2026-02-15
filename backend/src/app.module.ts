@@ -32,6 +32,9 @@ import { SingerPackagesModule } from './modules/singer-packages/singer-packages.
 import { ContactChannelsModule } from './modules/contact-channels/contact-channels.module';
 import { PaymentMethodConfigsModule } from './modules/payment-method-configs/payment-method-configs.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { CollaboratorModule } from './modules/collaborator/collaborator.module';
+import { SmartSupportModule } from './modules/smart-support/smart-support.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { EnhancedLoggerService } from './common/services/enhanced-logger.service';
 import { CommonModule } from './common/common.module';
@@ -96,6 +99,9 @@ import cloudinaryConfig from './config/cloudinary.config';
     ContactChannelsModule,
     PaymentMethodConfigsModule,
     WishlistModule,
+    AuditModule,
+    CollaboratorModule,
+    SmartSupportModule,
   ],
   providers: [EnhancedLoggerService],
   exports: [EnhancedLoggerService],

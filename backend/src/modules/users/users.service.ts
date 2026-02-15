@@ -11,6 +11,7 @@ interface CreateUserData {
   passwordHash: string;
   fullName: string;
   email?: string;
+  referredByCode?: string;
 }
 
 @Injectable()
@@ -20,14 +21,24 @@ export class UsersService {
     private readonly cache: CacheService,
   ) {}
 
+  // Generate a unique referral code
+  private generateReferralCode(userId: number, phoneNumber: string): string {
+    const prefix = phoneNumber.slice(-4).toUpperCase();
+    const suffix = userId.toString(36).toUpperCase().padStart(4, '0');
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `${prefix}${random}${suffix}`;
+  }
+
   async create(data: CreateUserData): Promise<User> {
-    return this.prisma.user.create({
+    // Create user first
+    const user = await this.prisma.user.create({
       data: {
         phoneNumber: data.phoneNumber,
         passwordHash: data.passwordHash,
         fullName: data.fullName,
         email: data.email,
         role: UserRole.USER,
+        referredByCode: data.referredByCode,
         wallet: {
           create: {
             balance: 0,
@@ -37,6 +48,25 @@ export class UsersService {
       },
       include: {
         wallet: true,
+      },
+    });
+
+    // Generate and update referral code
+    const referralCode = this.generateReferralCode(user.id, user.phoneNumber);
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { referralCode },
+      include: { wallet: true },
+    });
+
+    return updatedUser;
+  }
+
+  async findByReferralCode(referralCode: string): Promise<User | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        referralCode,
+        deletedAt: null,
       },
     });
   }
