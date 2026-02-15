@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import FloatingContactButtons from '@/components/common/FloatingContactButtons';
+import SmartSupportWidget from '@/components/common/SmartSupportWidget';
 
 // Loading skeleton for page content
 function PageSkeleton() {
@@ -32,6 +33,7 @@ export default function MainLayout({
       </main>
       <Footer />
       <FloatingContactButtons />
+      <SmartSupportWidget />
     </div>
   );
 }
