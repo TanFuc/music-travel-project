@@ -162,6 +162,19 @@ export function Header() {
               </Link>
             ))}
 
+            {/* Collaborator Link */}
+            <Link
+              href={isAuthenticated && user?.isCollaborator ? '/collaborator/dashboard' : '/collaborator/register'}
+              className={cn(
+                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                pathname?.startsWith('/collaborator')
+                  ? 'text-brand-600 bg-brand-50'
+                  : 'text-gray-600 hover:text-brand-600 hover:bg-brand-50'
+              )}
+            >
+              {isAuthenticated && user?.isCollaborator ? 'Dashboard CTV' : 'Đăng ký CTV'}
+            </Link>
+
             {/* Location Dropdown */}
             <div className="relative">
               <button
@@ -350,6 +363,20 @@ export function Header() {
                   {link.label}
                 </Link>
               ))}
+
+              {/* Collaborator Link Mobile */}
+              <Link
+                href={isAuthenticated && user?.isCollaborator ? '/collaborator/dashboard' : '/collaborator/register'}
+                className={cn(
+                  'flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition-all active:scale-[0.98]',
+                  pathname?.startsWith('/collaborator')
+                    ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/20'
+                    : 'text-gray-700 hover:bg-brand-50 hover:text-brand-600'
+                )}
+                onClick={closeMobileMenu}
+              >
+                {isAuthenticated && user?.isCollaborator ? 'Dashboard CTV' : 'Đăng ký CTV'}
+              </Link>
 
               {/* Mobile Location List */}
               <div className="mt-4 pt-4 border-t border-brand-50">
