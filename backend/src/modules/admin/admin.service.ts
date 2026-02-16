@@ -9,7 +9,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-  ) {}
+  ) { }
 
   async getDashboardStats() {
     const now = new Date();
@@ -146,13 +146,13 @@ export class AdminService {
     const skip = (page - 1) * limit;
     const where = search
       ? {
-          deletedAt: null,
-          OR: [
-            { fullName: { contains: search, mode: 'insensitive' as const } },
-            { phoneNumber: { contains: search } },
-            { email: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
+        deletedAt: null,
+        OR: [
+          { fullName: { contains: search, mode: 'insensitive' as const } },
+          { phoneNumber: { contains: search } },
+          { email: { contains: search, mode: 'insensitive' as const } },
+        ],
+      }
       : { deletedAt: null };
 
     const [items, total] = await Promise.all([
@@ -1146,6 +1146,9 @@ export class AdminService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          owner: { select: { id: true, fullName: true, referralCode: true, phoneNumber: true } },
+        },
       }),
       this.prisma.voucher.count(),
     ]);
@@ -1226,7 +1229,12 @@ export class AdminService {
   // VOUCHERS CRUD
   // ============================================================================
   async getVoucherById(id: number) {
-    const voucher = await this.prisma.voucher.findUnique({ where: { id } });
+    const voucher = await this.prisma.voucher.findUnique({
+      where: { id },
+      include: {
+        owner: { select: { id: true, fullName: true, phoneNumber: true, referralCode: true } },
+      },
+    });
     if (!voucher) throw new Error('Voucher not found');
     return voucher;
   }
@@ -1326,6 +1334,11 @@ export class AdminService {
             status: true,
             payTime: true,
             createdAt: true,
+          },
+        },
+        voucher: {
+          include: {
+            owner: { select: { id: true, fullName: true, referralCode: true, phoneNumber: true } },
           },
         },
       },

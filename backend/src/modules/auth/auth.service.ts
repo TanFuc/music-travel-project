@@ -25,6 +25,8 @@ export interface AuthResponse extends TokenResponse {
     fullName: string;
     email: string | null;
     role: string;
+    isCollaborator: boolean;
+    referralCode?: string | null;
   };
 }
 
@@ -95,6 +97,8 @@ export class AuthService {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        isCollaborator: user.isCollaborator,
+        referralCode: user.referralCode,
       },
     };
   }
@@ -163,6 +167,8 @@ export class AuthService {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        isCollaborator: user.isCollaborator,
+        referralCode: user.referralCode,
       },
     };
   }

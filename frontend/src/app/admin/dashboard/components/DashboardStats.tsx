@@ -12,19 +12,19 @@ interface DashboardStatsProps {
 const STAT_CARDS_CONFIG = [
   {
     key: 'users',
-    title: 'Nguoi dung',
+    title: 'Người dùng',
     icon: Users,
     gradient: 'from-blue-500 to-blue-600',
     getValue: (s: DashboardStatsType) => s.users.total,
-    getSubtitle: (s: DashboardStatsType) => `+${s.users.newThisMonth} thang nay`,
+    getSubtitle: (s: DashboardStatsType) => `+${s.users.newThisMonth} tháng này`,
   },
   {
     key: 'shows',
-    title: 'Show dien',
+    title: 'Show diễn',
     icon: Music,
     gradient: 'from-violet-500 to-purple-600',
     getValue: (s: DashboardStatsType) => s.shows.total,
-    getSubtitle: (s: DashboardStatsType) => `${s.shows.upcoming} sap dien`,
+    getSubtitle: (s: DashboardStatsType) => `${s.shows.upcoming} sắp diễn`,
   },
   {
     key: 'tours',
@@ -32,15 +32,15 @@ const STAT_CARDS_CONFIG = [
     icon: MapPin,
     gradient: 'from-emerald-500 to-teal-600',
     getValue: (s: DashboardStatsType) => s.tours.total,
-    getSubtitle: (s: DashboardStatsType) => `${s.tours.activeSchedules} dang mo`,
+    getSubtitle: (s: DashboardStatsType) => `${s.tours.activeSchedules} đang mở`,
   },
   {
     key: 'bookings',
-    title: 'Don hang',
+    title: 'Đơn hàng',
     icon: ShoppingBag,
     gradient: 'from-orange-500 to-amber-600',
     getValue: (s: DashboardStatsType) => s.bookings.total,
-    getSubtitle: (s: DashboardStatsType) => `${s.bookings.pendingCount} cho xu ly`,
+    getSubtitle: (s: DashboardStatsType) => `${s.bookings.pendingCount} chờ xử lý`,
   },
 ] as const;
 

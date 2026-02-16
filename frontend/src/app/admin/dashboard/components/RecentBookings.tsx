@@ -13,17 +13,17 @@ interface RecentBookingsProps {
 
 const STATUS_CONFIG = {
   booking: {
-    PENDING: { label: 'Cho xu ly', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-    CONFIRMED: { label: 'Da xac nhan', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    CANCELLED: { label: 'Da huy', color: 'bg-red-100 text-red-700 border-red-200' },
-    COMPLETED: { label: 'Hoan thanh', color: 'bg-sky-100 text-sky-700 border-sky-200' },
-    MANUAL_REVIEW: { label: 'Cho duyet', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    PENDING: { label: 'Chờ xử lý', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    CONFIRMED: { label: 'Đã xác nhận', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    CANCELLED: { label: 'Đã hủy', color: 'bg-red-100 text-red-700 border-red-200' },
+    COMPLETED: { label: 'Hoàn thành', color: 'bg-sky-100 text-sky-700 border-sky-200' },
+    MANUAL_REVIEW: { label: 'Chờ duyệt', color: 'bg-purple-100 text-purple-700 border-purple-200' },
   },
   payment: {
-    PAID: { label: 'Da TT', color: 'bg-emerald-500 text-white' },
-    UNPAID: { label: 'Chua TT', color: 'bg-amber-500 text-white' },
-    REFUNDED: { label: 'Hoan tien', color: 'bg-sky-500 text-white' },
-    PARTIALLY_REFUNDED: { label: 'Hoan 1 phan', color: 'bg-indigo-500 text-white' },
+    PAID: { label: 'Đã TT', color: 'bg-emerald-500 text-white' },
+    UNPAID: { label: 'Chưa TT', color: 'bg-amber-500 text-white' },
+    REFUNDED: { label: 'Hoàn tiền', color: 'bg-sky-500 text-white' },
+    PARTIALLY_REFUNDED: { label: 'Hoàn 1 phần', color: 'bg-indigo-500 text-white' },
   },
 } as const;
 
@@ -43,10 +43,10 @@ function getRelativeTime(dateString: string): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'Vua xong';
-  if (diffMins < 60) return `${diffMins} phut truoc`;
-  if (diffHours < 24) return `${diffHours} gio truoc`;
-  if (diffDays < 7) return `${diffDays} ngay truoc`;
+  if (diffMins < 1) return 'Vừa xong';
+  if (diffMins < 60) return `${diffMins} phút trước`;
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  if (diffDays < 7) return `${diffDays} ngày trước`;
   return formatDateTime(dateString);
 }
 
@@ -58,7 +58,7 @@ function getBookingItemsSummary(items: BookingItem[]): { text: string; count: nu
 
   if (showItems.length > 0) {
     const titles = [...new Set(showItems.map((item) => item.ticket?.show?.title).filter(Boolean))];
-    parts.push(titles.length === 1 ? titles[0]! : `${showItems.length} ve show`);
+    parts.push(titles.length === 1 ? titles[0]! : `${showItems.length} vé show`);
   }
 
   if (tourItems.length > 0) {
@@ -66,7 +66,7 @@ function getBookingItemsSummary(items: BookingItem[]): { text: string; count: nu
     parts.push(titles.length === 1 ? titles[0]! : `${tourItems.length} tour`);
   }
 
-  return { text: parts.join(' - ') || 'Khong co san pham', count: totalCount };
+  return { text: parts.join(' - ') || 'Không có sản phẩm', count: totalCount };
 }
 
 interface BookingCardProps {
@@ -86,11 +86,10 @@ const BookingCard = memo(function BookingCard({ booking }: BookingCardProps) {
     <div className="group relative bg-white rounded-xl border border-slate-200 hover:border-brand-300 hover:shadow-lg transition-all duration-300 overflow-hidden hover:scale-[1.01] transform">
       {/* Status accent bar */}
       <div
-        className={`absolute left-0 top-0 bottom-0 w-1.5 ${
-          booking.paymentStatus === 'PAID'
+        className={`absolute left-0 top-0 bottom-0 w-1.5 ${booking.paymentStatus === 'PAID'
             ? 'bg-gradient-to-b from-emerald-500 to-emerald-600'
             : 'bg-gradient-to-b from-amber-500 to-amber-600'
-        }`}
+          }`}
       />
 
       <div className="pl-5 sm:pl-6 pr-4 sm:pr-6 py-4 sm:py-5">
@@ -138,7 +137,7 @@ const BookingCard = memo(function BookingCard({ booking }: BookingCardProps) {
                 {itemsSummary}
               </p>
               <p className="text-xs text-slate-500 mt-1 font-medium">
-                <span className="text-slate-900">{totalQuantity}</span> san pham
+                <span className="text-slate-900">{totalQuantity}</span> sản phẩm
               </p>
             </div>
           </div>
@@ -169,12 +168,12 @@ export const RecentBookings = memo(function RecentBookings({ bookings }: RecentB
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center flex-shrink-0">
                 <ShoppingBag className="h-5 w-5 text-white" />
               </div>
-              <span>Don hang gan day</span>
+              <span>Đơn hàng gần đây</span>
             </CardTitle>
-            <CardDescription className="mt-2 text-sm">10 don hang moi nhat tren he thong</CardDescription>
+            <CardDescription className="mt-2 text-sm">10 đơn hàng mới nhất trên hệ thống</CardDescription>
           </div>
           <Button variant="outline" size="sm" className="gap-1.5 text-xs font-medium hidden sm:flex whitespace-nowrap bg-white hover:bg-slate-50 border-slate-300 rounded-lg">
-            Xem tat ca
+            Xem tất cả
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -185,8 +184,8 @@ export const RecentBookings = memo(function RecentBookings({ bookings }: RecentB
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
               <ShoppingBag className="h-10 w-10 text-slate-400" />
             </div>
-            <p className="text-slate-600 font-medium">Chua co don hang nao</p>
-            <p className="text-slate-500 text-sm mt-1">Cac don hang se xuat hien tai day</p>
+            <p className="text-slate-600 font-medium">Chưa có đơn hàng nào</p>
+            <p className="text-slate-500 text-sm mt-1">Các đơn hàng sẽ xuất hiện tại đây</p>
           </div>
         ) : (
           <div className="space-y-4">

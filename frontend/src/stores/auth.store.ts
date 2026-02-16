@@ -8,6 +8,8 @@ interface User {
   fullName: string;
   email: string | null;
   role: string;
+  isCollaborator?: boolean;
+  referralCode?: string | null;
 }
 
 interface AuthState {
@@ -41,20 +43,20 @@ export const useAuthStore = create<AuthState>()(
 
       login: (user, accessToken, refreshToken) => {
         const currentUser = useAuthStore.getState().user;
-        
+
         // If logging in as a different user, clear the cart
         if (typeof window !== 'undefined' && currentUser && currentUser.id !== user.id) {
           localStorage.removeItem('cart-storage');
           window.dispatchEvent(new Event('cart-clear'));
         }
-        
+
         set({
           user,
           accessToken,
           refreshToken,
           isAuthenticated: true,
         });
-        
+
         // Set userId in cart to track cart ownership
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('cart-set-user', { detail: { userId: user.id } }));
@@ -69,7 +71,7 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
         });
-        
+
         // Clear cart when logging out to prevent data leakage between users
         if (typeof window !== 'undefined') {
           localStorage.removeItem('cart-storage');

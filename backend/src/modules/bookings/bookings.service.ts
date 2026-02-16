@@ -11,6 +11,8 @@ import { CacheKeys, CACHE_TTL } from '@/cache/cache-keys.constant';
 import { EnhancedLoggerService } from '@/common/services/enhanced-logger.service';
 import { LogMethod } from '@/common/decorators/log-method.decorator';
 
+import { CollaboratorService } from '../collaborator/collaborator.service';
+
 @Injectable()
 export class BookingsService {
   private readonly logger: EnhancedLoggerService;
@@ -20,6 +22,7 @@ export class BookingsService {
     private readonly ticketsService: TicketsService,
     private readonly toursService: ToursService,
     private readonly cache: CacheService,
+    private readonly collaboratorService: CollaboratorService,
     private readonly enhancedLoggerService: EnhancedLoggerService,
   ) {
     this.logger = this.enhancedLoggerService.createChild(BookingsService.name);
@@ -235,8 +238,9 @@ export class BookingsService {
 
     // Calculate discount
     let discountAmount = new Decimal(0);
+    let voucher: any = null;
     if (createBookingDto.voucherCode) {
-      const voucher = await this.prisma.voucher.findFirst({
+      voucher = await this.prisma.voucher.findFirst({
         where: {
           code: createBookingDto.voucherCode,
           isActive: true,
@@ -250,6 +254,13 @@ export class BookingsService {
           throw new BadRequestException({
             code: ERROR_CODES.PAYMENT_003,
             message: 'Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã giảm giá.',
+          });
+        }
+
+        if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) {
+          throw new BadRequestException({
+            code: ERROR_CODES.PAYMENT_003,
+            message: 'Mã giảm giá đã hết lượt sử dụng.',
           });
         }
 
@@ -289,8 +300,17 @@ export class BookingsService {
           paymentStatus: PaymentStatus.UNPAID,
           note: createBookingDto.note,
           metadata: createBookingDto.metadata as object | undefined,
+          voucherId: voucher?.id,
         },
       });
+
+      if (voucher) {
+        await tx.voucher.update({
+          where: { id: voucher.id },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
+
 
       // Create ticket booking items and assign seats
       for (const item of ticketItems) {
@@ -469,6 +489,15 @@ export class BookingsService {
       newStatus: updated.status,
       finalAmount: updated.finalAmount.toString(),
     });
+
+    // Process commission for collaborator if applicable
+    this.logger.debug('Processing commission for collaborator', { bookingId: booking.id });
+    try {
+      await this.collaboratorService.processCommission(booking.id);
+    } catch (error) {
+      this.logger.error('Failed to process commission', error.stack, { bookingId: booking.id });
+      // Don't fail the request, just log error
+    }
 
     return updated;
   }

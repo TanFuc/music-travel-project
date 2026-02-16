@@ -40,7 +40,7 @@ export interface CommissionDetail {
 
 @Injectable()
 export class CollaboratorService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // Get collaborator content (public info page)
   async getContent() {
@@ -395,9 +395,30 @@ export class CollaboratorService {
       throw new BadRequestException('Bạn đã là cộng tác viên');
     }
 
+    let referralCode = user.referralCode;
+    if (!referralCode) {
+      // Generate referral code: first 3 letters of name + random numbers
+      const prefix = user.fullName
+        ? user.fullName
+          .split(' ')
+          .map((word) => word[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 3)
+        : 'CTV';
+      const random = Math.floor(1000 + Math.random() * 9000);
+      referralCode = `${prefix}${random}`;
+
+      // Ensure uniqueness (simple retry)
+      const existing = await this.prisma.user.findUnique({ where: { referralCode } });
+      if (existing) {
+        referralCode = `${prefix}${Math.floor(1000 + Math.random() * 9000)}`;
+      }
+    }
+
     return this.prisma.user.update({
       where: { id: userId },
-      data: { isCollaborator: true },
+      data: { isCollaborator: true, referralCode },
     });
   }
 

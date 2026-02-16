@@ -31,6 +31,8 @@ import {
   History,
   Save,
   Mic,
+  Copy,
+  Users,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,6 +69,8 @@ interface UserProfile {
   email: string | null;
   avatarUrl: string | null;
   role: string;
+  isCollaborator: boolean;
+  referralCode: string | null;
   createdAt: string;
 }
 
@@ -576,6 +580,58 @@ export default function ProfilePage() {
                   </div>
                 </Link>
               )}
+            </div>
+
+            {/* Referral & Collaborator Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5 shadow-sm">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-blue-900 mb-1">Chương trình Cộng Tác Viên</h3>
+                  <p className="text-blue-700 text-sm">
+                    {profile?.isCollaborator
+                      ? 'Bạn là Cộng tác viên! Chia sẻ và kiếm thu nhập ngay.'
+                      : 'Trở thành đối tác và nhận hoa hồng hấp dẫn.'}
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                  {profile?.referralCode && (
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-blue-200 w-full sm:w-auto">
+                      <span className="text-xs text-slate-500 font-medium uppercase min-w-max">Mã giới thiệu:</span>
+                      <code className="text-sm font-bold text-blue-700 font-mono">{profile.referralCode}</code>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 ml-1 text-slate-400 hover:text-blue-600"
+                        onClick={() => {
+                          if (profile.referralCode) {
+                            navigator.clipboard.writeText(profile.referralCode);
+                            toast.success('Đã sao chép mã giới thiệu');
+                          }
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+
+                  <Link href={profile?.isCollaborator ? "/collaborator/dashboard" : "/collaborator/register"}>
+                    <Button className={`${profile?.isCollaborator ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'} whitespace-nowrap w-full sm:w-auto`}>
+                      {profile?.isCollaborator ? (
+                        <>
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Dashboard CTV
+                        </>
+                      ) : (
+                        <>
+                          <Users className="h-4 w-4 mr-2" />
+                          Đăng ký CTV
+                        </>
+                      )}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </div>
 
             {/* Recent Bookings Preview */}

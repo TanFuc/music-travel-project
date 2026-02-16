@@ -24,7 +24,7 @@ import { Public } from '@/common/decorators/public.decorator';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) {}
+  constructor(private readonly ticketsService: TicketsService) { }
 
   @Public()
   @Get('tiers')
@@ -50,6 +50,16 @@ export class TicketsController {
     @Param('ticketId', ParseIntPipe) ticketId: number,
   ) {
     return this.ticketsService.releaseTicket(user.sub, ticketId);
+  }
+
+  @Post(':ticketId/suspend')
+  @ApiOperation({ summary: 'Suspend a ticket (> 48h before show)' })
+  @ApiResponse({ status: 200, description: 'Ticket suspended successfully' })
+  async suspendTicket(
+    @CurrentUser() user: JwtPayload,
+    @Param('ticketId', ParseIntPipe) ticketId: number,
+  ) {
+    return this.ticketsService.suspendTicket(user.sub, ticketId);
   }
 
   @Delete('lock')
@@ -131,5 +141,19 @@ export class TicketsController {
   @ApiResponse({ status: 200, description: 'Check-in statistics retrieved' })
   async getCheckInStats(@Param('showId', ParseIntPipe) showId: number) {
     return this.ticketsService.getCheckInStats(showId);
+  }
+
+
+
+  @Post(':id/reactivate')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Reactivate a suspended ticket (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Ticket reactivated successfully' })
+  async reactivateTicket(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) ticketId: number,
+  ) {
+    return this.ticketsService.reactivateTicket(ticketId, user.sub);
   }
 }

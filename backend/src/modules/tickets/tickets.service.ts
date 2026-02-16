@@ -1005,10 +1005,123 @@ export class TicketsService {
     }
   }
 
+
+  /**
+   * Suspend a ticket (User requests suspension > 48h before show)
+   */
+  @LogMethod({ logParams: true, sanitize: true })
+  async suspendTicket(userId: number, ticketId: number) {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: {
+        show: true,
+        booking: true,
+      },
+    });
+
+    if (!ticket) {
+      throw new NotFoundException({
+        code: ERROR_CODES.TICKET_001,
+        message: 'Vé không tồn tại.',
+      });
+    }
+
+    if (ticket.holderUserId !== userId && ticket.booking?.userId !== userId) {
+      throw new BadRequestException({
+        code: ERROR_CODES.AUTH_003,
+        message: 'Bạn không có quyền thao tác trên vé này.',
+      });
+    }
+
+    if (ticket.status === TicketStatus.SUSPENDED) {
+      throw new BadRequestException('Vé đã bị ngưng hoạt động.');
+    }
+
+    if (ticket.status !== TicketStatus.SOLD) {
+      throw new BadRequestException('Chỉ có thể ngưng vé đã thanh toán.');
+    }
+
+    if (!ticket.show || !ticket.show.performTime) {
+      throw new BadRequestException('Thông tin show không hợp lệ.');
+    }
+
+    const now = new Date();
+    const showTime = new Date(ticket.show.performTime);
+    const diffMs = showTime.getTime() - now.getTime();
+    const hoursDiff = diffMs / (1000 * 60 * 60);
+
+    if (hoursDiff < 48) {
+      throw new BadRequestException(
+        'Chỉ có thể ngưng vé trước giờ diễn ít nhất 48 giờ.',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.ticket.update({
+        where: { id: ticketId },
+        data: {
+          status: TicketStatus.SUSPENDED,
+          suspendedAt: new Date(),
+          physicalSeatId: null,
+          lockedAt: null,
+          holderUserId: null,
+        },
+      });
+    });
+
+    if (ticket.showId) {
+      await this.invalidateShowTicketCache(ticket.showId);
+    }
+    await this.cache.del(CacheKeys.userBookings(userId));
+
+    this.logger.log(`Ticket ${ticketId} suspended by user ${userId}`);
+
+    return {
+      success: true,
+      message: 'Đã ngưng vé thành công. Vé này hiện ở trạng thái chờ và có thể sử dụng cho show khác.',
+    };
+  }
+
   /**
    * Create HMAC-SHA256 signature
    */
   private createHmacSignature(data: string): string {
     return crypto.createHmac('sha256', this.qrSecret).update(data).digest('hex');
+  }
+  /**
+   * Reactivate a suspended ticket (Admin only)
+   */
+  @LogMethod({ logParams: true, sanitize: true })
+  async reactivateTicket(ticketId: number, adminId: number) {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: { booking: true },
+    });
+
+    if (!ticket) {
+      throw new NotFoundException({
+        code: ERROR_CODES.TICKET_001,
+        message: 'Vé không tồn tại.',
+      });
+    }
+
+    if (ticket.status !== TicketStatus.SUSPENDED) {
+      throw new BadRequestException('Vé không ở trạng thái tạm ngưng.');
+    }
+
+    await this.prisma.ticket.update({
+      where: { id: ticketId },
+      data: {
+        status: TicketStatus.AVAILABLE,
+        suspendedAt: null,
+      },
+    });
+
+    this.logger.log(`Ticket ${ticketId} reactivated by admin ${adminId}`);
+
+    return {
+      success: true,
+      message: 'Đã kích hoạt lại vé thành công. Trạng thái hiện tại: Sẵn sàng.',
+    };
   }
 }

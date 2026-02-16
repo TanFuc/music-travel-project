@@ -84,6 +84,16 @@ interface Booking {
     payTime?: string;
     createdAt: string;
   }>;
+  voucher?: {
+    code: string;
+    discountValue: number;
+    owner?: {
+      id: number;
+      fullName: string;
+      referralCode: string;
+      phoneNumber: string;
+    };
+  };
 }
 
 interface BookingFilters {
@@ -643,6 +653,18 @@ export default function AdminBookingsPage() {
                       <div className="flex justify-between text-green-600">
                         <span>Giảm giá</span>
                         <span>-{formatCurrency(bookingDetails.discountAmount)}</span>
+                      </div>
+                    )}
+                    {bookingDetails.voucher && (
+                      <div className="flex justify-between text-xs text-neutral-500 pt-1 border-t border-dashed">
+                        <span>Mã giảm giá:</span>
+                        <span className="font-mono">{bookingDetails.voucher.code}</span>
+                      </div>
+                    )}
+                    {bookingDetails.voucher?.owner && (
+                      <div className="flex justify-between text-xs text-blue-600 pt-1">
+                        <span>CTV giới thiệu:</span>
+                        <span className="font-medium">{bookingDetails.voucher.owner.fullName} ({bookingDetails.voucher.owner.referralCode})</span>
                       </div>
                     )}
                     <div className="flex justify-between font-semibold text-base pt-1.5 border-t">

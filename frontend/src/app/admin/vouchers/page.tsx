@@ -21,6 +21,10 @@ interface Voucher {
     isActive: boolean;
     startDate: string | null;
     endDate: string | null;
+    owner?: {
+        fullName: string;
+        referralCode: string;
+    };
 }
 
 export default function AdminVouchersPage() {
@@ -69,6 +73,11 @@ export default function AdminVouchersPage() {
                                                 <Badge variant={voucher.isActive ? 'success' : 'destructive'} className="text-xs">
                                                     {voucher.isActive ? 'Hoạt động' : 'Tạm dừng'}
                                                 </Badge>
+                                                {voucher.owner && (
+                                                    <div className="mt-1 text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-full w-fit">
+                                                        CTV: {voucher.owner.fullName} ({voucher.owner.referralCode})
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="text-left sm:text-right">
                                                 <p className="text-xl sm:text-2xl font-bold text-brand-600">
