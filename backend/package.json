@@ -19,6 +19,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typecheck": "tsc --noEmit",
+    "clean:ast": "node scripts/clean-code.cjs src",
+    "clean:code": "pnpm run clean:ast && pnpm run lint && pnpm run format",
+    "quality": "pnpm run clean:code && pnpm run typecheck",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
@@ -26,7 +30,7 @@
     "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:seed:tiers": "ts-node prisma/seed-tiers.ts",
     "prisma:seed:singer-packages": "ts-node prisma/seed-singer-packages.ts",
-    "validate": "pnpm lint && pnpm build && pnpm test"
+    "validate": "pnpm run quality && pnpm build && pnpm test"
   },
   "dependencies": {
     "@fastify/compress": "^7.0.0",
