@@ -9,6 +9,11 @@
     "start": "next start",
     "lint": "next lint --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "clean:ast": "node scripts/clean-code.cjs src",
+    "clean:code": "pnpm run clean:ast && pnpm run lint && pnpm run format",
+    "quality": "pnpm run clean:code && pnpm run typecheck && pnpm run build",
+    "test:seo": "node --test tests/seo/jsonld.snapshot.test.mjs",
     "test": "jest",
     "validate": "pnpm lint && pnpm build",
     "analyze": "cross-env ANALYZE=true next build"

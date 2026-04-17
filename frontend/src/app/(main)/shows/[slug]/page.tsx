@@ -16,11 +16,20 @@ import { ShowDetailServer, ShowHero } from '@/components/server/ShowDetailServer
 import { TicketBookingClient } from '@/components/client/TicketBookingClient';
 import { ShowDetailSkeleton } from '@/components/server/Skeletons';
 import { fetchServer } from '@/lib/api-server';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { stripHtml, toAbsoluteUrl } from '@/lib/seo';
+import {
+  buildLanguageAlternates,
+  buildShowOffers,
+  buildShowTicketProductsJsonLd,
+} from '@/lib/seo-jsonld';
 
 // ISR - Revalidate every 5 minutes
 export const revalidate = 300;
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://musictravel.vn').replace(/\/$/, '');
+const enableEnglishHreflang = process.env.NEXT_PUBLIC_ENABLE_EN_HREFLANG === 'true';
 
 // Types
 interface Artist {
@@ -110,21 +119,24 @@ export async function generateMetadata({
       show.metaDescription ||
       show.description?.replace(/<[^>]*>/g, '').substring(0, 160) ||
       `Tham gia ${show.title} tại ${show.stage.name}`;
+    const ogImageUrl = `${SITE_URL}/shows/${params.slug}/opengraph-image`;
 
     return {
       title,
       description,
+      alternates: buildLanguageAlternates(`/shows/${params.slug}`, SITE_URL, enableEnglishHreflang),
       openGraph: {
         title: show.title,
         description,
         type: 'website',
-        images: show.thumbnailUrl ? [show.thumbnailUrl] : [],
+        url: `${SITE_URL}/shows/${params.slug}`,
+        images: [ogImageUrl, ...(show.thumbnailUrl ? [show.thumbnailUrl] : [])],
       },
       twitter: {
         card: 'summary_large_image',
         title: show.title,
         description,
-        images: show.thumbnailUrl ? [show.thumbnailUrl] : [],
+        images: [ogImageUrl, ...(show.thumbnailUrl ? [show.thumbnailUrl] : [])],
       },
     };
   } catch (error) {
@@ -160,9 +172,65 @@ export default async function ShowDetailPage({
   }
 
   const isBookable = show.status === 'UPCOMING' || show.status === 'ONGOING';
+  const minPrice = show.ticketClasses.length
+    ? Math.min(...show.ticketClasses.map((ticketClass) => ticketClass.price))
+    : undefined;
+
+  const maxPrice = show.ticketClasses.length
+    ? Math.max(...show.ticketClasses.map((ticketClass) => ticketClass.price))
+    : undefined;
+
+  const showSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'MusicEvent',
+    name: show.title,
+    description: stripHtml(show.metaDescription || show.description),
+    image: show.thumbnailUrl ? [show.thumbnailUrl] : undefined,
+    eventStatus: show.status === 'UPCOMING'
+      ? 'https://schema.org/EventScheduled'
+      : show.status === 'ONGOING'
+        ? 'https://schema.org/EventInProgress'
+        : 'https://schema.org/EventCompleted',
+    startDate: show.performTime,
+    location: {
+      '@type': 'Place',
+      name: show.stage.name,
+      address: show.stage.address || show.stage.location.name,
+    },
+    performer: show.artists.map((artist) => ({
+      '@type': 'Person',
+      name: artist.name,
+    })),
+    offers: minPrice !== undefined
+      ? [
+        {
+          '@type': 'AggregateOffer',
+          priceCurrency: 'VND',
+          lowPrice: minPrice,
+          highPrice: maxPrice,
+          offerCount: show.ticketClasses.length,
+          availability: isBookable
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/SoldOut',
+          url: toAbsoluteUrl(`/shows/${params.slug}`),
+        },
+        ...buildShowOffers(show.ticketClasses, isBookable, params.slug),
+      ]
+      : undefined,
+    organizer: {
+      '@type': 'Organization',
+      name: 'Mai Cho Hanh Tinh Xanh',
+      url: SITE_URL,
+    },
+    url: toAbsoluteUrl(`/shows/${params.slug}`),
+  };
+
+  const showTicketProductsSchema = buildShowTicketProductsJsonLd(show, params.slug, isBookable);
 
   return (
     <div className="bg-neutral-50 min-h-screen pb-20">
+      <JsonLd data={showSchema} />
+      <JsonLd data={showTicketProductsSchema} />
       <Suspense fallback={<ShowDetailSkeleton />}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Hero Banner */}

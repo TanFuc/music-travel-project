@@ -17,11 +17,20 @@ import { TourSchedulesClient } from '@/components/client/TourSchedulesClient';
 import { TourBookingClient } from '@/components/client/TourBookingClient';
 import { TourDetailSkeleton } from '@/components/server/Skeletons';
 import { fetchServer } from '@/lib/api-server';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { stripHtml, toAbsoluteUrl } from '@/lib/seo';
+import {
+  buildLanguageAlternates,
+  buildTourOffers,
+  buildTourScheduleProductsJsonLd,
+} from '@/lib/seo-jsonld';
 
 // ISR - Revalidate every 5 minutes
 export const revalidate = 300;
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://musictravel.vn').replace(/\/$/, '');
+const enableEnglishHreflang = process.env.NEXT_PUBLIC_ENABLE_EN_HREFLANG === 'true';
 
 // Types
 interface TourSchedule {
@@ -97,6 +106,7 @@ export async function generateMetadata({
       tour.metaDescription ||
       tour.description?.replace(/<[^>]*>/g, '').substring(0, 160) ||
       `Khám phá ${tour.title} cùng Music Travel`;
+    const ogImageUrl = `${SITE_URL}/tours/${params.slug}/opengraph-image`;
 
     const thumbnailUrl = (tour.properties?.thumbnailUrl ||
       tour.properties?.bannerUrl) as string;
@@ -104,17 +114,19 @@ export async function generateMetadata({
     return {
       title,
       description,
+      alternates: buildLanguageAlternates(`/tours/${params.slug}`, SITE_URL, enableEnglishHreflang),
       openGraph: {
         title: tour.title,
         description,
         type: 'website',
-        images: thumbnailUrl ? [thumbnailUrl] : [],
+        url: `${SITE_URL}/tours/${params.slug}`,
+        images: [ogImageUrl, ...(thumbnailUrl ? [thumbnailUrl] : [])],
       },
       twitter: {
         card: 'summary_large_image',
         title: tour.title,
         description,
-        images: thumbnailUrl ? [thumbnailUrl] : [],
+        images: [ogImageUrl, ...(thumbnailUrl ? [thumbnailUrl] : [])],
       },
     };
   } catch (error) {
@@ -149,8 +161,64 @@ export default async function TourDetailPage({
     notFound();
   }
 
+  const nextSchedule = tour.schedules
+    .filter((schedule) => schedule.status === 'OPEN')
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
+
+  const thumbnailUrl = (tour.properties?.thumbnailUrl || tour.properties?.bannerUrl) as string | undefined;
+  const hasSlots = nextSchedule ? nextSchedule.capacity - nextSchedule.bookedCount > 0 : false;
+  const itineraryItems: Array<{ '@type': 'ListItem'; position: number; item: { '@type': 'Place'; name: string } }> = [];
+
+  if (tour.departureLoc) {
+    itineraryItems.push({
+      '@type': 'ListItem',
+      position: 1,
+      item: {
+        '@type': 'Place',
+        name: tour.departureLoc.name,
+      },
+    });
+  }
+
+  if (tour.destinationLoc) {
+    itineraryItems.push({
+      '@type': 'ListItem',
+      position: itineraryItems.length + 1,
+      item: {
+        '@type': 'Place',
+        name: tour.destinationLoc.name,
+      },
+    });
+  }
+
+  const tourSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'TouristTrip',
+    name: tour.title,
+    description: stripHtml(tour.metaDescription || tour.description),
+    image: thumbnailUrl ? [thumbnailUrl] : undefined,
+    itinerary: {
+      '@type': 'ItemList',
+      itemListElement: itineraryItems,
+    },
+    touristType: 'Leisure',
+    offers: nextSchedule
+      ? buildTourOffers([...tour.schedules], params.slug)
+      : undefined,
+    provider: {
+      '@type': 'Organization',
+      name: 'Mai Cho Hanh Tinh Xanh',
+      url: SITE_URL,
+    },
+    url: toAbsoluteUrl(`/tours/${params.slug}`),
+  };
+
+  const tourScheduleProductsSchema = buildTourScheduleProductsJsonLd(tour, params.slug);
+
   return (
     <div className="bg-neutral-50 min-h-screen pb-20">
+      <JsonLd data={tourSchema} />
+      <JsonLd data={tourScheduleProductsSchema} />
       <Suspense fallback={<TourDetailSkeleton />}>
         {/* Hero Banner - rendered by TourDetailServer */}
         <TourDetailServer tour={tour} />

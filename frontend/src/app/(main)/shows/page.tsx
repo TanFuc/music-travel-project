@@ -15,7 +15,9 @@ import { ShowFiltersClient } from '@/components/client/ShowFiltersClient';
 import { ShowsGridServer } from '@/components/server/ShowsGridServer';
 import { PaginationClient } from '@/components/client/PaginationClient';
 import { ShowsGridSkeleton } from '@/components/server/Skeletons';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { serverAPI, type Show, type Location, type PaginatedData } from '@/lib/api-server';
+import { buildShowListingItemListJsonLd } from '@/lib/seo-jsonld';
 
 // ISR - Revalidate every 3 minutes
 export const revalidate = 180;
@@ -82,9 +84,11 @@ export default async function ShowsPage({
 }) {
   const data = await fetchShowsData(searchParams);
   const currentPage = parseInt(searchParams.page || '1', 10);
+  const showsListSchema = buildShowListingItemListJsonLd(data.shows, currentPage, 12);
 
   return (
     <div className="min-h-screen bg-[#FDFDFF]">
+      <JsonLd data={showsListSchema} />
       {/* Hero Header */}
       <section className="relative pt-24 pb-16 overflow-hidden">
         <div className="absolute top-0 right-0 w-1/4 h-full bg-brand-500/5 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />

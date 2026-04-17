@@ -15,7 +15,9 @@ import { TourFiltersClient } from '@/components/client/TourFiltersClient';
 import { ToursGridServer } from '@/components/server/ToursGridServer';
 import { PaginationClient } from '@/components/client/PaginationClient';
 import { ToursGridSkeleton } from '@/components/server/Skeletons';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { serverAPI, type Tour, type Location, type PaginatedData } from '@/lib/api-server';
+import { buildTourListingItemListJsonLd } from '@/lib/seo-jsonld';
 
 // ISR - Revalidate every 3 minutes
 export const revalidate = 180;
@@ -104,9 +106,11 @@ export default async function ToursPage({
 }) {
   const data = await fetchToursData(searchParams);
   const currentPage = parseInt(searchParams.page || '1', 10);
+  const toursListSchema = buildTourListingItemListJsonLd(data.tours, currentPage, 12);
 
   return (
     <div className="min-h-screen bg-[#FDFDFF]">
+      <JsonLd data={toursListSchema} />
       {/* Hero Header */}
       <section className="relative pt-24 pb-16 overflow-hidden">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/3" />

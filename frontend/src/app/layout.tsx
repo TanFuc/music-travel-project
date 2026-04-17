@@ -5,6 +5,34 @@ import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { Toaster as HotToaster } from 'react-hot-toast';
 import { WebVitals } from '@/components/common/WebVitals';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { PublicBreadcrumbJsonLd } from '@/components/seo/PublicBreadcrumbJsonLd';
+import { buildLanguageAlternates } from '@/lib/seo-jsonld';
+
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://musictravel.vn').replace(/\/$/, '');
+const enableEnglishHreflang = process.env.NEXT_PUBLIC_ENABLE_EN_HREFLANG === 'true';
+
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Mai Cho Hanh Tinh Xanh',
+  alternateName: 'Music Travel',
+  url: SITE_URL,
+  logo: `${SITE_URL}/apple-touch-icon.png`,
+  description: 'Nen tang ket noi am nhac va du lich, lan toa thong diep song xanh va phat trien ben vung.',
+};
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Music Travel',
+  url: SITE_URL,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${SITE_URL}/search?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
@@ -16,12 +44,14 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Mãi Cho Hành Tinh Xanh - Music Travel',
     template: '%s | Mãi Cho Hành Tinh Xanh',
   },
   description: 'Sân khấu âm nhạc vì hành tinh xanh. Đặt vé show nhạc và tour du lịch hàng đầu Việt Nam.',
   keywords: ['music', 'travel', 'concert', 'tour', 'vietnam', 'hành tinh xanh', 'eco', 'green planet', 'show nhạc'],
+  alternates: buildLanguageAlternates('/', SITE_URL, enableEnglishHreflang),
 
   // Favicon configuration - generated from logo via favicon.io
   icons: {
@@ -39,7 +69,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Mãi Cho Hành Tinh Xanh - Music Travel',
     description: 'Sân khấu âm nhạc vì hành tinh xanh. Đặt vé show nhạc và tour du lịch hàng đầu Việt Nam.',
-    url: 'https://musictravel.vn',
+    url: SITE_URL,
     siteName: 'Mãi Cho Hành Tinh Xanh',
     locale: 'vi_VN',
     type: 'website',
@@ -81,6 +111,8 @@ export default function RootLayout({
       </head>
       <body className={`${beVietnamPro.variable} font-sans antialiased bg-white text-gray-900`}>
         <Providers>
+          <JsonLd data={[organizationSchema, websiteSchema]} />
+          <PublicBreadcrumbJsonLd />
           <WebVitals />
           {children}
           <Toaster position="top-right" richColors />

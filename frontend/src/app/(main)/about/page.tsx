@@ -9,6 +9,7 @@
  */
 
 import { Metadata } from 'next';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -31,9 +32,41 @@ export const metadata: Metadata = {
   description: 'Tìm hiểu về dự án chuỗi đêm nhạc "Mãi Cho Hành Tinh Xanh" - nơi kết nối âm nhạc, môi trường và cộng đồng',
 };
 
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Du an Mai Cho Hanh Tinh Xanh la gi?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Day la chuoi dem nhac cong dong ket hop thong diep bao ve moi truong, du lich xanh va ket noi cong dong ben vung.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Ai co the tham gia chuong trinh?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Khach tham du, nghe si, doanh nghiep, cong dong dia phuong va nhung nguoi quan tam den song xanh deu co the tham gia.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Gia tri noi bat cua du an la gi?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Du an ket noi am nhac, van hoa va trach nhiem xa hoi, dong thoi tao tac dong tich cuc den nhan thuc moi truong va du lich ben vung.',
+      },
+    },
+  ],
+};
+
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <JsonLd data={faqSchema} />
       {/* Hero Section */}
       <section className="relative py-20 px-4">
         <div className="container mx-auto max-w-4xl">
