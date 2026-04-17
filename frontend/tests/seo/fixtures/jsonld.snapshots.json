@@ -1,0 +1,24 @@
+{
+  "alternatesDefault": {
+    "canonical": "/shows/sample-show",
+    "languages": {
+      "vi-VN": "https://musictravel.vn/shows/sample-show",
+      "x-default": "https://musictravel.vn/shows/sample-show"
+    }
+  },
+  "alternatesEnglish": {
+    "canonical": "/shows/sample-show",
+    "languages": {
+      "vi-VN": "https://musictravel.vn/shows/sample-show",
+      "x-default": "https://musictravel.vn/shows/sample-show",
+      "en-US": "https://musictravel.vn/en/shows/sample-show"
+    }
+  },
+  "showOffersCount": 2,
+  "tourOffersCount": 2,
+  "showProductsType": "ItemList",
+  "tourProductsType": "ItemList",
+  "showListingType": "ItemList",
+  "tourListingType": "ItemList",
+  "listingFirstPosition": 13
+}

@@ -1,0 +1,18 @@
+pre-commit:
+  parallel: true
+  commands:
+    frontend-clean:
+      root: frontend
+      run: pnpm run clean:code
+    frontend-typecheck:
+      root: frontend
+      run: pnpm run typecheck
+    frontend-seo-snapshot:
+      root: frontend
+      run: node --test tests/seo/jsonld.snapshot.test.mjs
+    backend-clean:
+      root: backend
+      run: pnpm run clean:code
+    backend-typecheck:
+      root: backend
+      run: pnpm run typecheck
