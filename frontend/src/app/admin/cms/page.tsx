@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,7 +8,6 @@ import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get, post, del } from '@/lib/api';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { toast } from 'sonner';
-
 interface SystemConfig {
   id: number;
   key: string;
@@ -18,18 +16,15 @@ interface SystemConfig {
   description: string;
   updatedAt: string;
 }
-
 export default function AdminCmsPage() {
   usePageTitle();
   const queryClient = useQueryClient();
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [formData, setFormData] = useState({ key: '', value: '', type: 'TEXT', description: '' });
-
   const { data: configs, isLoading } = useQuery({
     queryKey: ['system-configs'],
     queryFn: () => get<SystemConfig[]>('/system-configs'),
   });
-
   const upsertMutation = useMutation({
     mutationFn: (data: any) => post('/system-configs', data),
     onSuccess: () => {
@@ -40,7 +35,6 @@ export default function AdminCmsPage() {
     },
     onError: () => toast.error('Lỗi khi lưu cấu hình'),
   });
-
   const deleteMutation = useMutation({
     mutationFn: (key: string) => del(`/system-configs/${key}`),
     onSuccess: () => {
@@ -48,17 +42,18 @@ export default function AdminCmsPage() {
       toast.success('Xóa cấu hình thành công!');
     },
   });
-
   const handleEdit = (config: SystemConfig) => {
     setEditingKey(config.key);
     setFormData({
       key: config.key,
-      value: typeof config.value === 'object' ? JSON.stringify(config.value, null, 2) : String(config.value),
+      value:
+        typeof config.value === 'object'
+          ? JSON.stringify(config.value, null, 2)
+          : String(config.value),
       type: config.type,
       description: config.description || '',
     });
   };
-
   const handleSave = () => {
     if (!formData.key || !formData.value) return toast.error('Key và Value không được để trống');
     try {
@@ -68,29 +63,32 @@ export default function AdminCmsPage() {
       toast.error('Value không đúng định dạng JSON hợp lệ');
     }
   };
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Dynamic CMS (Hệ thống không Hardcode)</h1>
-        <p className="text-neutral-600 mt-1">Quản lý toàn bộ text, banner, nội dung hiển thị trên website</p>
+        <p className="mt-1 text-neutral-600">
+          Quản lý toàn bộ text, banner, nội dung hiển thị trên website
+        </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>{editingKey ? 'Cập nhật cấu hình' : 'Thêm cấu hình mới'}</CardTitle>
-          <CardDescription>Key phải viết hoa và dùng dấu gạch dưới (VD: HERO_BANNER, FOOTER_LINKS)</CardDescription>
+          <CardDescription>
+            Key phải viết hoa và dùng dấu gạch dưới (VD: HERO_BANNER, FOOTER_LINKS)
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input 
-              placeholder="Key (vd: HOME_TITLE)" 
-              value={formData.key} 
-              onChange={(e) => setFormData({ ...formData, key: e.target.value })} 
-              disabled={!!editingKey} 
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Input
+              placeholder="Key (vd: HOME_TITLE)"
+              value={formData.key}
+              onChange={(e) => setFormData({ ...formData, key: e.target.value })}
+              disabled={!!editingKey}
             />
-            <select 
-              value={formData.type} 
+            <select
+              value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
@@ -100,10 +98,10 @@ export default function AdminCmsPage() {
               <option value="IMAGE">Đường dẫn ảnh (IMAGE)</option>
             </select>
           </div>
-          <Input 
-            placeholder="Mô tả cấu hình..." 
-            value={formData.description} 
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+          <Input
+            placeholder="Mô tả cấu hình..."
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
           <textarea
             className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
@@ -116,7 +114,13 @@ export default function AdminCmsPage() {
               {upsertMutation.isPending ? 'Đang lưu...' : 'Lưu lại'}
             </Button>
             {editingKey && (
-              <Button variant="outline" onClick={() => { setEditingKey(null); setFormData({ key: '', value: '', type: 'TEXT', description: '' }); }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingKey(null);
+                  setFormData({ key: '', value: '', type: 'TEXT', description: '' });
+                }}
+              >
                 Hủy
               </Button>
             )}
@@ -132,21 +136,39 @@ export default function AdminCmsPage() {
           {isLoading ? (
             <Skeleton className="h-40 w-full" />
           ) : !configs?.length ? (
-            <p className="text-center text-neutral-500 py-10">Chưa có dữ liệu. Web sẽ hiển thị fallback default.</p>
+            <p className="py-10 text-center text-neutral-500">
+              Chưa có dữ liệu. Web sẽ hiển thị fallback default.
+            </p>
           ) : (
             <div className="space-y-4">
               {configs.map((c) => (
-                <div key={c.key} className="border rounded-md p-4 flex justify-between items-start gap-4">
-                  <div className="overflow-hidden flex-1">
-                    <h3 className="font-bold text-lg text-primary">{c.key} <span className="text-xs bg-neutral-200 text-neutral-700 px-2 rounded-full py-1 ml-2">{c.type}</span></h3>
-                    <p className="text-sm text-neutral-500 mb-2">{c.description}</p>
-                    <pre className="bg-neutral-50 p-2 rounded text-xs truncate">
+                <div
+                  key={c.key}
+                  className="flex items-start justify-between gap-4 rounded-md border p-4"
+                >
+                  <div className="flex-1 overflow-hidden">
+                    <h3 className="text-lg font-bold text-primary">
+                      {c.key}{' '}
+                      <span className="ml-2 rounded-full bg-neutral-200 px-2 py-1 text-xs text-neutral-700">
+                        {c.type}
+                      </span>
+                    </h3>
+                    <p className="mb-2 text-sm text-neutral-500">{c.description}</p>
+                    <pre className="truncate rounded bg-neutral-50 p-2 text-xs">
                       {typeof c.value === 'object' ? JSON.stringify(c.value) : String(c.value)}
                     </pre>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(c)}>Sửa</Button>
-                    <Button variant="destructive" size="sm" onClick={() => deleteMutation.mutate(c.key)}>Xóa</Button>
+                  <div className="flex flex-shrink-0 gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(c)}>
+                      Sửa
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(c.key)}
+                    >
+                      Xóa
+                    </Button>
                   </div>
                 </div>
               ))}
