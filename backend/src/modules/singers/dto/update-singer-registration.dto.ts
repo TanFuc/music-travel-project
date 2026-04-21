@@ -2,7 +2,6 @@ import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { SingerRegistrationStatus } from '@prisma/client';
 import { CreateSingerRegistrationDto } from './create-singer-registration.dto';
-
 export class UpdateSingerRegistrationDto extends PartialType(CreateSingerRegistrationDto) {
   @ApiProperty({
     description: 'Registration status (Admin only)',
@@ -13,7 +12,6 @@ export class UpdateSingerRegistrationDto extends PartialType(CreateSingerRegistr
   @IsOptional()
   @IsEnum(SingerRegistrationStatus)
   status?: SingerRegistrationStatus;
-
   @ApiProperty({ description: 'Admin notes', required: false })
   @IsOptional()
   @IsString()

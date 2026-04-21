@@ -21,13 +21,11 @@ import {
   BankQRConfigSingleResponse,
 } from '../dto/bank-qr-config.dto';
 import { Public } from '../../../common/decorators/public.decorator';
-
 @ApiTags('admin/bank-qr-config')
 @Controller('admin/bank-qr-config')
-@Public() // Remove this in production and add proper authentication
+@Public()
 export class BankQRConfigController {
   constructor(private readonly bankQRConfigService: BankQRConfigService) {}
-
   @Post()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOperation({
@@ -45,7 +43,10 @@ export class BankQRConfigController {
     description: 'Invalid input data or creation failed',
   })
   @ApiConsumes('application/json')
-  async create(@Body() dto: CreateBankQRConfigDto): Promise<BankQRConfigSingleResponse> {
+  async create(
+    @Body()
+    dto: CreateBankQRConfigDto,
+  ): Promise<BankQRConfigSingleResponse> {
     const data = await this.bankQRConfigService.create(dto);
     return {
       success: true,
@@ -53,7 +54,6 @@ export class BankQRConfigController {
       message: 'Bank QR configuration created successfully',
     };
   }
-
   @Get()
   @ApiOperation({
     summary: 'Get all bank QR configurations',
@@ -72,7 +72,6 @@ export class BankQRConfigController {
       message: 'Bank QR configurations retrieved successfully',
     };
   }
-
   @Get('active')
   @ApiOperation({
     summary: 'Get active bank QR configuration',
@@ -89,7 +88,6 @@ export class BankQRConfigController {
   })
   async findActive(): Promise<BankQRConfigSingleResponse> {
     const data = await this.bankQRConfigService.findActive();
-
     if (!data) {
       return {
         success: false,
@@ -97,14 +95,12 @@ export class BankQRConfigController {
         message: 'No active bank QR configuration found',
       };
     }
-
     return {
       success: true,
       data,
       message: 'Active bank QR configuration retrieved successfully',
     };
   }
-
   @Get(':id')
   @ApiOperation({
     summary: 'Get bank QR configuration by ID',
@@ -125,7 +121,10 @@ export class BankQRConfigController {
     status: 404,
     description: 'Bank QR configuration not found',
   })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<BankQRConfigSingleResponse> {
+  async findOne(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ): Promise<BankQRConfigSingleResponse> {
     const data = await this.bankQRConfigService.findOne(id);
     return {
       success: true,
@@ -133,7 +132,6 @@ export class BankQRConfigController {
       message: 'Bank QR configuration retrieved successfully',
     };
   }
-
   @Put(':id')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOperation({
@@ -162,8 +160,10 @@ export class BankQRConfigController {
   })
   @ApiConsumes('application/json')
   async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateBankQRConfigDto,
+    @Param('id', ParseIntPipe)
+    id: number,
+    @Body()
+    dto: UpdateBankQRConfigDto,
   ): Promise<BankQRConfigSingleResponse> {
     const data = await this.bankQRConfigService.update(id, dto);
     return {
@@ -172,7 +172,6 @@ export class BankQRConfigController {
       message: 'Bank QR configuration updated successfully',
     };
   }
-
   @Put(':id/activate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -194,7 +193,10 @@ export class BankQRConfigController {
     status: 404,
     description: 'Bank QR configuration not found',
   })
-  async activate(@Param('id', ParseIntPipe) id: number): Promise<BankQRConfigSingleResponse> {
+  async activate(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ): Promise<BankQRConfigSingleResponse> {
     const data = await this.bankQRConfigService.activate(id);
     return {
       success: true,
@@ -202,7 +204,6 @@ export class BankQRConfigController {
       message: 'Bank QR configuration activated successfully',
     };
   }
-
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
@@ -223,7 +224,10 @@ export class BankQRConfigController {
     status: 404,
     description: 'Bank QR configuration not found',
   })
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async remove(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ): Promise<void> {
     await this.bankQRConfigService.remove(id);
   }
 }

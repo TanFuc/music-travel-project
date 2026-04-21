@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { BookingStatus, PaymentStatus, BookingItemType, TransactionStatus } from '@prisma/client';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -10,13 +10,10 @@ import { CacheService } from '@/cache/cache.service';
 import { CacheKeys, CACHE_TTL } from '@/cache/cache-keys.constant';
 import { EnhancedLoggerService } from '@/common/services/enhanced-logger.service';
 import { LogMethod } from '@/common/decorators/log-method.decorator';
-
 import { CollaboratorService } from '../collaborator/collaborator.service';
-
 @Injectable()
 export class BookingsService {
   private readonly logger: EnhancedLoggerService;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly ticketsService: TicketsService,
@@ -27,7 +24,6 @@ export class BookingsService {
   ) {
     this.logger = this.enhancedLoggerService.createChild(BookingsService.name);
   }
-
   @LogMethod({ logParams: true, sanitize: true })
   async create(userId: number, createBookingDto: CreateBookingDto) {
     this.logger.log('Starting booking creation', {
@@ -38,7 +34,6 @@ export class BookingsService {
       tourItemsCount: createBookingDto.tourItems?.length ?? 0,
       singerPackagesCount: createBookingDto.singerPackages?.length ?? 0,
     });
-
     const hasTickets =
       (createBookingDto.ticketsWithSeats?.length ?? 0) > 0 ||
       (createBookingDto.ticketIds?.length ?? 0) > 0;
@@ -53,15 +48,14 @@ export class BookingsService {
           'Đơn hàng phải có ít nhất một mục: vé (ticketsWithSeats/ticketIds), loại vé (ticketTiers), tour (tourItems), hoặc gói ca sĩ (singerPackages).',
       });
     }
-
     const bookingCode = this.generateBookingCode();
     this.logger.debug('Generated booking code', { bookingCode, userId });
     let totalAmount = new Decimal(0);
-
-    // Validate and calculate ticket prices (new flow with seats)
-    const ticketItems: { ticketId: number; price: Decimal; physicalSeatId?: number }[] = [];
-
-    // Handle new flow: ticketsWithSeats (includes seat selection)
+    const ticketItems: {
+      ticketId: number;
+      price: Decimal;
+      physicalSeatId?: number;
+    }[] = [];
     if (createBookingDto.ticketsWithSeats?.length) {
       const ticketIds = createBookingDto.ticketsWithSeats.map((t) => t.ticketId);
       const tickets = await this.prisma.ticket.findMany({
@@ -75,37 +69,28 @@ export class BookingsService {
           show: true,
         },
       });
-
       if (tickets.length !== ticketIds.length) {
         throw new BadRequestException({
           code: ERROR_CODES.TICKET_002,
           message: getErrorMessage(ERROR_CODES.TICKET_002),
         });
       }
-
-      // Validate and assign seats
       for (const ticketWithSeat of createBookingDto.ticketsWithSeats) {
         const ticket = tickets.find((t) => t.id === ticketWithSeat.ticketId);
         if (!ticket) continue;
-
-        // If seat selection is enabled and seat is provided, validate it
         if (ticket.show?.seatSelectionEnabled && ticketWithSeat.physicalSeatId) {
-          // Check if seat exists and belongs to the stage
           const seat = await this.prisma.physicalSeat.findFirst({
             where: {
               id: ticketWithSeat.physicalSeatId,
               stageId: ticket.show?.stageId,
             },
           });
-
           if (!seat) {
             throw new BadRequestException({
               code: ERROR_CODES.SEAT_001,
               message: 'Chỗ ngồi không tồn tại hoặc không thuộc sân khấu này.',
             });
           }
-
-          // Check if seat is already taken for this show
           const existingTicket = await this.prisma.ticket.findFirst({
             where: {
               showId: ticket.showId,
@@ -114,7 +99,6 @@ export class BookingsService {
               id: { not: ticket.id },
             },
           });
-
           if (existingTicket) {
             throw new BadRequestException({
               code: ERROR_CODES.SEAT_002,
@@ -122,7 +106,6 @@ export class BookingsService {
             });
           }
         }
-
         ticketItems.push({
           ticketId: ticket.id,
           price: (ticket.ticketClass?.price as unknown as Decimal) || new Decimal(0),
@@ -130,9 +113,7 @@ export class BookingsService {
         });
         totalAmount = totalAmount.plus((ticket.ticketClass?.price as unknown as Decimal) || 0);
       }
-    }
-    // Handle old flow: simple ticketIds (backward compatibility)
-    else if (createBookingDto.ticketIds?.length) {
+    } else if (createBookingDto.ticketIds?.length) {
       const tickets = await this.prisma.ticket.findMany({
         where: {
           id: { in: createBookingDto.ticketIds },
@@ -141,14 +122,12 @@ export class BookingsService {
         },
         include: { ticketClass: true },
       });
-
       if (tickets.length !== createBookingDto.ticketIds.length) {
         throw new BadRequestException({
           code: ERROR_CODES.TICKET_002,
           message: getErrorMessage(ERROR_CODES.TICKET_002),
         });
       }
-
       for (const ticket of tickets) {
         ticketItems.push({
           ticketId: ticket.id,
@@ -157,9 +136,11 @@ export class BookingsService {
         totalAmount = totalAmount.plus((ticket.ticketClass?.price as unknown as Decimal) || 0);
       }
     }
-
-    // Validate and calculate tour prices
-    const tourItems: { scheduleId: number; quantity: number; price: Decimal }[] = [];
+    const tourItems: {
+      scheduleId: number;
+      quantity: number;
+      price: Decimal;
+    }[] = [];
     if (createBookingDto.tourItems?.length) {
       for (const item of createBookingDto.tourItems) {
         await this.toursService.checkScheduleAvailability(item.scheduleId, item.quantity);
@@ -177,22 +158,22 @@ export class BookingsService {
         }
       }
     }
-
-    // Validate and calculate ticket tiers (Open Ticket Flow)
-    const tierItems: { tierId: number; quantity: number; price: Decimal }[] = [];
+    const tierItems: {
+      tierId: number;
+      quantity: number;
+      price: Decimal;
+    }[] = [];
     if (createBookingDto.ticketTiers?.length) {
       const tierIds = createBookingDto.ticketTiers.map((t) => t.tierId);
       const tiers = await this.prisma.ticketTier.findMany({
         where: { id: { in: tierIds }, isActive: true },
       });
-
       if (tiers.length !== tierIds.length) {
         throw new BadRequestException({
           code: ERROR_CODES.TICKET_001,
           message: 'Một số loại vé không tồn tại hoặc ngừng hoạt động.',
         });
       }
-
       for (const item of createBookingDto.ticketTiers) {
         const tier = tiers.find((t) => t.id === item.tierId);
         if (tier) {
@@ -206,22 +187,22 @@ export class BookingsService {
         }
       }
     }
-
-    // Validate and calculate singer packages
-    const singerPackageItems: { packageId: string; quantity: number; price: Decimal }[] = [];
+    const singerPackageItems: {
+      packageId: string;
+      quantity: number;
+      price: Decimal;
+    }[] = [];
     if (createBookingDto.singerPackages?.length) {
       const packageIds = createBookingDto.singerPackages.map((p) => p.packageId);
       const packages = await this.prisma.singerPackageTemplate.findMany({
         where: { id: { in: packageIds }, isActive: true },
       });
-
       if (packages.length !== packageIds.length) {
         throw new BadRequestException({
           code: ERROR_CODES.VAL_001,
           message: 'Một số gói ca sĩ không tồn tại hoặc ngừng hoạt động.',
         });
       }
-
       for (const item of createBookingDto.singerPackages) {
         const pkg = packages.find((p) => p.id === item.packageId);
         if (pkg) {
@@ -235,8 +216,6 @@ export class BookingsService {
         }
       }
     }
-
-    // Calculate discount
     let discountAmount = new Decimal(0);
     let voucher: any = null;
     if (createBookingDto.voucherCode) {
@@ -248,7 +227,6 @@ export class BookingsService {
           endDate: { gte: new Date() },
         },
       });
-
       if (voucher) {
         if (voucher.minOrderValue && totalAmount.lessThan(voucher.minOrderValue)) {
           throw new BadRequestException({
@@ -256,28 +234,23 @@ export class BookingsService {
             message: 'Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã giảm giá.',
           });
         }
-
         if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) {
           throw new BadRequestException({
             code: ERROR_CODES.PAYMENT_003,
             message: 'Mã giảm giá đã hết lượt sử dụng.',
           });
         }
-
         if (voucher.discountType === 'PERCENT') {
           discountAmount = totalAmount.mul(voucher.discountValue).div(100);
         } else {
           discountAmount = voucher.discountValue;
         }
-
         if (voucher.maxDiscountAmount && discountAmount.greaterThan(voucher.maxDiscountAmount)) {
           discountAmount = voucher.maxDiscountAmount;
         }
       }
     }
-
     const finalAmount = totalAmount.minus(discountAmount);
-
     this.logger.debug('Calculated booking amounts', {
       userId,
       bookingCode,
@@ -285,9 +258,10 @@ export class BookingsService {
       discountAmount: discountAmount.toString(),
       finalAmount: finalAmount.toString(),
     });
-
-    // Create booking with items and assign seats
-    this.logger.debug('Starting database transaction for booking creation', { userId, bookingCode });
+    this.logger.debug('Starting database transaction for booking creation', {
+      userId,
+      bookingCode,
+    });
     const booking = await this.prisma.$transaction(async (tx) => {
       const newBooking = await tx.booking.create({
         data: {
@@ -303,16 +277,12 @@ export class BookingsService {
           voucherId: voucher?.id,
         },
       });
-
       if (voucher) {
         await tx.voucher.update({
           where: { id: voucher.id },
           data: { usedCount: { increment: 1 } },
         });
       }
-
-
-      // Create ticket booking items and assign seats
       for (const item of ticketItems) {
         await tx.bookingItem.create({
           data: {
@@ -322,8 +292,6 @@ export class BookingsService {
             originalPrice: item.price,
           },
         });
-
-        // Update ticket with physical seat if provided
         if (item.physicalSeatId) {
           await tx.ticket.update({
             where: { id: item.ticketId },
@@ -331,8 +299,6 @@ export class BookingsService {
           });
         }
       }
-
-      // Create tour booking items
       for (const item of tourItems) {
         await tx.bookingItem.create({
           data: {
@@ -346,21 +312,17 @@ export class BookingsService {
           },
         });
       }
-
-      // Create ticket tier booking items
       for (const item of tierItems) {
         await tx.bookingItem.create({
           data: {
             bookingId: newBooking.id,
-            itemType: BookingItemType.SHOW_TICKET, // Or reusing SHOW_TICKET type, but with null ticketId
+            itemType: BookingItemType.SHOW_TICKET,
             ticketTierId: item.tierId,
             quantity: item.quantity,
             originalPrice: item.price,
           },
         });
       }
-
-      // Create singer package booking items
       for (const item of singerPackageItems) {
         await tx.bookingItem.create({
           data: {
@@ -372,15 +334,10 @@ export class BookingsService {
           },
         });
       }
-
       return newBooking;
     });
-
     this.logger.debug('Transaction completed successfully', { userId, bookingCode });
-
-    // Invalidate user bookings cache
     await this.cache.del(CacheKeys.userBookings(userId));
-
     this.logger.log('Booking created successfully', {
       bookingCode: booking.bookingCode,
       userId,
@@ -388,9 +345,9 @@ export class BookingsService {
       discountAmount: booking.discountAmount.toString(),
       finalAmount: booking.finalAmount.toString(),
       status: booking.status,
-      itemCount: ticketItems.length + tourItems.length + tierItems.length + singerPackageItems.length,
+      itemCount:
+        ticketItems.length + tourItems.length + tierItems.length + singerPackageItems.length,
     });
-
     return {
       bookingCode: booking.bookingCode,
       totalAmount: booking.totalAmount,
@@ -400,18 +357,15 @@ export class BookingsService {
       message: 'Đặt hàng thành công. Vui lòng thanh toán để hoàn tất.',
     };
   }
-
   @LogMethod({ logParams: true, sanitize: true })
   async confirmManualPayment(code: string, userId: number) {
     this.logger.log('Manual payment confirmation requested', {
       bookingCode: code,
       userId,
     });
-
     const booking = await this.prisma.booking.findFirst({
       where: { bookingCode: code, userId },
     });
-
     if (!booking) {
       this.logger.warn('Booking not found for manual payment confirmation', {
         bookingCode: code,
@@ -422,8 +376,6 @@ export class BookingsService {
         message: getErrorMessage(ERROR_CODES.BOOKING_001),
       });
     }
-
-    // Allow confirming if Pending or if already Manual Review (idempotent)
     if (
       booking.status !== BookingStatus.PENDING &&
       booking.status !== BookingStatus.MANUAL_REVIEW
@@ -435,53 +387,41 @@ export class BookingsService {
       });
       throw new BadRequestException('Trạng thái đơn hàng không hợp lệ để xác nhận thanh toán.');
     }
-
-    // Idempotent - already confirmed
     if (booking.status === BookingStatus.MANUAL_REVIEW) {
       this.logger.debug('Booking already in manual review status', {
         bookingCode: code,
         userId,
         currentPaymentStatus: booking.paymentStatus,
       });
-
-      // Still need to ensure paymentStatus is PAID
       if (booking.paymentStatus !== PaymentStatus.PAID) {
         this.logger.debug('Updating payment status to PAID for existing MANUAL_REVIEW booking', {
           bookingCode: code,
           userId,
         });
-
         const updated = await this.prisma.booking.update({
           where: { id: booking.id },
           data: {
             paymentStatus: PaymentStatus.PAID,
           },
         });
-
         await this.invalidateBookingCache(code, userId);
-
         return updated;
       }
-
       return booking;
     }
-
     this.logger.debug('Updating booking status to MANUAL_REVIEW', {
       bookingCode: code,
       bookingId: booking.id,
       userId,
     });
-
     const updated = await this.prisma.booking.update({
       where: { id: booking.id },
       data: {
         status: BookingStatus.MANUAL_REVIEW,
-        paymentStatus: PaymentStatus.PAID, // Mark as paid when user confirms
+        paymentStatus: PaymentStatus.PAID,
       },
     });
-
     await this.invalidateBookingCache(code, userId);
-
     this.logger.log('Manual payment confirmed successfully', {
       bookingCode: code,
       bookingId: booking.id,
@@ -489,28 +429,20 @@ export class BookingsService {
       newStatus: updated.status,
       finalAmount: updated.finalAmount.toString(),
     });
-
-    // Process commission for collaborator if applicable
     this.logger.debug('Processing commission for collaborator', { bookingId: booking.id });
     try {
       await this.collaboratorService.processCommission(booking.id);
     } catch (error) {
       this.logger.error('Failed to process commission', error.stack, { bookingId: booking.id });
-      // Don't fail the request, just log error
     }
-
     return updated;
   }
-
   async findByUserId(userId: number) {
     const cacheKey = CacheKeys.userBookings(userId);
-
-    // Try cache first
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
     }
-
     const bookings = await this.prisma.booking.findMany({
       where: { userId },
       include: {
@@ -525,20 +457,13 @@ export class BookingsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-
-    // Cache for 5 minutes
     await this.cache.set(cacheKey, bookings, CACHE_TTL.SHORT);
-
     return bookings;
   }
-
   @LogMethod({ logParams: true, sanitize: true })
   async findByCode(code: string, userId?: number) {
     this.logger.debug('Looking up booking by code', { code, userId });
-
     const cacheKey = CacheKeys.bookingByCode(code);
-
-    // Try cache first (only for read without userId filter)
     if (!userId) {
       const cached = await this.cache.get(cacheKey);
       if (cached) {
@@ -546,7 +471,6 @@ export class BookingsService {
         return cached;
       }
     }
-
     this.logger.debug('Fetching booking from database', { code, userId });
     const booking = await this.prisma.booking.findFirst({
       where: {
@@ -565,7 +489,6 @@ export class BookingsService {
         transactions: true,
       },
     });
-
     if (!booking) {
       this.logger.warn('Booking not found', { code, userId });
       throw new NotFoundException({
@@ -573,21 +496,15 @@ export class BookingsService {
         message: getErrorMessage(ERROR_CODES.BOOKING_001),
       });
     }
-
     this.logger.log('Booking retrieved successfully', {
       code,
       userId: booking.userId,
       status: booking.status,
       finalAmount: booking.finalAmount.toString(),
     });
-
-    // Cache booking for 10 minutes
     await this.cache.set(cacheKey, booking, CACHE_TTL.MEDIUM);
-
-
     return booking;
   }
-
   @LogMethod({ logParams: true, sanitize: true })
   async getBookingDetails(code: string, userId?: number) {
     const booking = await this.prisma.booking.findUnique({
@@ -668,20 +585,13 @@ export class BookingsService {
         },
       },
     });
-
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-
-    // If userId is provided, verify ownership
     if (userId && booking.userId !== userId) {
       throw new NotFoundException('Booking not found');
     }
-
-    // Get payment info from transaction
     const paidTransaction = booking.transactions[0];
-
-    // Helper to get item type label
     const getItemTypeLabel = (itemType: string) => {
       switch (itemType) {
         case 'SHOW_TICKET':
@@ -694,9 +604,7 @@ export class BookingsService {
           return itemType;
       }
     };
-
-    // Helper to get product name
-    const getProductName = (item: typeof booking.items[0]) => {
+    const getProductName = (item: (typeof booking.items)[0]) => {
       if (item.ticket?.show) {
         return item.ticket.show.title;
       }
@@ -708,8 +616,6 @@ export class BookingsService {
       }
       return 'Sản phẩm không xác định';
     };
-
-    // Transform the response to match frontend expectations
     return {
       id: booking.id,
       bookingCode: booking.bookingCode,
@@ -722,7 +628,8 @@ export class BookingsService {
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
       paidAt: paidTransaction?.payTime || null,
-      confirmedAt: booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' ? booking.updatedAt : null,
+      confirmedAt:
+        booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' ? booking.updatedAt : null,
       user: booking.user,
       items: booking.items.map((item) => ({
         id: item.id,
@@ -733,52 +640,58 @@ export class BookingsService {
         quantity: item.quantity,
         unitPrice: Number(item.originalPrice),
         subtotal: Number(item.originalPrice) * item.quantity,
-        show: item.ticket?.show ? {
-          title: item.ticket.show.title,
-          description: item.ticket.show.description,
-          thumbnailUrl: null,
-          startDate: item.ticket.show.performTime,
-          stage: item.ticket.show.stage,
-        } : null,
-        tour: item.tourSchedule?.tour ? {
-          title: item.tourSchedule.tour.title,
-          description: item.tourSchedule.tour.description,
-          duration: item.tourSchedule.tour.duration,
-          thumbnailUrl: null,
-          departureDate: item.tourSchedule.startDate,
-        } : null,
-        singerPackage: item.singerPackage ? {
-          name: item.singerPackage.name,
-          price: Number(item.singerPackage.price),
-          description: item.singerPackage.description,
-          benefits: item.singerPackage.benefits,
-          colorCode: item.singerPackage.colorCode,
-        } : null,
-        ticketClass: item.ticket?.ticketClass ? {
-          name: item.ticket.ticketClass.name,
-          price: Number(item.ticket.ticketClass.price),
-          colorCode: item.ticket.ticketClass.colorCode,
-        } : null,
-        ticketTier: item.ticketTier ? {
-          name: item.ticketTier.name,
-          price: Number(item.ticketTier.price),
-          description: item.ticketTier.description,
-          benefits: item.ticketTier.benefits,
-          colorCode: item.ticketTier.colorCode,
-        } : null,
+        show: item.ticket?.show
+          ? {
+              title: item.ticket.show.title,
+              description: item.ticket.show.description,
+              thumbnailUrl: null,
+              startDate: item.ticket.show.performTime,
+              stage: item.ticket.show.stage,
+            }
+          : null,
+        tour: item.tourSchedule?.tour
+          ? {
+              title: item.tourSchedule.tour.title,
+              description: item.tourSchedule.tour.description,
+              duration: item.tourSchedule.tour.duration,
+              thumbnailUrl: null,
+              departureDate: item.tourSchedule.startDate,
+            }
+          : null,
+        singerPackage: item.singerPackage
+          ? {
+              name: item.singerPackage.name,
+              price: Number(item.singerPackage.price),
+              description: item.singerPackage.description,
+              benefits: item.singerPackage.benefits,
+              colorCode: item.singerPackage.colorCode,
+            }
+          : null,
+        ticketClass: item.ticket?.ticketClass
+          ? {
+              name: item.ticket.ticketClass.name,
+              price: Number(item.ticket.ticketClass.price),
+              colorCode: item.ticket.ticketClass.colorCode,
+            }
+          : null,
+        ticketTier: item.ticketTier
+          ? {
+              name: item.ticketTier.name,
+              price: Number(item.ticketTier.price),
+              description: item.ticketTier.description,
+              benefits: item.ticketTier.benefits,
+              colorCode: item.ticketTier.colorCode,
+            }
+          : null,
       })),
     };
   }
-
-
   @LogMethod({ logParams: true, sanitize: true })
   async cancel(bookingId: number, userId: number) {
     this.logger.log('Cancelling booking', { bookingId, userId });
-
     const booking = await this.prisma.booking.findFirst({
       where: { id: bookingId, userId },
     });
-
     if (!booking) {
       this.logger.warn('Booking not found for cancellation', { bookingId, userId });
       throw new NotFoundException({
@@ -786,7 +699,6 @@ export class BookingsService {
         message: getErrorMessage(ERROR_CODES.BOOKING_001),
       });
     }
-
     if (booking.status === BookingStatus.CANCELLED) {
       this.logger.warn('Booking already cancelled', {
         bookingId,
@@ -798,7 +710,6 @@ export class BookingsService {
         message: getErrorMessage(ERROR_CODES.BOOKING_002),
       });
     }
-
     if (booking.paymentStatus === PaymentStatus.PAID) {
       this.logger.warn('Cannot cancel paid booking', {
         bookingId,
@@ -811,41 +722,29 @@ export class BookingsService {
         message: getErrorMessage(ERROR_CODES.BOOKING_003),
       });
     }
-
-    // Release locked tickets
     this.logger.debug('Releasing locked tickets', { bookingId });
     const ticketItems = await this.prisma.bookingItem.findMany({
       where: { bookingId, itemType: BookingItemType.SHOW_TICKET },
     });
-
     for (const item of ticketItems) {
       if (item.ticketId) {
         await this.ticketsService.releaseTicket(userId, item.ticketId);
       }
     }
     this.logger.debug('Released tickets', { bookingId, ticketCount: ticketItems.length });
-
     await this.prisma.booking.update({
       where: { id: bookingId },
       data: { status: BookingStatus.CANCELLED },
     });
-
-    // Invalidate caches
     await this.invalidateBookingCache(booking.bookingCode, userId);
-
     this.logger.log('Booking cancelled successfully', {
       bookingCode: booking.bookingCode,
       bookingId,
       userId,
       releasedTickets: ticketItems.length,
     });
-
     return { message: 'Đã hủy đơn hàng thành công.' };
   }
-
-  /**
-   * Invalidate booking-related caches
-   */
   async invalidateBookingCache(bookingCode: string, userId: number) {
     await this.cache.delMany([
       CacheKeys.bookingByCode(bookingCode),
@@ -854,7 +753,6 @@ export class BookingsService {
       `${CacheKeys.userBookings(userId)}:singer`,
     ]);
   }
-
   private generateBookingCode(): string {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();

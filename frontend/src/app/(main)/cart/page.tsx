@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Link } from '@/components/common/Link';
@@ -13,7 +12,6 @@ import { formatCurrency } from '@/lib/utils';
 import { bookingService } from '@/services/booking.service';
 import { toast } from 'sonner';
 import { usePageTitle } from '@/hooks/usePageTitle';
-
 export default function CartPage() {
   usePageTitle();
   const router = useRouter();
@@ -32,88 +30,98 @@ export default function CartPage() {
     voucherCode,
   } = useCartStore();
   const { isAuthenticated } = useAuthStore();
-
-  // Track which items are selected for checkout
-  const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set(tickets.map(t => t.ticketId)));
-  const [selectedTours, setSelectedTours] = useState<Set<number>>(new Set(tours.map(t => t.scheduleId)));
-  const [selectedTiers, setSelectedTiers] = useState<Set<number>>(new Set(ticketTiers.map(t => t.tierId)));
-  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set(singerPackages.map(p => p.packageId)));
+  const [selectedTickets, setSelectedTickets] = useState<Set<number>>(
+    new Set(tickets.map((t) => t.ticketId))
+  );
+  const [selectedTours, setSelectedTours] = useState<Set<number>>(
+    new Set(tours.map((t) => t.scheduleId))
+  );
+  const [selectedTiers, setSelectedTiers] = useState<Set<number>>(
+    new Set(ticketTiers.map((t) => t.tierId))
+  );
+  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(
+    new Set(singerPackages.map((p) => p.packageId))
+  );
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-
-  const isEmpty = tickets.length === 0 && tours.length === 0 && ticketTiers.length === 0 && singerPackages.length === 0;
-
-  // Calculate subtotal based on selected items only
+  const isEmpty =
+    tickets.length === 0 &&
+    tours.length === 0 &&
+    ticketTiers.length === 0 &&
+    singerPackages.length === 0;
   const getSelectedSubtotal = () => {
     const ticketTotal = tickets
-      .filter(t => selectedTickets.has(t.ticketId))
+      .filter((t) => selectedTickets.has(t.ticketId))
       .reduce((sum, t) => sum + Number(t.price), 0);
     const tourTotal = tours
-      .filter(t => selectedTours.has(t.scheduleId))
+      .filter((t) => selectedTours.has(t.scheduleId))
       .reduce((sum, t) => sum + Number(t.price) * Number(t.quantity), 0);
     const tierTotal = ticketTiers
-      .filter(t => selectedTiers.has(t.tierId))
+      .filter((t) => selectedTiers.has(t.tierId))
       .reduce((sum, t) => sum + Number(t.price) * Number(t.quantity), 0);
     const packageTotal = singerPackages
-      .filter(p => selectedPackages.has(p.packageId))
+      .filter((p) => selectedPackages.has(p.packageId))
       .reduce((sum, p) => sum + Number(p.price) * Number(p.quantity), 0);
     return ticketTotal + tourTotal + tierTotal + packageTotal;
   };
-
   const selectedSubtotal = getSelectedSubtotal();
   const selectedTotal = selectedSubtotal - discount;
-  const selectedCount = selectedTickets.size + selectedTours.size + selectedTiers.size + selectedPackages.size;
-
+  const selectedCount =
+    selectedTickets.size + selectedTours.size + selectedTiers.size + selectedPackages.size;
   const toggleTicket = (id: number) => {
     const newSet = new Set(selectedTickets);
     if (newSet.has(id)) newSet.delete(id);
     else newSet.add(id);
     setSelectedTickets(newSet);
   };
-
   const toggleTour = (id: number) => {
     const newSet = new Set(selectedTours);
     if (newSet.has(id)) newSet.delete(id);
     else newSet.add(id);
     setSelectedTours(newSet);
   };
-
   const toggleTier = (id: number) => {
     const newSet = new Set(selectedTiers);
     if (newSet.has(id)) newSet.delete(id);
     else newSet.add(id);
     setSelectedTiers(newSet);
   };
-
   const togglePackage = (id: string) => {
     const newSet = new Set(selectedPackages);
     if (newSet.has(id)) newSet.delete(id);
     else newSet.add(id);
     setSelectedPackages(newSet);
   };
-
   const handleCheckout = async () => {
     if (selectedCount === 0) {
       toast.error('Vui lòng chọn ít nhất 1 sản phẩm để thanh toán');
       return;
     }
-
     setIsCheckingOut(true);
     try {
-      // Body must match backend CreateBookingDto exactly: ticketIds | ticketsWithSeats | ticketTiers | tourItems + optional voucherCode, note, metadata
-      const selectedTicketsList = tickets.filter(t => selectedTickets.has(t.ticketId));
-      const selectedToursList = tours.filter(t => selectedTours.has(t.scheduleId));
-      const selectedTiersList = ticketTiers.filter(t => selectedTiers.has(t.tierId));
-      const selectedPackagesList = singerPackages.filter(p => selectedPackages.has(p.packageId));
-
+      const selectedTicketsList = tickets.filter((t) => selectedTickets.has(t.ticketId));
+      const selectedToursList = tours.filter((t) => selectedTours.has(t.scheduleId));
+      const selectedTiersList = ticketTiers.filter((t) => selectedTiers.has(t.tierId));
+      const selectedPackagesList = singerPackages.filter((p) => selectedPackages.has(p.packageId));
       const body: {
-        ticketsWithSeats?: Array<{ ticketId: number; physicalSeatId?: number }>;
-        ticketTiers?: Array<{ tierId: number; quantity: number }>;
-        tourItems?: Array<{ scheduleId: number; quantity: number }>;
-        singerPackages?: Array<{ packageId: string; quantity: number }>;
+        ticketsWithSeats?: Array<{
+          ticketId: number;
+          physicalSeatId?: number;
+        }>;
+        ticketTiers?: Array<{
+          tierId: number;
+          quantity: number;
+        }>;
+        tourItems?: Array<{
+          scheduleId: number;
+          quantity: number;
+        }>;
+        singerPackages?: Array<{
+          packageId: string;
+          quantity: number;
+        }>;
         voucherCode?: string;
         note?: string;
       } = {};
-
       if (selectedTicketsList.length) {
         body.ticketsWithSeats = selectedTicketsList.map((t) => ({
           ticketId: Number(t.ticketId),
@@ -139,15 +147,8 @@ export default function CartPage() {
       }
       const vCode = voucherCode?.trim();
       if (vCode) body.voucherCode = vCode;
-
       const booking = await bookingService.createBooking(body);
-
       if (booking) {
-        // Do not remove items here - wait for successful payment
-        // selectedTickets.forEach(id => removeTicket(id));
-        // selectedTours.forEach(id => removeTour(id));
-        // selectedTiers.forEach(id => removeTicketTier(id));
-
         toast.success('Đã tạo đơn hàng thành công!');
         router.push(`/checkout?code=${booking.bookingCode}`);
       }
@@ -157,17 +158,17 @@ export default function CartPage() {
       setIsCheckingOut(false);
     }
   };
-
   if (isEmpty) {
     return (
       <div className="container mx-auto px-4 py-16">
-        <div className="max-w-md mx-auto text-center">
-          <ShoppingBag className="h-16 w-16 mx-auto text-neutral-300 mb-4" />
-          <h1 className="text-2xl font-display font-bold mb-2">Giỏ hàng trống</h1>
-          <p className="text-neutral-600 mb-6">
-            Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá các sự kiện và tour du lịch hấp dẫn!
+        <div className="mx-auto max-w-md text-center">
+          <ShoppingBag className="mx-auto mb-4 h-16 w-16 text-neutral-300" />
+          <h1 className="mb-2 font-display text-2xl font-bold">Giỏ hàng trống</h1>
+          <p className="mb-6 text-neutral-600">
+            Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá các sự kiện và tour du lịch hấp
+            dẫn!
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <Link href="/tickets">
               <Button>Mua Vé</Button>
             </Link>
@@ -182,15 +183,12 @@ export default function CartPage() {
       </div>
     );
   }
-
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <h1 className="text-2xl sm:text-3xl font-display font-bold mb-6 sm:mb-8">Giỏ Hàng</h1>
+    <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <h1 className="mb-6 font-display text-2xl font-bold sm:mb-8 sm:text-3xl">Giỏ Hàng</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        {/* Cart Items */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Singer Packages */}
+      <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
           {singerPackages.length > 0 && (
             <Card>
               <CardHeader>
@@ -200,7 +198,7 @@ export default function CartPage() {
                 {singerPackages.map((pkg) => (
                   <div
                     key={pkg.packageId}
-                    className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200"
+                    className="rounded-lg border-2 border-green-200 bg-gradient-to-r from-green-50 to-blue-50 p-4"
                   >
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -210,20 +208,24 @@ export default function CartPage() {
                       />
                       <div className="flex-1 space-y-3">
                         <div>
-                          <h4 className="font-bold text-base text-green-800">{pkg.packageName}</h4>
+                          <h4 className="text-base font-bold text-green-800">{pkg.packageName}</h4>
                           {pkg.description && (
-                            <p className="text-sm text-neutral-600 mt-1 leading-relaxed">{pkg.description}</p>
+                            <p className="mt-1 text-sm leading-relaxed text-neutral-600">
+                              {pkg.description}
+                            </p>
                           )}
                         </div>
 
-                        {/* Benefits */}
                         {pkg.benefits && pkg.benefits.length > 0 && (
-                          <div className="bg-white/50 rounded-lg p-3 border border-green-100">
-                            <p className="text-sm font-semibold text-green-800 mb-2">Quyền lợi:</p>
+                          <div className="rounded-lg border border-green-100 bg-white/50 p-3">
+                            <p className="mb-2 text-sm font-semibold text-green-800">Quyền lợi:</p>
                             <ul className="space-y-1.5">
                               {pkg.benefits.map((benefit, idx) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700">
-                                  <span className="text-green-600 mt-0.5 font-bold">✓</span>
+                                <li
+                                  key={idx}
+                                  className="flex items-start gap-2 text-sm text-neutral-700"
+                                >
+                                  <span className="mt-0.5 font-bold text-green-600">✓</span>
                                   <span className="flex-1">{benefit}</span>
                                 </li>
                               ))}
@@ -231,40 +233,49 @@ export default function CartPage() {
                           </div>
                         )}
 
-                        {/* Price and Quantity */}
-                        <div className="flex items-center justify-between pt-2 border-t border-green-200">
+                        <div className="flex items-center justify-between border-t border-green-200 pt-2">
                           <div className="flex items-center gap-3">
                             <span className="text-sm text-neutral-600">Số lượng:</span>
-                            <div className="flex items-center gap-2 bg-white rounded-lg px-2 py-1 border border-green-200">
+                            <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1">
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7 hover:bg-green-100"
-                                onClick={() => updateSingerPackageQuantity(pkg.packageId, pkg.quantity - 1)}
+                                onClick={() =>
+                                  updateSingerPackageQuantity(pkg.packageId, pkg.quantity - 1)
+                                }
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
-                              <span className="text-sm font-bold w-8 text-center">{pkg.quantity}</span>
+                              <span className="w-8 text-center text-sm font-bold">
+                                {pkg.quantity}
+                              </span>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7 hover:bg-green-100"
-                                onClick={() => updateSingerPackageQuantity(pkg.packageId, pkg.quantity + 1)}
+                                onClick={() =>
+                                  updateSingerPackageQuantity(pkg.packageId, pkg.quantity + 1)
+                                }
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-xs text-neutral-600">Đơn giá: {formatCurrency(pkg.price)}</p>
-                            <p className="font-bold text-green-700 text-lg">{formatCurrency(pkg.price * pkg.quantity)}</p>
+                            <p className="text-xs text-neutral-600">
+                              Đơn giá: {formatCurrency(pkg.price)}
+                            </p>
+                            <p className="text-lg font-bold text-green-700">
+                              {formatCurrency(pkg.price * pkg.quantity)}
+                            </p>
                           </div>
                         </div>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-error-500 hover:text-error-600 hover:bg-error-50 h-8 w-8 flex-shrink-0"
+                        className="hover:bg-error-50 h-8 w-8 flex-shrink-0 text-error-500 hover:text-error-600"
                         onClick={() => removeSingerPackage(pkg.packageId)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -276,7 +287,6 @@ export default function CartPage() {
             </Card>
           )}
 
-          {/* Ticket Tiers */}
           {ticketTiers.length > 0 && (
             <Card>
               <CardHeader>
@@ -286,19 +296,19 @@ export default function CartPage() {
                 {ticketTiers.map((tier) => (
                   <div
                     key={tier.tierId}
-                    className="flex items-start gap-3 p-3 sm:p-4 bg-neutral-50 rounded-lg"
+                    className="flex items-start gap-3 rounded-lg bg-neutral-50 p-3 sm:p-4"
                   >
                     <Checkbox
                       checked={selectedTiers.has(tier.tierId)}
                       onCheckedChange={() => toggleTier(tier.tierId)}
                       className="mt-1"
                     />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm sm:text-base">{tier.tierName}</h4>
-                      <p className="text-xs sm:text-sm text-neutral-600">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-semibold sm:text-base">{tier.tierName}</h4>
+                      <p className="text-xs text-neutral-600 sm:text-sm">
                         {formatCurrency(tier.price)} × {tier.quantity}
                       </p>
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="mt-2 flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="icon"
@@ -307,7 +317,7 @@ export default function CartPage() {
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
-                        <span className="text-sm font-medium w-8 text-center">{tier.quantity}</span>
+                        <span className="w-8 text-center text-sm font-medium">{tier.quantity}</span>
                         <Button
                           variant="outline"
                           size="icon"
@@ -319,13 +329,13 @@ export default function CartPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <span className="font-bold text-brand-600 text-sm sm:text-base">
+                      <span className="text-sm font-bold text-brand-600 sm:text-base">
                         {formatCurrency(tier.price * tier.quantity)}
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-error-500 hover:text-error-600 hover:bg-error-50 h-8 w-8"
+                        className="hover:bg-error-50 h-8 w-8 text-error-500 hover:text-error-600"
                         onClick={() => removeTicketTier(tier.tierId)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -337,7 +347,6 @@ export default function CartPage() {
             </Card>
           )}
 
-          {/* Show Tickets */}
           {tickets.length > 0 && (
             <Card>
               <CardHeader>
@@ -347,28 +356,28 @@ export default function CartPage() {
                 {tickets.map((ticket) => (
                   <div
                     key={ticket.ticketId}
-                    className="flex items-start gap-3 p-3 sm:p-4 bg-neutral-50 rounded-lg"
+                    className="flex items-start gap-3 rounded-lg bg-neutral-50 p-3 sm:p-4"
                   >
                     <Checkbox
                       checked={selectedTickets.has(ticket.ticketId)}
                       onCheckedChange={() => toggleTicket(ticket.ticketId)}
                       className="mt-1"
                     />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm sm:text-base">{ticket.showTitle}</h4>
-                      <p className="text-xs sm:text-sm text-neutral-600">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-semibold sm:text-base">{ticket.showTitle}</h4>
+                      <p className="text-xs text-neutral-600 sm:text-sm">
                         {ticket.ticketClassName}
                         {ticket.seatInfo && ` - ${ticket.seatInfo}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-bold text-brand-600 text-sm sm:text-base">
+                      <span className="text-sm font-bold text-brand-600 sm:text-base">
                         {formatCurrency(ticket.price)}
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-error-500 hover:text-error-600 hover:bg-error-50"
+                        className="hover:bg-error-50 text-error-500 hover:text-error-600"
                         onClick={() => removeTicket(ticket.ticketId)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -380,7 +389,6 @@ export default function CartPage() {
             </Card>
           )}
 
-          {/* Tours */}
           {tours.length > 0 && (
             <Card>
               <CardHeader>
@@ -390,27 +398,28 @@ export default function CartPage() {
                 {tours.map((tour) => (
                   <div
                     key={tour.scheduleId}
-                    className="flex items-start gap-3 p-3 sm:p-4 bg-neutral-50 rounded-lg"
+                    className="flex items-start gap-3 rounded-lg bg-neutral-50 p-3 sm:p-4"
                   >
                     <Checkbox
                       checked={selectedTours.has(tour.scheduleId)}
                       onCheckedChange={() => toggleTour(tour.scheduleId)}
                       className="mt-1"
                     />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm sm:text-base">{tour.tourTitle}</h4>
-                      <p className="text-xs sm:text-sm text-neutral-600">
-                        Khởi hành: {new Date(tour.startDate).toLocaleDateString('vi-VN')} • {tour.quantity} người
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-semibold sm:text-base">{tour.tourTitle}</h4>
+                      <p className="text-xs text-neutral-600 sm:text-sm">
+                        Khởi hành: {new Date(tour.startDate).toLocaleDateString('vi-VN')} •{' '}
+                        {tour.quantity} người
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-bold text-brand-600 text-sm sm:text-base">
+                      <span className="text-sm font-bold text-brand-600 sm:text-base">
                         {formatCurrency(tour.price * tour.quantity)}
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-error-500 hover:text-error-600 hover:bg-error-50"
+                        className="hover:bg-error-50 text-error-500 hover:text-error-600"
                         onClick={() => removeTour(tour.scheduleId)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -423,7 +432,6 @@ export default function CartPage() {
           )}
         </div>
 
-        {/* Order Summary */}
         <div>
           <Card className="lg:sticky lg:top-24">
             <CardHeader>
@@ -442,7 +450,7 @@ export default function CartPage() {
                   </div>
                 )}
                 <div className="border-t pt-2">
-                  <div className="flex justify-between font-bold text-lg">
+                  <div className="flex justify-between text-lg font-bold">
                     <span>Tổng cộng</span>
                     <span className="text-brand-600">{formatCurrency(selectedTotal)}</span>
                   </div>
@@ -466,7 +474,7 @@ export default function CartPage() {
                       Đăng nhập để thanh toán
                     </Button>
                   </Link>
-                  <p className="text-xs text-center text-neutral-500">
+                  <p className="text-center text-xs text-neutral-500">
                     Bạn cần đăng nhập để tiếp tục thanh toán
                   </p>
                 </div>

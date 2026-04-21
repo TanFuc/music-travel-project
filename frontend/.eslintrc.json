@@ -1,10 +1,16 @@
 {
   "extends": ["next/core-web-vitals"],
+  "plugins": ["unused-imports"],
   "rules": {
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "off",
-    "no-console": "error",
+    "no-console": "warn",
     "no-debugger": "error",
+    "unused-imports/no-unused-imports": "error",
+    "unused-imports/no-unused-vars": [
+      "warn",
+      { "vars": "all", "varsIgnorePattern": "^_", "args": "after-used", "argsIgnorePattern": "^_" }
+    ],
     "no-restricted-imports": [
       "error",
       {

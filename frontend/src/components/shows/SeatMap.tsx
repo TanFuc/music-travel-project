@@ -1,11 +1,9 @@
 'use client';
-
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { showService } from '@/services/show.service';
 import { ticketService, SeatMapTicket } from '@/services/ticket.service';
 import { cn, formatPrice } from '@/lib/utils';
-
 interface SeatMapProps {
   showId: number;
   onSeatsSelected?: (ticketIds: number[], totalPrice: number) => void;
@@ -13,14 +11,12 @@ interface SeatMapProps {
   maxSelectable?: number;
   className?: string;
 }
-
 interface TicketClass {
   id: number;
   name: string;
   price: number;
   colorCode: string | null;
 }
-
 export function SeatMap({
   showId,
   onSeatsSelected,
@@ -32,8 +28,6 @@ export function SeatMap({
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
   const [lockCountdown, setLockCountdown] = useState<number | null>(null);
   const [lockId, setLockId] = useState<string | null>(null);
-
-  // Fetch seat map data
   const {
     data: seats,
     isPending,
@@ -46,8 +40,6 @@ export function SeatMap({
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
-
-  // Lock tickets mutation
   const lockMutation = useMutation({
     mutationFn: (ticketIds: number[]) => ticketService.lockTickets(ticketIds),
     onSuccess: (data) => {
@@ -62,8 +54,6 @@ export function SeatMap({
       refetch();
     },
   });
-
-  // Release tickets mutation
   const releaseMutation = useMutation({
     mutationFn: () => ticketService.releaseAllTickets(),
     onSuccess: () => {
@@ -73,11 +63,8 @@ export function SeatMap({
       queryClient.invalidateQueries({ queryKey: ['seatMap', showId] });
     },
   });
-
-  // Countdown timer
   useEffect(() => {
     if (lockCountdown === null || lockCountdown <= 0) return;
-
     const timer = setInterval(() => {
       setLockCountdown((prev) => {
         if (prev === null || prev <= 1) {
@@ -90,11 +77,8 @@ export function SeatMap({
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [lockCountdown, refetch]);
-
-  // Get unique ticket classes for legend
   const ticketClasses = useMemo(() => {
     if (!seats?.tickets) return [];
     const classMap = new Map<number, TicketClass>();
@@ -105,8 +89,6 @@ export function SeatMap({
     });
     return Array.from(classMap.values());
   }, [seats]);
-
-  // Calculate price for ticket selection
   const calculatePrice = useCallback(
     (ticketIds: number[]) => {
       if (!seats?.tickets) return 0;
@@ -115,20 +97,15 @@ export function SeatMap({
         return sum + (ticket?.ticketClass?.price || 0);
       }, 0);
     },
-    [seats],
+    [seats]
   );
-
-  // Calculate total price
   const totalPrice = useMemo(() => {
     return calculatePrice(selectedSeats);
   }, [calculatePrice, selectedSeats]);
-
-  // Handle seat click
   const handleSeatClick = useCallback(
     (ticket: SeatMapTicket) => {
       if (ticket.status !== 'AVAILABLE') return;
       if (lockCountdown !== null) return;
-
       setSelectedSeats((prev) => {
         const isSelected = prev.includes(ticket.id);
         if (isSelected) {
@@ -142,42 +119,30 @@ export function SeatMap({
         return newSelection;
       });
     },
-    [lockCountdown, maxSelectable, onSeatsSelected, calculatePrice],
+    [lockCountdown, maxSelectable, onSeatsSelected, calculatePrice]
   );
-
-  // Handle lock button click
   const handleLockClick = () => {
     if (selectedSeats.length === 0) return;
     lockMutation.mutate(selectedSeats);
   };
-
-  // Handle release button click
   const handleReleaseClick = () => {
     releaseMutation.mutate();
   };
-
-  // Calculate SVG viewBox dimensions - MEMOIZED to prevent shifts
   const viewBoxDimensions = useMemo(() => {
     const fallback = { minX: 0, minY: 0, width: 800, height: 600 };
     if (!seats?.tickets?.length) return fallback;
-
     const seatsWithPosition = seats.tickets.filter(
       (t: SeatMapTicket) => typeof t.seat?.x === 'number' && typeof t.seat?.y === 'number'
     );
-
     if (seatsWithPosition.length === 0) return fallback;
-
     const xs = seatsWithPosition.map((t: SeatMapTicket) => t.seat!.x as number);
     const ys = seatsWithPosition.map((t: SeatMapTicket) => t.seat!.y as number);
-
     const minX = Math.min(...xs);
     const minY = Math.min(...ys);
     const maxX = Math.max(...xs);
     const maxY = Math.max(...ys);
-
     const paddingX = 60;
     const paddingY = 100;
-
     return {
       minX: minX - paddingX,
       minY: minY - paddingY,
@@ -185,78 +150,82 @@ export function SeatMap({
       height: maxY - minY + paddingY * 2,
     };
   }, [seats]);
-
-  // Loading state
   if (isPending && !seats) {
     return (
-      <div className={cn('flex items-center justify-center p-12 min-h-[400px]', className)}>
+      <div className={cn('flex min-h-[400px] items-center justify-center p-12', className)}>
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand-600" />
           <p className="text-sm text-muted-foreground">Đang tải sơ đồ...</p>
         </div>
       </div>
     );
   }
-
   if (!seats?.tickets?.length) {
     return (
-      <div className={cn('flex items-center justify-center p-12 min-h-[300px] text-muted-foreground bg-neutral-50 rounded-xl border border-dashed', className)}>
+      <div
+        className={cn(
+          'flex min-h-[300px] items-center justify-center rounded-xl border border-dashed bg-neutral-50 p-12 text-muted-foreground',
+          className
+        )}
+      >
         Chưa có sơ đồ ghế cho sự kiện này.
       </div>
     );
   }
-
   return (
-    <div className={cn('flex flex-col h-full bg-white border rounded-xl shadow-sm overflow-hidden', className)}>
-      {/* Legend Header */}
-      <div className="bg-neutral-50 border-b p-4">
+    <div
+      className={cn(
+        'flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm',
+        className
+      )}
+    >
+      <div className="border-b bg-neutral-50 p-4">
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-neutral-200 border border-neutral-300" />
+            <div className="h-5 w-5 rounded-md border border-neutral-300 bg-neutral-200" />
             <span className="text-neutral-600">Đã bán</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-red-100 border border-red-200" />
+            <div className="h-5 w-5 rounded-md border border-red-200 bg-red-100" />
             <span className="text-neutral-600">Đang giữ</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-green-500 border border-green-600 shadow-sm" />
-            <span className="text-neutral-600 font-medium">Đang chọn</span>
+            <div className="h-5 w-5 rounded-md border border-green-600 bg-green-500 shadow-sm" />
+            <span className="font-medium text-neutral-600">Đang chọn</span>
           </div>
-          <div className="hidden sm:block w-px h-4 bg-neutral-300 mx-2" />
+          <div className="mx-2 hidden h-4 w-px bg-neutral-300 sm:block" />
           {ticketClasses.map((tc) => (
             <div key={tc.id} className="flex items-center gap-2">
               <div
-                className="w-5 h-5 rounded-md shadow-sm"
+                className="h-5 w-5 rounded-md shadow-sm"
                 style={{ backgroundColor: tc.colorCode || '#3B82F6' }}
               />
-              <span className="text-neutral-700 font-medium">{tc.name}</span>
-              <span className="text-neutral-500 text-xs">({formatPrice(tc.price)})</span>
+              <span className="font-medium text-neutral-700">{tc.name}</span>
+              <span className="text-xs text-neutral-500">({formatPrice(tc.price)})</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Main Map Area */}
-      <div className="relative flex-1 overflow-auto bg-white p-6 min-h-[500px] flex items-center justify-center">
+      <div className="relative flex min-h-[500px] flex-1 items-center justify-center overflow-auto bg-white p-6">
         {isRefetching && (
-          <div className="absolute top-4 right-4 z-10">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-500" />
+          <div className="absolute right-4 top-4 z-10">
+            <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-brand-500" />
           </div>
         )}
 
-        {/* Helper text for mobile */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm sm:hidden pointer-events-none z-10">
+        <div className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-white backdrop-blur-sm sm:hidden">
           Chạm và kéo để di chuyển
         </div>
 
         <svg
           viewBox={`${viewBoxDimensions.minX} ${viewBoxDimensions.minY} ${viewBoxDimensions.width} ${viewBoxDimensions.height}`}
-          className="min-w-[800px] sm:min-w-0 w-full h-full max-h-[600px] touch-pan-x touch-pan-y select-none"
+          className="h-full max-h-[600px] w-full min-w-[800px] touch-pan-x touch-pan-y select-none sm:min-w-0"
           preserveAspectRatio="xMidYMid meet"
         >
-          {/* Stage Visual */}
-          <g transform={`translate(${viewBoxDimensions.minX + viewBoxDimensions.width / 2}, ${viewBoxDimensions.minY + 40})`}>
+          <g
+            transform={`translate(${viewBoxDimensions.minX + viewBoxDimensions.width / 2}, ${viewBoxDimensions.minY + 40})`}
+          >
             <defs>
               <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation="15" result="blur" />
@@ -275,24 +244,29 @@ export function SeatMap({
               stroke="#334155"
               strokeWidth="2"
             />
-            <text x="0" y="35" textAnchor="middle" fill="#64748b" fontSize="14" fontWeight="600" letterSpacing="0.1em">
+            <text
+              x="0"
+              y="35"
+              textAnchor="middle"
+              fill="#64748b"
+              fontSize="14"
+              fontWeight="600"
+              letterSpacing="0.1em"
+            >
               SÂN KHẤU
             </text>
           </g>
 
-          {/* Seats */}
           {seats.tickets.map((ticket: SeatMapTicket) => {
-            if (typeof ticket.seat?.x !== 'number' || typeof ticket.seat?.y !== 'number') return null;
-
+            if (typeof ticket.seat?.x !== 'number' || typeof ticket.seat?.y !== 'number')
+              return null;
             const isAvailable = ticket.status === 'AVAILABLE';
             const isLocked = ticket.status === 'LOCKED';
             const isSold = ticket.status === 'SOLD';
             const isSelectable = isAvailable && lockCountdown === null;
             const isSelected = selectedSeats.includes(ticket.id);
-
             let fillColor = ticket.ticketClass?.colorCode || '#3B82F6';
             let strokeColor = 'transparent';
-
             if (isSelected) {
               fillColor = '#10B981';
               strokeColor = '#059669';
@@ -303,10 +277,8 @@ export function SeatMap({
               fillColor = '#FEE2E2';
               strokeColor = '#FCA5A5';
             }
-
             const seatWidth = 26;
             const seatHeight = 22;
-
             return (
               <g
                 key={ticket.id}
@@ -364,12 +336,11 @@ export function SeatMap({
         </svg>
       </div>
 
-      {/* Footer / Action Bar */}
-      <div className="p-4 bg-white border-t z-10 shadow-up">
+      <div className="shadow-up z-10 border-t bg-white p-4">
         {selectedSeats.length > 0 ? (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-bottom-2 fade-in duration-300">
+          <div className="flex flex-col items-center justify-between gap-4 duration-300 animate-in fade-in slide-in-from-bottom-2 sm:flex-row">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-600">
                 {selectedSeats.length}
               </div>
               <div>
@@ -378,28 +349,29 @@ export function SeatMap({
               </div>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex w-full items-center gap-3 sm:w-auto">
               {lockCountdown !== null ? (
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <div className="text-right mr-2">
+                <div className="flex w-full items-center gap-3 sm:w-auto">
+                  <div className="mr-2 text-right">
                     <p className="text-xs text-neutral-500">Thời gian giữ vé</p>
-                    <p className="text-lg font-mono font-bold text-orange-600 w-[60px]">
-                      {Math.floor(lockCountdown / 60)}:{(lockCountdown % 60).toString().padStart(2, '0')}
+                    <p className="w-[60px] font-mono text-lg font-bold text-orange-600">
+                      {Math.floor(lockCountdown / 60)}:
+                      {(lockCountdown % 60).toString().padStart(2, '0')}
                     </p>
                   </div>
                   <button
                     onClick={handleReleaseClick}
                     disabled={releaseMutation.isPending}
-                    className="flex-1 sm:flex-none px-6 py-2.5 bg-neutral-100 text-neutral-700 font-medium rounded-lg hover:bg-neutral-200 transition disabled:opacity-50"
+                    className="flex-1 rounded-lg bg-neutral-100 px-6 py-2.5 font-medium text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-50 sm:flex-none"
                   >
                     {releaseMutation.isPending ? 'Đang hủy...' : 'Hủy bỏ'}
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex w-full items-center gap-3 sm:w-auto">
                   <button
                     onClick={() => setSelectedSeats([])}
-                    className="px-4 py-2.5 text-neutral-500 hover:text-neutral-700 font-medium transition"
+                    className="px-4 py-2.5 font-medium text-neutral-500 transition hover:text-neutral-700"
                   >
                     Xóa chọn
                   </button>
@@ -407,7 +379,7 @@ export function SeatMap({
                     onClick={handleLockClick}
                     disabled={lockMutation.isPending}
                     className={cn(
-                      'flex-1 sm:flex-none px-8 py-2.5 bg-brand-600 text-white font-bold rounded-lg shadow-lg shadow-brand-200 hover:bg-brand-700 hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none',
+                      'flex-1 rounded-lg bg-brand-600 px-8 py-2.5 font-bold text-white shadow-lg shadow-brand-200 transition-all hover:scale-105 hover:bg-brand-700 disabled:scale-100 disabled:opacity-50 disabled:shadow-none sm:flex-none',
                       lockMutation.isPending && 'animate-pulse'
                     )}
                   >
@@ -418,8 +390,10 @@ export function SeatMap({
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-2 text-neutral-400 py-2">
-            <span className="text-sm">Vui lòng chọn ghế trên sơ đồ. Tối đa {maxSelectable} ghế mỗi lần đặt.</span>
+          <div className="flex items-center justify-center gap-2 py-2 text-neutral-400">
+            <span className="text-sm">
+              Vui lòng chọn ghế trên sơ đồ. Tối đa {maxSelectable} ghế mỗi lần đặt.
+            </span>
           </div>
         )}
       </div>

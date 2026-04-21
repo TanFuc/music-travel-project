@@ -3,27 +3,19 @@ import { ConfigService } from '@nestjs/config';
 import { BankDeeplinkParams } from '../interfaces/bank.interface';
 import { VietnamBankCode } from '../dto/bank-qr.dto';
 import { VietQRService } from './vietqr.service';
-
 @Injectable()
 export class BankDeeplinkService {
   private readonly logger = new Logger(BankDeeplinkService.name);
-
   constructor(
     private readonly configService: ConfigService,
     private readonly vietQRService: VietQRService,
   ) {}
-
-  /**
-   * Generate deeplink for bank mobile app
-   */
   generateDeeplink(params: BankDeeplinkParams): string | null {
     const bank = this.vietQRService.getBankInfo(params.bankCode as VietnamBankCode);
-
     if (!bank.deeplinkSupported || !bank.appScheme) {
       this.logger.debug(`Deeplink not supported for bank: ${params.bankCode}`);
       return null;
     }
-
     try {
       switch (params.bankCode) {
         case VietnamBankCode.MB:
@@ -48,73 +40,48 @@ export class BankDeeplinkService {
       return null;
     }
   }
-
-  /**
-   * Generate MB Bank deeplink
-   */
   private generateMBBankDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'mbbank://';
     const queryParams = new URLSearchParams();
-
     if (params.qrContent) {
-      // Use QR content for payment
       queryParams.append('action', 'qr-payment');
       queryParams.append('data', params.qrContent);
     } else {
-      // Direct transfer
       queryParams.append('action', 'transfer');
       queryParams.append('account', params.accountNumber);
       queryParams.append('name', params.accountName);
-
       if (params.amount) {
         queryParams.append('amount', params.amount.toString());
       }
-
       if (params.description) {
         queryParams.append('memo', params.description);
       }
     }
-
     return `${baseUrl}?${queryParams.toString()}`;
   }
-
-  /**
-   * Generate Vietcombank deeplink
-   */
   private generateVietcombankDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'vcb://';
-
     if (params.qrContent) {
       return `${baseUrl}qr-payment?qr=${encodeURIComponent(params.qrContent)}`;
     }
-
     const queryParams = new URLSearchParams({
       action: 'transfer',
       beneficiary_account: params.accountNumber,
       beneficiary_name: params.accountName,
     });
-
     if (params.amount) {
       queryParams.append('amount', params.amount.toString());
     }
-
     if (params.description) {
       queryParams.append('description', params.description);
     }
-
     return `${baseUrl}transfer?${queryParams.toString()}`;
   }
-
-  /**
-   * Generate Techcombank deeplink
-   */
   private generateTechcombankDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'tcb://';
-
     if (params.qrContent) {
       return `${baseUrl}qr?data=${encodeURIComponent(params.qrContent)}`;
     }
-
     const transferData = {
       type: 'transfer',
       account_number: params.accountNumber,
@@ -122,47 +89,31 @@ export class BankDeeplinkService {
       amount: params.amount || 0,
       message: params.description || '',
     };
-
     return `${baseUrl}transfer?data=${encodeURIComponent(JSON.stringify(transferData))}`;
   }
-
-  /**
-   * Generate BIDV deeplink
-   */
   private generateBIDVDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'bidv://';
-
     if (params.qrContent) {
       return `${baseUrl}qrpay?qr=${encodeURIComponent(params.qrContent)}`;
     }
-
     const queryParams = new URLSearchParams({
       function: 'transfer',
       account: params.accountNumber,
       name: params.accountName,
     });
-
     if (params.amount) {
       queryParams.append('amount', params.amount.toString());
     }
-
     if (params.description) {
       queryParams.append('content', params.description);
     }
-
     return `${baseUrl}?${queryParams.toString()}`;
   }
-
-  /**
-   * Generate ACB deeplink
-   */
   private generateACBDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'acb://';
-
     if (params.qrContent) {
       return `${baseUrl}qr-payment/${encodeURIComponent(params.qrContent)}`;
     }
-
     const transferParams = {
       screen: 'transfer',
       to_account: params.accountNumber,
@@ -170,52 +121,35 @@ export class BankDeeplinkService {
       amount: params.amount || '',
       memo: params.description || '',
     };
-
     const paramString = Object.entries(transferParams)
       .filter(([_, value]) => value !== '')
       .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
       .join('&');
-
     return `${baseUrl}?${paramString}`;
   }
-
-  /**
-   * Generate VPBank deeplink
-   */
   private generateVPBankDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'vpbank://';
-
     if (params.qrContent) {
       return `${baseUrl}qr?code=${encodeURIComponent(params.qrContent)}`;
     }
-
     const queryParams = new URLSearchParams({
       action: 'transfer',
       receiver_account: params.accountNumber,
       receiver_name: params.accountName,
     });
-
     if (params.amount) {
       queryParams.append('amount', params.amount.toString());
     }
-
     if (params.description) {
       queryParams.append('note', params.description);
     }
-
     return `${baseUrl}transfer?${queryParams.toString()}`;
   }
-
-  /**
-   * Generate TPBank deeplink
-   */
   private generateTPBankDeeplink(params: BankDeeplinkParams): string {
     const baseUrl = 'tpbank://';
-
     if (params.qrContent) {
       return `${baseUrl}qr-scan?qr_data=${encodeURIComponent(params.qrContent)}`;
     }
-
     const transferData = {
       action: 'fund_transfer',
       account_number: params.accountNumber,
@@ -223,59 +157,35 @@ export class BankDeeplinkService {
       transfer_amount: params.amount || 0,
       transfer_content: params.description || '',
     };
-
     return `${baseUrl}?${new URLSearchParams(transferData as any).toString()}`;
   }
-
-  /**
-   * Generate generic deeplink for banks without specific implementation
-   */
   private generateGenericDeeplink(params: BankDeeplinkParams): string {
     const bank = this.vietQRService.getBankInfo(params.bankCode as VietnamBankCode);
     const baseUrl = `${bank.appScheme}://`;
-
     if (params.qrContent) {
       return `${baseUrl}qr?data=${encodeURIComponent(params.qrContent)}`;
     }
-
     const queryParams = new URLSearchParams({
       action: 'transfer',
       account: params.accountNumber,
       name: params.accountName,
     });
-
     if (params.amount) {
       queryParams.append('amount', params.amount.toString());
     }
-
     if (params.description) {
       queryParams.append('memo', params.description);
     }
-
     return `${baseUrl}?${queryParams.toString()}`;
   }
-
-  /**
-   * Check if deeplink is supported for a bank
-   */
   isDeeplinkSupported(bankCode: VietnamBankCode): boolean {
     const bank = this.vietQRService.getBankInfo(bankCode);
     return bank.deeplinkSupported && !!bank.appScheme;
   }
-
-  /**
-   * Get fallback URL for unsupported deeplinks
-   */
   getFallbackUrl(params: BankDeeplinkParams): string {
     const bank = this.vietQRService.getBankInfo(params.bankCode as VietnamBankCode);
-
-    // Return a generic banking QR payment instruction
     return `https://qr.sepay.vn/img?acc=${params.accountNumber}&bank=${bank.napasCode}&amount=${params.amount || ''}&des=${encodeURIComponent(params.description || '')}`;
   }
-
-  /**
-   * Generate universal payment link (works on both mobile and web)
-   */
   generateUniversalLink(params: BankDeeplinkParams): {
     deeplink: string | null;
     fallbackUrl: string;
@@ -284,7 +194,6 @@ export class BankDeeplinkService {
     const deeplink = this.generateDeeplink(params);
     const fallbackUrl = this.getFallbackUrl(params);
     const isSupported = this.isDeeplinkSupported(params.bankCode as VietnamBankCode);
-
     return {
       deeplink,
       fallbackUrl,

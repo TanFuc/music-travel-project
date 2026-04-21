@@ -4,38 +4,24 @@ import {
   Get,
   Body,
   Query,
-  HttpStatus,
   ValidationPipe,
   UsePipes,
   BadRequestException,
-  StreamableFile,
-  Header,
 } from '@nestjs/common';
-import { Readable } from 'stream';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiQuery,
-  ApiProduces,
-  ApiConsumes,
-} from '@nestjs/swagger';
-import { Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { BankQRService } from '../services/bank-qr.service';
 import { AdminQRService } from '../services/admin-qr.service';
 import { GenerateBankQRDto, BankQRResponse, VietnamBankCode } from '../dto/bank-qr.dto';
 import { GenerateAdminQRDto, AdminQRResponse } from '../dto/admin-qr.dto';
 import { Public } from '@/common/decorators/public.decorator';
-
 @ApiTags('payment/bank-qr')
 @Controller('payment')
-@Public() // Make endpoints public for easy testing
+@Public()
 export class BankQRController {
   constructor(
     private readonly bankQRService: BankQRService,
     private readonly adminQRService: AdminQRService,
   ) {}
-
   @Post('generate-qr')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOperation({
@@ -53,8 +39,10 @@ export class BankQRController {
     description: 'Invalid input parameters or admin bank not configured',
   })
   @ApiConsumes('application/json')
-  async generateQR(@Body() dto: GenerateAdminQRDto): Promise<AdminQRResponse> {
-    // Validate admin configuration (database first, then env fallback)
+  async generateQR(
+    @Body()
+    dto: GenerateAdminQRDto,
+  ): Promise<AdminQRResponse> {
     const isConfigValid = await this.adminQRService.validateAdminConfig();
     if (!isConfigValid) {
       throw new BadRequestException(
@@ -65,10 +53,8 @@ export class BankQRController {
         ].join(' '),
       );
     }
-
     return this.adminQRService.generateAdminQR(dto);
   }
-
   @Post('generate-custom-qr')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOperation({
@@ -86,16 +72,16 @@ export class BankQRController {
     description: 'Invalid input parameters',
   })
   @ApiConsumes('application/json')
-  async generateCustomQR(@Body() dto: GenerateBankQRDto): Promise<BankQRResponse> {
-    // Validate bank account
+  async generateCustomQR(
+    @Body()
+    dto: GenerateBankQRDto,
+  ): Promise<BankQRResponse> {
     const isValidAccount = this.bankQRService.validateBankAccount(dto.bankCode, dto.accountNumber);
     if (!isValidAccount) {
       throw new BadRequestException('Invalid account number format for the selected bank');
     }
-
     return this.bankQRService.generateBankQR(dto);
   }
-
   @Get('qr-image')
   @ApiOperation({
     summary: 'Generate QR code as base64 string',
@@ -130,16 +116,24 @@ export class BankQRController {
     },
   })
   async generateQRImage(
-    @Query('bankCode') bankCode: VietnamBankCode,
-    @Query('accountNumber') accountNumber: string,
-    @Query('accountName') accountName: string,
-    @Query('amount') amount?: number,
-    @Query('description') description?: string,
-  ): Promise<{ qrBase64: string; contentType: string; filename: string }> {
+    @Query('bankCode')
+    bankCode: VietnamBankCode,
+    @Query('accountNumber')
+    accountNumber: string,
+    @Query('accountName')
+    accountName: string,
+    @Query('amount')
+    amount?: number,
+    @Query('description')
+    description?: string,
+  ): Promise<{
+    qrBase64: string;
+    contentType: string;
+    filename: string;
+  }> {
     if (!bankCode || !accountNumber || !accountName) {
       throw new BadRequestException('bankCode, accountNumber, and accountName are required');
     }
-
     const dto: GenerateBankQRDto = {
       bankCode,
       accountNumber,
@@ -147,23 +141,18 @@ export class BankQRController {
       amount: amount ? Number(amount) : undefined,
       description,
     };
-
-    // Validate bank account
     const isValidAccount = this.bankQRService.validateBankAccount(dto.bankCode, dto.accountNumber);
     if (!isValidAccount) {
       throw new BadRequestException('Invalid account number format for the selected bank');
     }
-
     const qrBuffer = await this.bankQRService.generateQRImage(dto);
     const qrBase64 = qrBuffer.toString('base64');
-
     return {
       qrBase64: `data:image/png;base64,${qrBase64}`,
       contentType: 'image/png',
       filename: `qr-${bankCode}-${Date.now()}.png`,
     };
   }
-
   @Get('banks')
   @ApiOperation({
     summary: 'Get supported banks',
@@ -193,7 +182,6 @@ export class BankQRController {
       total: Object.keys(VietnamBankCode).length,
     };
   }
-
   @Post('validate-qr')
   @ApiOperation({
     summary: 'Validate and parse VietQR string',
@@ -218,23 +206,24 @@ export class BankQRController {
       },
     },
   })
-  validateQR(@Body() body: { qrString: string }) {
+  validateQR(
+    @Body()
+    body: {
+      qrString: string;
+    },
+  ) {
     const { qrString } = body;
-
     if (!qrString) {
       throw new BadRequestException('qrString is required');
     }
-
     const isValid = this.bankQRService.validateVietQRString(qrString);
     const parsedData = isValid ? this.bankQRService.parseVietQRString(qrString) : null;
-
     return {
       success: true,
       valid: isValid,
       data: parsedData,
     };
   }
-
   @Get('test-qr')
   @ApiOperation({
     summary: 'Generate test QR code (Development only)',
@@ -252,7 +241,6 @@ export class BankQRController {
   async generateTestQR(): Promise<BankQRResponse> {
     return this.bankQRService.generateTestQR();
   }
-
   @Get('health')
   @ApiOperation({
     summary: 'Health check for bank QR service',

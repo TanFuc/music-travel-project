@@ -1,5 +1,5 @@
 import { PrismaClient, UserRole, ShowStatus, TicketStatus, TourScheduleStatus, VoucherDiscountType, BannerPosition, MediaType, MediaTargetType, SeatType, BookingStatus, PaymentStatus, BookingItemType, WalletTransactionType } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { seedSingerPackages } from './seed-singer-packages';
 import { seedPaymentMethods } from './seed-payment-methods';
 
@@ -56,7 +56,7 @@ async function main() {
       phoneNumber: '0901234567',
       passwordHash,
       fullName: 'Admin User',
-      email: 'admin@musictravel.vn',
+      email: 'admin@maichohanhtinhxanh.com',
       role: UserRole.ADMIN,
       isActive: true,
     },
@@ -67,7 +67,7 @@ async function main() {
       phoneNumber: '0901234568',
       passwordHash,
       fullName: 'Staff User',
-      email: 'staff@musictravel.vn',
+      email: 'staff@maichohanhtinhxanh.com',
       role: UserRole.STAFF,
       isActive: true,
     },

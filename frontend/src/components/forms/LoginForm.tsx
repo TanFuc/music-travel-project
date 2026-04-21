@@ -1,5 +1,4 @@
 'use client';
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@/components/common/Link';
@@ -10,11 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, LoginFormData } from '@/lib/validations/auth.schema';
-
 export function LoginForm() {
   const { login, isLoggingIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -26,15 +23,13 @@ export function LoginForm() {
       password: '',
     },
   });
-
   const onSubmit = (data: LoginFormData) => {
     login(data);
   };
-
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="mx-auto w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-display">Đăng Nhập</CardTitle>
+        <CardTitle className="font-display text-2xl">Đăng Nhập</CardTitle>
         <CardDescription>Nhập thông tin để đăng nhập vào tài khoản</CardDescription>
       </CardHeader>
       <CardContent>
@@ -44,7 +39,7 @@ export function LoginForm() {
               Số điện thoại
             </label>
             <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+              <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
               <Input
                 id="phoneNumber"
                 type="tel"
@@ -63,7 +58,7 @@ export function LoginForm() {
               Mật khẩu
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -79,9 +74,7 @@ export function LoginForm() {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {errors.password && (
-              <p className="text-sm text-error-500">{errors.password.message}</p>
-            )}
+            {errors.password && <p className="text-sm text-error-500">{errors.password.message}</p>}
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoggingIn}>
@@ -98,7 +91,7 @@ export function LoginForm() {
 
         <div className="mt-6 text-center text-sm">
           <span className="text-neutral-600">Chưa có tài khoản? </span>
-          <Link href="/register" className="text-brand-500 hover:text-brand-600 font-medium">
+          <Link href="/register" className="font-medium text-brand-500 hover:text-brand-600">
             Đăng ký ngay
           </Link>
         </div>

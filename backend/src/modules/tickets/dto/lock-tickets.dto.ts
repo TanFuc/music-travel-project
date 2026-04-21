@@ -1,6 +1,5 @@
 import { IsArray, IsInt, ArrayMinSize, ArrayMaxSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
 export class LockTicketsDto {
   @ApiProperty({
     example: [1, 2, 3],

@@ -1,9 +1,8 @@
 'use client';
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Search, X, Filter, MapPin, Calendar, Music, Compass, ChevronDown } from 'lucide-react';
+import { Search, X, Filter, MapPin, Music, Compass } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,20 +14,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { searchService, SearchType, SearchResults } from '@/services/search.service';
+import { searchService, SearchType } from '@/services/search.service';
 import { branchService } from '@/services/branch.service';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { Link } from '@/components/common/Link';
 import { useDebounce } from '@/hooks/usePerformance';
-
 interface SearchBarProps {
   className?: string;
   showFilters?: boolean;
   onClose?: () => void;
   isExpanded?: boolean;
 }
-
-export function SearchBar({ className, showFilters = true, onClose, isExpanded = false }: SearchBarProps) {
+export function SearchBar({
+  className,
+  showFilters = true,
+  onClose,
+  isExpanded = false,
+}: SearchBarProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -38,15 +40,11 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Focus input when expanded
   useEffect(() => {
     if (isExpanded && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isExpanded]);
-
-  // Click outside to close
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -57,19 +55,14 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
   const debouncedSetQuery = useDebounce((value: string) => {
     setDebouncedQuery(value);
   }, 300);
-
-  // Fetch branches for filter
   const { data: branches = [] } = useQuery({
     queryKey: ['branches'],
     queryFn: () => branchService.getBranches(),
     staleTime: 10 * 60 * 1000,
   });
-
-  // Search results (debounced by debouncedQuery)
   const { data: results, isLoading } = useQuery({
     queryKey: ['search', debouncedQuery, type, branchId],
     queryFn: () =>
@@ -82,7 +75,6 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
     enabled: debouncedQuery.length >= 2,
     staleTime: 30 * 1000,
   });
-
   const handleSearch = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -98,39 +90,33 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
     },
     [query, type, branchId, router, onClose]
   );
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
     debouncedSetQuery(value);
-
     if (value.length >= 2) {
       setShowResults(true);
     } else {
       setShowResults(false);
     }
   };
-
   const clearSearch = () => {
     setQuery('');
     setDebouncedQuery('');
     setShowResults(false);
     inputRef.current?.focus();
   };
-
   const hasResults =
     results &&
     (results.shows.items.length > 0 ||
       results.tours.items.length > 0 ||
       results.locations.items.length > 0);
-
   return (
     <div ref={searchRef} className={cn('relative w-full', className)}>
       <form onSubmit={handleSearch} className="relative">
         <div className="flex items-center gap-2">
-          {/* Main Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <Input
               ref={inputRef}
               type="text"
@@ -138,7 +124,7 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
               value={query}
               onChange={handleInputChange}
               onFocus={() => query.length >= 2 && setShowResults(true)}
-              className="pl-10 pr-10 h-11 bg-white border-gray-200 focus:border-brand-500 focus:ring-brand-500/20"
+              className="h-11 border-gray-200 bg-white pl-10 pr-10 focus:border-brand-500 focus:ring-brand-500/20"
             />
             {query && (
               <button
@@ -146,29 +132,27 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
                 onClick={clearSearch}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
 
-          {/* Filter Toggle Button - Mobile */}
           {showFilters && (
             <Button
               type="button"
               variant="outline"
               size="icon"
-              className="md:hidden h-11 w-11 border-gray-200"
+              className="h-11 w-11 border-gray-200 md:hidden"
               onClick={() => setShowFilterPanel(!showFilterPanel)}
             >
-              <Filter className={cn('w-5 h-5', showFilterPanel && 'text-brand-500')} />
+              <Filter className={cn('h-5 w-5', showFilterPanel && 'text-brand-500')} />
             </Button>
           )}
 
-          {/* Desktop Filters */}
           {showFilters && (
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden items-center gap-2 md:flex">
               <Select value={type} onValueChange={(val) => setType(val as SearchType)}>
-                <SelectTrigger className="w-32 h-11 border-gray-200">
+                <SelectTrigger className="h-11 w-32 border-gray-200">
                   <SelectValue placeholder="Loại" />
                 </SelectTrigger>
                 <SelectContent>
@@ -179,8 +163,11 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
                 </SelectContent>
               </Select>
 
-              <Select value={branchId || '__all__'} onValueChange={(val) => setBranchId(val === '__all__' ? '' : val)}>
-                <SelectTrigger className="w-40 h-11 border-gray-200">
+              <Select
+                value={branchId || '__all__'}
+                onValueChange={(val) => setBranchId(val === '__all__' ? '' : val)}
+              >
+                <SelectTrigger className="h-11 w-40 border-gray-200">
                   <SelectValue placeholder="Chi nhánh" />
                 </SelectTrigger>
                 <SelectContent>
@@ -195,13 +182,11 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
             </div>
           )}
 
-          {/* Search Button */}
-          <Button type="submit" className="h-11 px-6 btn-primary">
-            <Search className="w-4 h-4 md:mr-2" />
+          <Button type="submit" className="btn-primary h-11 px-6">
+            <Search className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Tìm kiếm</span>
           </Button>
 
-          {/* Close button for modal */}
           {onClose && (
             <Button
               type="button"
@@ -210,16 +195,15 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
               onClick={onClose}
               className="h-11 w-11"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </Button>
           )}
         </div>
 
-        {/* Mobile Filter Panel */}
         {showFilters && showFilterPanel && (
-          <div className="md:hidden mt-3 p-4 bg-white rounded-xl border border-gray-200 shadow-lg space-y-3">
+          <div className="mt-3 space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-lg md:hidden">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1.5 block">Loại</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Loại</label>
               <Select value={type} onValueChange={(val) => setType(val as SearchType)}>
                 <SelectTrigger className="w-full border-gray-200">
                   <SelectValue placeholder="Chọn loại" />
@@ -233,8 +217,11 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1.5 block">Chi nhánh</label>
-              <Select value={branchId || '__all__'} onValueChange={(val) => setBranchId(val === '__all__' ? '' : val)}>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Chi nhánh</label>
+              <Select
+                value={branchId || '__all__'}
+                onValueChange={(val) => setBranchId(val === '__all__' ? '' : val)}
+              >
                 <SelectTrigger className="w-full border-gray-200">
                   <SelectValue placeholder="Chọn chi nhánh" />
                 </SelectTrigger>
@@ -252,12 +239,11 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
         )}
       </form>
 
-      {/* Search Results Dropdown */}
       {showResults && query.length >= 2 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-gray-200 shadow-xl z-50 max-h-[70vh] overflow-y-auto">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl">
           {isLoading ? (
             <div className="p-6 text-center text-gray-500">
-              <div className="animate-spin w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full mx-auto mb-2" />
+              <div className="mx-auto mb-2 h-6 w-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
               Đang tìm kiếm...
             </div>
           ) : !hasResults ? (
@@ -266,12 +252,11 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {/* Shows Results */}
               {results?.shows.items.length > 0 && (
                 <div className="p-3">
-                  <div className="flex items-center gap-2 px-2 mb-2">
-                    <Music className="w-4 h-4 text-brand-500" />
-                    <span className="text-xs font-semibold text-gray-500 uppercase">Shows</span>
+                  <div className="mb-2 flex items-center gap-2 px-2">
+                    <Music className="h-4 w-4 text-brand-500" />
+                    <span className="text-xs font-semibold uppercase text-gray-500">Shows</span>
                     <Badge variant="secondary" className="text-xs">
                       {results.shows.total}
                     </Badge>
@@ -285,14 +270,14 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
                           setShowResults(false);
                           onClose?.();
                         }}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0">
-                          <Music className="w-5 h-5 text-white" />
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-400 to-brand-600">
+                          <Music className="h-5 w-5 text-white" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">{show.title}</p>
-                          <p className="text-xs text-gray-500 truncate">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-gray-900">{show.title}</p>
+                          <p className="truncate text-xs text-gray-500">
                             {show.stage.name} • {formatDateTime(show.performTime)}
                           </p>
                         </div>
@@ -307,12 +292,11 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
                 </div>
               )}
 
-              {/* Tours Results */}
               {results?.tours.items.length > 0 && (
                 <div className="p-3">
-                  <div className="flex items-center gap-2 px-2 mb-2">
-                    <Compass className="w-4 h-4 text-accent-500" />
-                    <span className="text-xs font-semibold text-gray-500 uppercase">Tours</span>
+                  <div className="mb-2 flex items-center gap-2 px-2">
+                    <Compass className="h-4 w-4 text-accent-500" />
+                    <span className="text-xs font-semibold uppercase text-gray-500">Tours</span>
                     <Badge variant="secondary" className="text-xs">
                       {results.tours.total}
                     </Badge>
@@ -326,14 +310,14 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
                           setShowResults(false);
                           onClose?.();
                         }}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center flex-shrink-0">
-                          <Compass className="w-5 h-5 text-white" />
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-accent-400 to-accent-600">
+                          <Compass className="h-5 w-5 text-white" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">{tour.title}</p>
-                          <p className="text-xs text-gray-500 truncate">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-gray-900">{tour.title}</p>
+                          <p className="truncate text-xs text-gray-500">
                             {tour.departureLoc?.name} → {tour.destinationLoc?.name}
                             {tour.duration && ` • ${tour.duration}`}
                           </p>
@@ -349,12 +333,11 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
                 </div>
               )}
 
-              {/* Locations Results */}
               {results?.locations.items.length > 0 && (
                 <div className="p-3">
-                  <div className="flex items-center gap-2 px-2 mb-2">
-                    <MapPin className="w-4 h-4 text-success-500" />
-                    <span className="text-xs font-semibold text-gray-500 uppercase">Địa điểm</span>
+                  <div className="mb-2 flex items-center gap-2 px-2">
+                    <MapPin className="h-4 w-4 text-success-500" />
+                    <span className="text-xs font-semibold uppercase text-gray-500">Địa điểm</span>
                     <Badge variant="secondary" className="text-xs">
                       {results.locations.total}
                     </Badge>
@@ -368,13 +351,13 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
                           setShowResults(false);
                           onClose?.();
                         }}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center flex-shrink-0">
-                          <MapPin className="w-5 h-5 text-white" />
+                        <div className="from-success-400 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br to-success-600">
+                          <MapPin className="h-5 w-5 text-white" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">{location.name}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-gray-900">{location.name}</p>
                         </div>
                         {location.showCount > 0 && (
                           <Badge variant="outline" className="text-xs">
@@ -387,14 +370,13 @@ export function SearchBar({ className, showFilters = true, onClose, isExpanded =
                 </div>
               )}
 
-              {/* View All Link */}
               {hasResults && (
                 <div className="p-3">
                   <Button
                     variant="ghost"
-                    className="w-full text-brand-600 hover:text-brand-700 hover:bg-brand-50"
+                    className="w-full text-brand-600 hover:bg-brand-50 hover:text-brand-700"
                     onClick={() => {
-                      handleSearch({ preventDefault: () => { } } as React.FormEvent);
+                      handleSearch({ preventDefault: () => {} } as React.FormEvent);
                     }}
                   >
                     Xem tất cả kết quả cho "{query}"

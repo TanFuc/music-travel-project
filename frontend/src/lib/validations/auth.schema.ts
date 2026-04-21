@@ -1,5 +1,4 @@
 import { z } from 'zod';
-
 export const loginSchema = z.object({
   phoneNumber: z
     .string()
@@ -7,7 +6,6 @@ export const loginSchema = z.object({
     .regex(/^(0|84|\+84)[0-9]{9}$/, 'Số điện thoại không hợp lệ'),
   password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
 });
-
 export const registerSchema = z
   .object({
     fullName: z
@@ -19,7 +17,6 @@ export const registerSchema = z
       .string()
       .min(1, 'Vui lòng nhập số điện thoại')
       .regex(/^(0|84|\+84)[0-9]{9}$/, 'Số điện thoại không hợp lệ'),
-
     password: z
       .string()
       .min(1, 'Vui lòng nhập mật khẩu')
@@ -32,6 +29,5 @@ export const registerSchema = z
     message: 'Mật khẩu xác nhận không khớp',
     path: ['confirmPassword'],
   });
-
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;

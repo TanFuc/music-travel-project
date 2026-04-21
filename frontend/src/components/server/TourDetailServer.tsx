@@ -1,13 +1,7 @@
-/**
- * Server Component: TourDetailServer
- * Renders tour details with data fetched on the server
- */
-
 import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { ArrowLeft, Clock, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
 interface TourSchedule {
   id: number;
   startDate: string;
@@ -16,7 +10,6 @@ interface TourSchedule {
   bookedCount: number;
   status: string;
 }
-
 interface TourDetail {
   id: number;
   title: string;
@@ -32,20 +25,19 @@ interface TourDetail {
     id: number;
     name: string;
   } | null;
-  branch: { id: number; name: string } | null;
+  branch: {
+    id: number;
+    name: string;
+  } | null;
   schedules: TourSchedule[];
 }
-
 interface TourDetailServerProps {
   tour: TourDetail;
 }
-
 export function TourDetailServer({ tour }: TourDetailServerProps) {
   const bannerUrl = (tour.properties?.bannerUrl || tour.properties?.thumbnailUrl) as string;
-
   return (
     <>
-      {/* Hero Banner Background */}
       <div className="relative h-[40vh] min-h-[300px] w-full overflow-hidden">
         {bannerUrl ? (
           <Image
@@ -57,15 +49,14 @@ export function TourDetailServer({ tour }: TourDetailServerProps) {
             sizes="100vw"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-brand-400 to-brand-600" />
+          <div className="h-full w-full bg-gradient-to-br from-brand-400 to-brand-600" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
-        {/* Back Button */}
-        <div className="absolute top-6 left-4 sm:left-8 z-20">
+        <div className="absolute left-4 top-6 z-20 sm:left-8">
           <Link
             href="/tours"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/40 transition-all font-medium text-sm"
+            className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-md transition-all hover:bg-white/40"
           >
             <ArrowLeft className="h-4 w-4" />
             Quay lại
@@ -73,31 +64,30 @@ export function TourDetailServer({ tour }: TourDetailServerProps) {
         </div>
       </div>
 
-      {/* Header Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-neutral-100 border border-neutral-100/50">
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <Badge className="bg-brand-100 text-brand-700 hover:bg-brand-200 border-none px-3 py-1 text-xs font-bold uppercase tracking-wider">
+      <div className="rounded-3xl border border-neutral-100/50 bg-white p-6 shadow-xl shadow-neutral-100 sm:p-8">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <Badge className="border-none bg-brand-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 hover:bg-brand-200">
             Tour Hot
           </Badge>
           {tour.branch && (
-            <Badge variant="outline" className="text-neutral-500 border-neutral-200">
+            <Badge variant="outline" className="border-neutral-200 text-neutral-500">
               {tour.branch.name}
             </Badge>
           )}
         </div>
 
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-black text-gray-900 leading-tight mb-6">
+        <h1 className="mb-6 font-display text-3xl font-black leading-tight text-gray-900 sm:text-4xl md:text-5xl">
           {tour.title}
         </h1>
 
-        <div className="flex flex-wrap gap-6 pt-6 border-t border-neutral-100">
+        <div className="flex flex-wrap gap-6 border-t border-neutral-100 pt-6">
           {tour.duration && (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 text-orange-600">
                 <Clock className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">
+                <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
                   Thời lượng
                 </p>
                 <p className="font-semibold text-gray-900">{tour.duration}</p>
@@ -106,11 +96,11 @@ export function TourDetailServer({ tour }: TourDetailServerProps) {
           )}
           {tour.destinationLoc && (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                 <MapPin className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">
+                <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
                   Hành trình
                 </p>
                 <p className="font-semibold text-gray-900">
@@ -122,28 +112,25 @@ export function TourDetailServer({ tour }: TourDetailServerProps) {
         </div>
       </div>
 
-      {/* Description */}
       {tour.description && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-neutral-100">
-          <h3 className="font-display font-bold text-xl mb-6 flex items-center gap-2">
+        <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm sm:p-8">
+          <h3 className="mb-6 flex items-center gap-2 font-display text-xl font-bold">
             <span className="text-2xl">📝</span> Giới thiệu chương trình
           </h3>
           <div
-            className="prose prose-neutral prose-lg max-w-none text-neutral-600 leading-relaxed"
+            className="prose prose-neutral prose-lg max-w-none leading-relaxed text-neutral-600"
             dangerouslySetInnerHTML={{ __html: tour.description }}
           />
         </div>
       )}
 
-      {/* Tour Inclusions / Exclusions (Properties) */}
       {tour.properties && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Includes */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {!!tour.properties.includes && (
-            <div className="bg-green-50/50 rounded-3xl p-6 sm:p-8 border border-green-100">
-              <h3 className="font-display font-bold text-lg text-green-800 mb-4 flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-green-200 flex items-center justify-center">
-                  <span className="text-green-700 text-xs">✓</span>
+            <div className="rounded-3xl border border-green-100 bg-green-50/50 p-6 sm:p-8">
+              <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-green-800">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-200">
+                  <span className="text-xs text-green-700">✓</span>
                 </div>
                 Bao gồm
               </h3>
@@ -152,7 +139,7 @@ export function TourDetailServer({ tour }: TourDetailServerProps) {
                   .split(',')
                   .map((item, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-neutral-700">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                      <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-green-500" />
                       <span className="text-sm font-medium">{item.trim()}</span>
                     </li>
                   ))}
@@ -160,12 +147,11 @@ export function TourDetailServer({ tour }: TourDetailServerProps) {
             </div>
           )}
 
-          {/* Excludes */}
           {!!tour.properties.excludes && (
-            <div className="bg-red-50/50 rounded-3xl p-6 sm:p-8 border border-red-100">
-              <h3 className="font-display font-bold text-lg text-red-800 mb-4 flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-red-200 flex items-center justify-center">
-                  <span className="text-red-700 text-xs">✕</span>
+            <div className="rounded-3xl border border-red-100 bg-red-50/50 p-6 sm:p-8">
+              <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-red-800">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-200">
+                  <span className="text-xs text-red-700">✕</span>
                 </div>
                 Không bao gồm
               </h3>
@@ -174,7 +160,7 @@ export function TourDetailServer({ tour }: TourDetailServerProps) {
                   .split(',')
                   .map((item, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-neutral-700">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                      <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-red-400" />
                       <span className="text-sm font-medium">{item.trim()}</span>
                     </li>
                   ))}
@@ -182,18 +168,17 @@ export function TourDetailServer({ tour }: TourDetailServerProps) {
             </div>
           )}
 
-          {/* Other Highlights */}
           {Object.entries(tour.properties).filter(
             ([key]) =>
               !['includes', 'excludes', 'thumbnailUrl', 'bannerUrl', 'image', 'images'].includes(
                 key
               )
           ).length > 0 && (
-            <div className="md:col-span-2 bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-neutral-100">
-              <h3 className="font-display font-bold text-xl mb-6 flex items-center gap-2">
+            <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm sm:p-8 md:col-span-2">
+              <h3 className="mb-6 flex items-center gap-2 font-display text-xl font-bold">
                 <span className="text-2xl">✨</span> Thông tin khác
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {Object.entries(tour.properties)
                   .filter(
                     ([key]) =>
@@ -207,13 +192,13 @@ export function TourDetailServer({ tour }: TourDetailServerProps) {
                       ].includes(key)
                   )
                   .map(([key, value]) => (
-                    <div key={key} className="flex items-start gap-4 p-4 bg-neutral-50 rounded-2xl">
-                      <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 text-brand-600 font-bold">
+                    <div key={key} className="flex items-start gap-4 rounded-2xl bg-neutral-50 p-4">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-600">
                         {key.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h4 className="font-bold text-gray-900 capitalize">{key}</h4>
-                        <p className="text-sm text-neutral-600 mt-1">{String(value)}</p>
+                        <h4 className="font-bold capitalize text-gray-900">{key}</h4>
+                        <p className="mt-1 text-sm text-neutral-600">{String(value)}</p>
                       </div>
                     </div>
                   ))}

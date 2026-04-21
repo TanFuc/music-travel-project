@@ -6,18 +6,15 @@ export interface ApiResponse<T> {
   timestamp: string;
   path: string;
 }
-
 export interface PaginationMeta {
   page: number;
   limit: number;
   total: number;
   totalPages: number;
 }
-
 export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   meta: PaginationMeta;
 }
-
 export interface ErrorResponse {
   success: false;
   data: null;

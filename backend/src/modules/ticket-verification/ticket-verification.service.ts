@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import {
   VerifyTicketDto,
@@ -12,17 +7,10 @@ import {
   AttendanceStatsDto,
 } from './dto/ticket-verification.dto';
 import * as crypto from 'crypto';
-
 @Injectable()
 export class TicketVerificationService {
   constructor(private readonly prisma: PrismaService) {}
-
-  // ============================================================================
-  // TICKET VERIFICATION
-  // ============================================================================
-
   async verifyTicket(dto: VerifyTicketDto, verifierId: number) {
-    // Find ticket by code
     const ticket = await this.prisma.ticket.findUnique({
       where: { ticketCode: dto.ticketCode },
       include: {
@@ -37,9 +25,7 @@ export class TicketVerificationService {
         },
       },
     });
-
     if (!ticket) {
-      // Log failed attempt
       await this.logFailedVerification(
         dto.showId,
         dto.ticketCode,
@@ -53,8 +39,6 @@ export class TicketVerificationService {
         error: { code: 'TICKET_NOT_FOUND', details: 'No ticket found with the provided code' },
       };
     }
-
-    // Validate ticket status
     const validStatuses = ['SOLD', 'AVAILABLE'];
     if (!validStatuses.includes(ticket.status)) {
       await this.logFailedVerification(
@@ -73,12 +57,9 @@ export class TicketVerificationService {
         },
       };
     }
-
-    // Get show info
     const show = await this.prisma.show.findUnique({
       where: { id: dto.showId },
     });
-
     if (!show) {
       return {
         success: false,
@@ -86,8 +67,6 @@ export class TicketVerificationService {
         error: { code: 'SHOW_NOT_FOUND' },
       };
     }
-
-    // Check show status
     if (show.status === 'CANCELLED') {
       return {
         success: false,
@@ -95,8 +74,6 @@ export class TicketVerificationService {
         error: { code: 'SHOW_CANCELLED' },
       };
     }
-
-    // Get ticket holder user ID
     const userId = ticket.booking?.userId || ticket.holderUserId;
     if (!userId) {
       await this.logFailedVerification(
@@ -112,8 +89,6 @@ export class TicketVerificationService {
         error: { code: 'NO_TICKET_HOLDER' },
       };
     }
-
-    // Check if ticket has already been used for this show (General Admission - one entry per show)
     const existingVerification = await this.prisma.ticketVerification.findUnique({
       where: {
         ticketId_showId: {
@@ -122,7 +97,6 @@ export class TicketVerificationService {
         },
       },
     });
-
     if (existingVerification && !dto.isReEntry) {
       return {
         success: false,
@@ -139,8 +113,6 @@ export class TicketVerificationService {
         },
       };
     }
-
-    // Check capacity if maxCapacity is set
     if (show.maxCapacity && show.currentAttendance >= show.maxCapacity && !dto.isReEntry) {
       await this.logFailedVerification(
         dto.showId,
@@ -155,12 +127,8 @@ export class TicketVerificationService {
         error: { code: 'CAPACITY_FULL', details: `${show.currentAttendance}/${show.maxCapacity}` },
       };
     }
-
-    // If re-entry, we need to update the existing record (or allow it)
     if (dto.isReEntry && existingVerification) {
-      // Create a re-entry log (we'll use ShowActivityLog for this)
       await this.logReEntry(dto.showId, ticket.id, userId, verifierId, dto);
-
       return {
         success: true,
         message: 'Re-entry approved',
@@ -186,8 +154,6 @@ export class TicketVerificationService {
         },
       };
     }
-
-    // Create verification record
     const verification = await this.prisma.ticketVerification.create({
       data: {
         showId: dto.showId,
@@ -201,14 +167,10 @@ export class TicketVerificationService {
         isSuccessful: true,
       },
     });
-
-    // Update show attendance
     await this.prisma.show.update({
       where: { id: dto.showId },
       data: { currentAttendance: { increment: 1 } },
     });
-
-    // Update ticket check-in status
     await this.prisma.ticket.update({
       where: { id: ticket.id },
       data: {
@@ -221,10 +183,7 @@ export class TicketVerificationService {
         },
       },
     });
-
-    // Log activity
     await this.logVerificationActivity(dto.showId, ticket.id, userId, verifierId, 'SUCCESS', dto);
-
     return {
       success: true,
       message: 'Entry approved',
@@ -250,27 +209,19 @@ export class TicketVerificationService {
       },
     };
   }
-
   async verifyTicketByQR(qrData: string, showId: number, verifierId: number, deviceInfo?: string) {
-    // Parse QR data - expected format: ticketCode|securityHash|timestamp
     let ticketCode: string;
     let securityHash: string;
     let timestamp: string;
-
     try {
       const parts = qrData.split('|');
       if (parts.length < 2) {
-        // Try alternative format - just ticket code
         ticketCode = qrData;
       } else {
         [ticketCode, securityHash, timestamp] = parts;
-
-        // Verify security hash (optional validation)
         if (securityHash && timestamp) {
           const expectedHash = this.generateSecurityHash(ticketCode, timestamp);
           if (securityHash !== expectedHash) {
-            // Hash mismatch - could be tampering, but we'll still try to verify by code
-            console.warn('QR code security hash mismatch', { ticketCode });
           }
         }
       }
@@ -281,7 +232,6 @@ export class TicketVerificationService {
         error: { code: 'INVALID_QR_FORMAT' },
       };
     }
-
     return this.verifyTicket(
       {
         ticketCode,
@@ -292,38 +242,28 @@ export class TicketVerificationService {
       verifierId,
     );
   }
-
   async manualEntry(dto: ManualEntryDto, verifierId: number) {
     const show = await this.prisma.show.findUnique({
       where: { id: dto.showId },
     });
-
     if (!show) {
       throw new NotFoundException('Show not found');
     }
-
-    // Check capacity
     if (show.maxCapacity && show.currentAttendance >= show.maxCapacity) {
       throw new BadRequestException('Show is at full capacity');
     }
-
-    // Find or validate user
     const user = await this.prisma.user.findUnique({
       where: { id: dto.userId },
     });
-
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    // If ticket ID provided, verify it belongs to user
     let ticket = null;
     if (dto.ticketId) {
       ticket = await this.prisma.ticket.findUnique({
         where: { id: dto.ticketId },
         include: { booking: true },
       });
-
       if (
         !ticket ||
         (ticket.booking?.userId !== dto.userId && ticket.holderUserId !== dto.userId)
@@ -331,12 +271,10 @@ export class TicketVerificationService {
         throw new BadRequestException('Ticket does not belong to this user');
       }
     }
-
-    // Create verification record for manual entry
     const verification = await this.prisma.ticketVerification.create({
       data: {
         showId: dto.showId,
-        ticketId: dto.ticketId || 0, // Use 0 for manual entries without ticket
+        ticketId: dto.ticketId || 0,
         userId: dto.userId,
         verifiedBy: verifierId,
         verificationMethod: 'MANUAL_ENTRY',
@@ -345,14 +283,10 @@ export class TicketVerificationService {
         isSuccessful: true,
       },
     });
-
-    // Update show attendance
     await this.prisma.show.update({
       where: { id: dto.showId },
       data: { currentAttendance: { increment: 1 } },
     });
-
-    // Log activity
     await this.prisma.showActivityLog.create({
       data: {
         showId: dto.showId,
@@ -368,7 +302,6 @@ export class TicketVerificationService {
         },
       },
     });
-
     return {
       success: true,
       message: 'Manual entry recorded',
@@ -388,11 +321,6 @@ export class TicketVerificationService {
       },
     };
   }
-
-  // ============================================================================
-  // VERIFICATION HISTORY & ANALYTICS
-  // ============================================================================
-
   async getVerifications(filters: {
     showId?: number;
     ticketId?: number;
@@ -403,17 +331,14 @@ export class TicketVerificationService {
     limit?: number;
   }) {
     const where: any = {};
-
     if (filters.showId) where.showId = filters.showId;
     if (filters.ticketId) where.ticketId = filters.ticketId;
     if (filters.userId) where.userId = filters.userId;
     if (filters.verificationMethod) where.verificationMethod = filters.verificationMethod;
     if (filters.successfulOnly) where.isSuccessful = true;
-
     const page = filters.page || 1;
     const limit = filters.limit || 20;
     const skip = (page - 1) * limit;
-
     const [verifications, total] = await Promise.all([
       this.prisma.ticketVerification.findMany({
         where,
@@ -429,7 +354,6 @@ export class TicketVerificationService {
       }),
       this.prisma.ticketVerification.count({ where }),
     ]);
-
     return {
       data: verifications,
       pagination: {
@@ -440,16 +364,13 @@ export class TicketVerificationService {
       },
     };
   }
-
   async getShowAttendance(showId: number): Promise<AttendanceStatsDto> {
     const show = await this.prisma.show.findUnique({
       where: { id: showId },
     });
-
     if (!show) {
       throw new NotFoundException('Show not found');
     }
-
     const [
       totalVerifications,
       successfulVerifications,
@@ -477,7 +398,6 @@ export class TicketVerificationService {
         },
       }),
     ]);
-
     return {
       showId: show.id,
       showTitle: show.title,
@@ -503,7 +423,6 @@ export class TicketVerificationService {
       })),
     };
   }
-
   async getTicketVerificationHistory(ticketCode: string) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { ticketCode },
@@ -524,11 +443,9 @@ export class TicketVerificationService {
         },
       },
     });
-
     if (!ticket) {
       throw new NotFoundException('Ticket not found');
     }
-
     return {
       ticket: {
         id: ticket.id,
@@ -555,17 +472,11 @@ export class TicketVerificationService {
         .length,
     };
   }
-
-  // ============================================================================
-  // QR CODE GENERATION
-  // ============================================================================
-
   generateTicketQRData(ticketCode: string): string {
     const timestamp = Date.now().toString();
     const securityHash = this.generateSecurityHash(ticketCode, timestamp);
     return `${ticketCode}|${securityHash}|${timestamp}`;
   }
-
   private generateSecurityHash(ticketCode: string, timestamp: string): string {
     const secret = process.env.QR_SECRET_KEY || 'default-secret-key';
     return crypto
@@ -574,11 +485,6 @@ export class TicketVerificationService {
       .digest('hex')
       .substring(0, 16);
   }
-
-  // ============================================================================
-  // LOGGING HELPERS
-  // ============================================================================
-
   private async logFailedVerification(
     showId: number,
     ticketCode: string,
@@ -601,7 +507,6 @@ export class TicketVerificationService {
       },
     });
   }
-
   private async logVerificationActivity(
     showId: number,
     ticketId: number,
@@ -628,7 +533,6 @@ export class TicketVerificationService {
       },
     });
   }
-
   private async logReEntry(
     showId: number,
     ticketId: number,

@@ -16,7 +16,6 @@ import { BankQRConfigService } from './services/bank-qr-config.service';
 import { AdminQRService } from './services/admin-qr.service';
 import { VietQRService } from './services/vietqr.service';
 import { BankDeeplinkService } from './services/bank-deeplink.service';
-
 @Module({
   imports: [ScheduleModule.forRoot(), BookingsModule, WalletModule, TicketsModule],
   controllers: [PaymentsController, BankQRController, BankQRConfigController],

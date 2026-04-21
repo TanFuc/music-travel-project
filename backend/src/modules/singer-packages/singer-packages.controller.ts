@@ -23,8 +23,6 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Public } from '@/common/decorators/public.decorator';
 import { FastifyRequest } from 'fastify';
-
-// Extend FastifyRequest to include user property
 interface AuthenticatedRequest extends FastifyRequest {
   user?: {
     id: number;
@@ -32,12 +30,10 @@ interface AuthenticatedRequest extends FastifyRequest {
     role: string;
   };
 }
-
 @ApiTags('singer-packages')
 @Controller('singer-packages')
 export class SingerPackagesController {
-  constructor(private readonly singerPackagesService: SingerPackagesService) { }
-
+  constructor(private readonly singerPackagesService: SingerPackagesService) {}
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
@@ -45,21 +41,27 @@ export class SingerPackagesController {
   @ApiOperation({ summary: 'Tạo gói đăng ký ca sĩ mới' })
   @ApiResponse({ status: 201, description: 'Gói đăng ký đã được tạo thành công' })
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createDto: CreateSingerPackageDto, @Req() req: AuthenticatedRequest) {
+  async create(
+    @Body()
+    createDto: CreateSingerPackageDto,
+    @Req()
+    req: AuthenticatedRequest,
+  ) {
     const userId = req.user?.id;
     return this.singerPackagesService.create(createDto, userId);
   }
-
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy danh sách gói đăng ký (Admin)' })
   @ApiResponse({ status: 200, description: 'Danh sách gói đăng ký' })
-  async findAll(@Query() filterDto: SingerPackageFilterDto) {
+  async findAll(
+    @Query()
+    filterDto: SingerPackageFilterDto,
+  ) {
     return this.singerPackagesService.findAll(filterDto);
   }
-
   @Get('active')
   @Public()
   @ApiOperation({ summary: 'Lấy danh sách gói đăng ký đang hoạt động (Public)' })
@@ -67,7 +69,6 @@ export class SingerPackagesController {
   async findAllActive() {
     return this.singerPackagesService.findAllActive();
   }
-
   @Get('statistics')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
@@ -77,17 +78,18 @@ export class SingerPackagesController {
   async getStatistics() {
     return this.singerPackagesService.getStatistics();
   }
-
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy thông tin gói đăng ký theo ID' })
   @ApiResponse({ status: 200, description: 'Thông tin gói đăng ký' })
-  async findOne(@Param('id') id: string) {
+  async findOne(
+    @Param('id')
+    id: string,
+  ) {
     return this.singerPackagesService.findOne(id);
   }
-
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
@@ -95,14 +97,16 @@ export class SingerPackagesController {
   @ApiOperation({ summary: 'Cập nhật gói đăng ký' })
   @ApiResponse({ status: 200, description: 'Gói đăng ký đã được cập nhật' })
   async update(
-    @Param('id') id: string,
-    @Body() updateDto: UpdateSingerPackageDto,
-    @Req() req: AuthenticatedRequest,
+    @Param('id')
+    id: string,
+    @Body()
+    updateDto: UpdateSingerPackageDto,
+    @Req()
+    req: AuthenticatedRequest,
   ) {
     const userId = req.user?.id;
     return this.singerPackagesService.update(id, updateDto, userId);
   }
-
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
@@ -110,13 +114,15 @@ export class SingerPackagesController {
   @ApiOperation({ summary: 'Cập nhật gói đăng ký' })
   @ApiResponse({ status: 200, description: 'Gói đăng ký đã được cập nhật' })
   async updatePut(
-    @Param('id') id: string,
-    @Body() updateDto: UpdateSingerPackageDto,
-    @Req() req: AuthenticatedRequest,
+    @Param('id')
+    id: string,
+    @Body()
+    updateDto: UpdateSingerPackageDto,
+    @Req()
+    req: AuthenticatedRequest,
   ) {
     return this.update(id, updateDto, req);
   }
-
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
@@ -124,7 +130,10 @@ export class SingerPackagesController {
   @ApiOperation({ summary: 'Xóa gói đăng ký' })
   @ApiResponse({ status: 200, description: 'Gói đăng ký đã được xóa' })
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string) {
+  async remove(
+    @Param('id')
+    id: string,
+  ) {
     await this.singerPackagesService.remove(id);
     return { message: 'Gói đăng ký đã được xóa thành công' };
   }

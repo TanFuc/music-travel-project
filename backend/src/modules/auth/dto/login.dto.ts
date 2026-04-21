@@ -1,6 +1,5 @@
 import { IsNotEmpty, IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
 export class LoginDto {
   @ApiProperty({
     example: '0901234567',
@@ -12,7 +11,6 @@ export class LoginDto {
     message: 'Số điện thoại không hợp lệ.',
   })
   phoneNumber: string;
-
   @ApiProperty({
     example: 'Password123',
     description: 'User password',

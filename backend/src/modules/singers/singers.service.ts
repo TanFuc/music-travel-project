@@ -16,21 +16,16 @@ import { FastifyRequest } from 'fastify';
 import { CreateSingerRegistrationDto } from './dto/create-singer-registration.dto';
 import { UpdateSingerRegistrationDto } from './dto/update-singer-registration.dto';
 import { SingerRegistrationFilterDto } from './dto/singer-registration-filter.dto';
-
 @Injectable()
 export class SingersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
-
   async create(createDto: CreateSingerRegistrationDto): Promise<SingerRegistration> {
-    // Validate package selection - either legacy package or template ID must be provided
     if (!createDto.package && !createDto.packageTemplateId) {
       throw new BadRequestException('Vui lòng chọn gói đăng ký');
     }
-
-    // If packageTemplateId is provided, validate it exists and is active
     if (createDto.packageTemplateId) {
       const packageTemplate = await this.prisma.singerPackageTemplate.findFirst({
         where: {
@@ -38,12 +33,9 @@ export class SingersService {
           isActive: true,
         },
       });
-
       if (!packageTemplate) {
         throw new BadRequestException('Gói đăng ký không tồn tại hoặc đã ngừng hoạt động');
       }
-
-      // Check registration limit
       if (packageTemplate.maxRegistrations) {
         const currentRegistrations = await this.prisma.singerRegistration.count({
           where: {
@@ -53,25 +45,20 @@ export class SingersService {
             },
           },
         });
-
         if (currentRegistrations >= packageTemplate.maxRegistrations) {
           throw new BadRequestException('Gói đăng ký đã đạt giới hạn số lượng');
         }
       }
     }
-
-    // Sanitize input data
     const sanitizedData = {
       ...createDto,
       fullName: createDto.fullName.trim(),
-      phoneNumber: createDto.phoneNumber.replace(/\D/g, ''), // Remove non-digits
+      phoneNumber: createDto.phoneNumber.replace(/\D/g, ''),
       email: createDto.email.toLowerCase().trim(),
       address: createDto.address.trim(),
       favoriteGenre: createDto.favoriteGenre.trim(),
       introduction: createDto.introduction?.trim() || null,
     };
-
-    // Try to link registration to an existing user by phone/email
     const existingUser = await this.prisma.user.findFirst({
       where: {
         isActive: true,
@@ -81,12 +68,8 @@ export class SingersService {
         id: true,
       },
     });
-
-    // Prepare data to store, excluding agreeToTerms which is not persisted
     const { agreeToTerms, ...dataToStore } = sanitizedData as any;
     (dataToStore as any).userId = existingUser ? existingUser.id : null;
-
-    // Check for duplicate phone number or email
     const existingRegistration = await this.prisma.singerRegistration.findFirst({
       where: {
         OR: [{ phoneNumber: sanitizedData.phoneNumber }, { email: sanitizedData.email }],
@@ -95,7 +78,6 @@ export class SingersService {
         },
       },
     });
-
     if (existingRegistration) {
       if (existingRegistration.phoneNumber === sanitizedData.phoneNumber) {
         throw new ConflictException('Số điện thoại này đã được đăng ký');
@@ -104,7 +86,6 @@ export class SingersService {
         throw new ConflictException('Email này đã được đăng ký');
       }
     }
-
     return this.prisma.singerRegistration.create({
       data: dataToStore,
       include: {
@@ -120,7 +101,6 @@ export class SingersService {
       },
     });
   }
-
   async findAll(filterDto: SingerRegistrationFilterDto) {
     const {
       page = 1,
@@ -131,40 +111,30 @@ export class SingersService {
       singingExperience,
       search,
     } = filterDto;
-
-    // Limit page size for security
     const safeLimit = Math.min(Math.max(limit, 1), 100);
     const safePage = Math.max(page, 1);
     const skip = (safePage - 1) * safeLimit;
-
     const where: any = {};
-
     if (status) {
       where.status = status;
     }
-
     if (packageFilter) {
       where.package = packageFilter;
     }
-
     if (packageTemplateId) {
       where.packageTemplateId = packageTemplateId;
     }
-
     if (singingExperience) {
       where.singingExperience = singingExperience;
     }
-
     if (search) {
-      // Sanitize search input
-      const sanitizedSearch = search.trim().substring(0, 100); // Limit search length
+      const sanitizedSearch = search.trim().substring(0, 100);
       where.OR = [
         { fullName: { contains: sanitizedSearch, mode: 'insensitive' } },
         { phoneNumber: { contains: sanitizedSearch } },
         { email: { contains: sanitizedSearch, mode: 'insensitive' } },
       ];
     }
-
     const [registrations, total] = await Promise.all([
       this.prisma.singerRegistration.findMany({
         where,
@@ -185,7 +155,6 @@ export class SingersService {
       }),
       this.prisma.singerRegistration.count({ where }),
     ]);
-
     return {
       data: registrations,
       pagination: {
@@ -196,7 +165,6 @@ export class SingersService {
       },
     };
   }
-
   async findOne(id: string): Promise<SingerRegistration> {
     const registration = await this.prisma.singerRegistration.findUnique({
       where: { id },
@@ -212,41 +180,31 @@ export class SingersService {
         },
       },
     });
-
     if (!registration) {
       throw new NotFoundException('Không tìm thấy đơn đăng ký');
     }
-
     return registration;
   }
-
   async update(id: string, updateDto: UpdateSingerRegistrationDto): Promise<SingerRegistration> {
     const registration = await this.findOne(id);
-
-    // If updating phone or email, check for duplicates
     if (updateDto.phoneNumber || updateDto.email) {
       const duplicateCheck: any = {
         id: { not: id },
         status: { not: SingerRegistrationStatus.CANCELLED },
       };
-
       if (updateDto.phoneNumber || updateDto.email) {
         duplicateCheck.OR = [];
-
         if (updateDto.phoneNumber && updateDto.phoneNumber !== registration.phoneNumber) {
           duplicateCheck.OR.push({ phoneNumber: updateDto.phoneNumber });
         }
-
         if (updateDto.email && updateDto.email !== registration.email) {
           duplicateCheck.OR.push({ email: updateDto.email });
         }
       }
-
       if (duplicateCheck.OR?.length > 0) {
         const existingRegistration = await this.prisma.singerRegistration.findFirst({
           where: duplicateCheck,
         });
-
         if (existingRegistration) {
           if (existingRegistration.phoneNumber === updateDto.phoneNumber) {
             throw new ConflictException('Số điện thoại này đã được đăng ký');
@@ -257,7 +215,6 @@ export class SingersService {
         }
       }
     }
-
     return this.prisma.singerRegistration.update({
       where: { id },
       data: updateDto,
@@ -274,22 +231,18 @@ export class SingersService {
       },
     });
   }
-
   async remove(id: string): Promise<void> {
-    await this.findOne(id); // Check if exists
-
+    await this.findOne(id);
     await this.prisma.singerRegistration.delete({
       where: { id },
     });
   }
-
   async updateStatus(
     id: string,
     status: SingerRegistrationStatus,
     adminNotes?: string,
   ): Promise<SingerRegistration> {
-    await this.findOne(id); // Check if exists
-
+    await this.findOne(id);
     return this.prisma.singerRegistration.update({
       where: { id },
       data: {
@@ -309,7 +262,6 @@ export class SingersService {
       },
     });
   }
-
   async getStatistics() {
     const [
       totalRegistrations,
@@ -336,7 +288,6 @@ export class SingersService {
         _count: { singingExperience: true },
       }),
     ]);
-
     return {
       total: totalRegistrations,
       byStatus: {
@@ -362,35 +313,28 @@ export class SingersService {
       ),
     };
   }
-
-  async uploadVoiceSample(req: FastifyRequest): Promise<{ url: string }> {
+  async uploadVoiceSample(req: FastifyRequest): Promise<{
+    url: string;
+  }> {
     try {
       const data = await req.file();
-
       if (!data) {
         throw new BadRequestException('Không có file được tải lên');
       }
-
-      // Validate file type
       const allowedMimeTypes = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/m4a', 'audio/x-m4a'];
       if (!allowedMimeTypes.includes(data.mimetype)) {
         throw new BadRequestException('Chỉ chấp nhận file âm thanh (MP3, WAV, M4A)');
       }
-
-      // Validate file size (10MB max)
-      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      const maxSize = 10 * 1024 * 1024;
       const buffer = await data.toBuffer();
       if (buffer.length > maxSize) {
         throw new BadRequestException('File không được vượt quá 10MB');
       }
-
-      // Upload to Cloudinary
       const result = await this.cloudinaryService.uploadFromBuffer(
         buffer,
         'singer-voice-samples',
         `voice-sample-${Date.now()}`,
       );
-
       if ('secure_url' in result) {
         return { url: result.secure_url };
       } else {
@@ -403,9 +347,7 @@ export class SingersService {
       throw new BadRequestException('Lỗi khi xử lý file');
     }
   }
-
   async findByUserId(userId: number) {
-    // Get user contact info
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -413,17 +355,13 @@ export class SingersService {
         email: true,
       },
     });
-
     if (!user) {
       return [];
     }
-
     return this.prisma.singerRegistration.findMany({
       where: {
         OR: [
-          // Registrations already linked to this user
           { userId },
-          // Older registrations created without userId but matching by phone/email
           {
             userId: null,
             OR: [

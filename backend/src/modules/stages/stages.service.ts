@@ -5,22 +5,18 @@ import { CacheKeys, CachePatterns, CACHE_TTL } from '@/cache/cache-keys.constant
 import { ERROR_CODES } from '@/common/constants/error-codes.constant';
 import { CreateStageDto } from './dto/create-stage.dto';
 import { UpdateStageDto } from './dto/update-stage.dto';
-
 @Injectable()
 export class StagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
   ) {}
-
   async findAll(locationId?: number) {
     const cacheKey = locationId ? CacheKeys.stagesByLocation(locationId) : CacheKeys.stages();
-
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
     }
-
     const stages = await this.prisma.stage.findMany({
       where: {
         deletedAt: null,
@@ -54,7 +50,6 @@ export class StagesService {
       },
       orderBy: { name: 'asc' },
     });
-
     const result = stages.map((stage) => ({
       id: stage.id,
       name: stage.name,
@@ -64,14 +59,10 @@ export class StagesService {
       branch: stage.branch,
       activeShowCount: stage._count.shows,
     }));
-
     await this.cache.set(cacheKey, result, CACHE_TTL.MEDIUM);
-
     return result;
   }
-
   async findBySlug(_slug: string) {
-    // First find by name since we don't have slug in Stage model
     const stage = await this.prisma.stage.findFirst({
       where: { deletedAt: null },
       include: {
@@ -113,14 +104,12 @@ export class StagesService {
         },
       },
     });
-
     if (!stage) {
       throw new NotFoundException({
         code: ERROR_CODES.SHOW_001,
         message: 'Sân khấu không tồn tại.',
       });
     }
-
     return {
       ...stage,
       shows: stage.shows.map((show) => ({
@@ -140,26 +129,20 @@ export class StagesService {
       })),
     };
   }
-
   async create(createStageDto: CreateStageDto, userId?: number) {
-    // Verify location exists
     const location = await this.prisma.location.findUnique({
       where: { id: createStageDto.locationId },
     });
-
     if (!location) {
       throw new NotFoundException({
         code: ERROR_CODES.LOCATION_001,
         message: 'Địa điểm không tồn tại.',
       });
     }
-
-    // Verify template exists if provided
     if (createStageDto.seatMapTemplate) {
       const template = await this.prisma.seatMapTemplate.findUnique({
         where: { id: createStageDto.seatMapTemplate },
       });
-
       if (!template) {
         throw new NotFoundException({
           code: ERROR_CODES.TEMPLATE_001,
@@ -167,13 +150,10 @@ export class StagesService {
         });
       }
     }
-
-    // Verify branch exists if provided
     if (createStageDto.branchId) {
       const branch = await this.prisma.branch.findUnique({
         where: { id: createStageDto.branchId },
       });
-
       if (!branch) {
         throw new NotFoundException({
           code: 'BRANCH_001',
@@ -181,8 +161,6 @@ export class StagesService {
         });
       }
     }
-
-    // Create stage
     const stage = await this.prisma.stage.create({
       data: {
         locationId: createStageDto.locationId,
@@ -213,32 +191,23 @@ export class StagesService {
         },
       },
     });
-
-    // Invalidate cache
     await this.cache.delPattern(CachePatterns.stages());
-
     return stage;
   }
-
   async update(id: number, updateStageDto: UpdateStageDto, userId?: number) {
-    // Verify stage exists
     const existingStage = await this.prisma.stage.findFirst({
       where: { id, deletedAt: null },
     });
-
     if (!existingStage) {
       throw new NotFoundException({
         code: ERROR_CODES.STAGE_001,
         message: 'Sân khấu không tồn tại.',
       });
     }
-
-    // Verify location exists if provided
     if (updateStageDto.locationId) {
       const location = await this.prisma.location.findUnique({
         where: { id: updateStageDto.locationId },
       });
-
       if (!location) {
         throw new NotFoundException({
           code: ERROR_CODES.LOCATION_001,
@@ -246,13 +215,10 @@ export class StagesService {
         });
       }
     }
-
-    // Verify template exists if provided
     if (updateStageDto.seatMapTemplate) {
       const template = await this.prisma.seatMapTemplate.findUnique({
         where: { id: updateStageDto.seatMapTemplate },
       });
-
       if (!template) {
         throw new NotFoundException({
           code: ERROR_CODES.TEMPLATE_001,
@@ -260,13 +226,10 @@ export class StagesService {
         });
       }
     }
-
-    // Verify branch exists if provided
     if (updateStageDto.branchId) {
       const branch = await this.prisma.branch.findUnique({
         where: { id: updateStageDto.branchId },
       });
-
       if (!branch) {
         throw new NotFoundException({
           code: 'BRANCH_001',
@@ -274,8 +237,6 @@ export class StagesService {
         });
       }
     }
-
-    // Update stage
     const stage = await this.prisma.stage.update({
       where: { id },
       data: {
@@ -300,42 +261,31 @@ export class StagesService {
         },
       },
     });
-
-    // Invalidate cache
     await this.cache.delPattern(CachePatterns.stages());
-
     return stage;
   }
-
   async remove(id: number, userId?: number) {
-    // Verify stage exists
     const stage = await this.prisma.stage.findFirst({
       where: { id, deletedAt: null },
     });
-
     if (!stage) {
       throw new NotFoundException({
         code: ERROR_CODES.STAGE_001,
         message: 'Sân khấu không tồn tại.',
       });
     }
-
-    // Check if stage has any shows
     const showCount = await this.prisma.show.count({
       where: {
         stageId: id,
         deletedAt: null,
       },
     });
-
     if (showCount > 0) {
       throw new BadRequestException({
         code: ERROR_CODES.STAGE_002,
         message: 'Không thể xóa sân khấu đã có show.',
       });
     }
-
-    // Soft delete
     await this.prisma.stage.update({
       where: { id },
       data: {
@@ -343,40 +293,28 @@ export class StagesService {
         updatedBy: userId,
       },
     });
-
-    // Invalidate cache
     await this.cache.delPattern(CachePatterns.stages());
-
     return { message: 'Xóa sân khấu thành công.' };
   }
-
   async getPhysicalSeats(stageId: number, showId?: number) {
     const cacheKey = showId ? CacheKeys.showSeats(showId) : CacheKeys.stageSeats(stageId);
-
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
     }
-
-    // Verify stage exists
     const stage = await this.prisma.stage.findFirst({
       where: { id: stageId, deletedAt: null },
     });
-
     if (!stage) {
       throw new NotFoundException({
         code: ERROR_CODES.STAGE_001,
         message: 'Sân khấu không tồn tại.',
       });
     }
-
-    // Get all physical seats of the stage
     const seats = await this.prisma.physicalSeat.findMany({
       where: { stageId },
       orderBy: [{ zoneName: 'asc' }, { rowName: 'asc' }, { seatNumber: 'asc' }],
     });
-
-    // If showId is provided, get ticket status for each seat
     let result;
     if (showId) {
       const tickets = await this.prisma.ticket.findMany({
@@ -390,9 +328,7 @@ export class StagesService {
           ticketClassId: true,
         },
       });
-
       const ticketMap = new Map(tickets.map((t) => [t.physicalSeatId, t]));
-
       result = seats.map((seat) => {
         const ticket = ticketMap.get(seat.id);
         return {
@@ -425,9 +361,7 @@ export class StagesService {
         },
       }));
     }
-
     await this.cache.set(cacheKey, result, CACHE_TTL.MEDIUM);
-
     return result;
   }
 }

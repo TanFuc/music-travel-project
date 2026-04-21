@@ -1,5 +1,4 @@
 'use client';
-
 import { useQuery } from '@tanstack/react-query';
 import { get } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -28,7 +27,6 @@ import {
   ArrowUpRight,
   CalendarDays,
 } from 'lucide-react';
-
 interface ShowAnalytics {
   showId: number;
   showTitle: string;
@@ -47,12 +45,20 @@ interface ShowAnalytics {
   manualEntryVerifications: number;
   totalActivities: number;
   activityBreakdown: Record<string, number>;
-  registrationsOverTime: Array<{ date: string; count: number }>;
-  verificationsOverTime: Array<{ time: string; count: number }>;
+  registrationsOverTime: Array<{
+    date: string;
+    count: number;
+  }>;
+  verificationsOverTime: Array<{
+    time: string;
+    count: number;
+  }>;
   averagePerformanceDuration: number | null;
-  mostPopularPerformanceTypes: Array<{ type: string; count: number }>;
+  mostPopularPerformanceTypes: Array<{
+    type: string;
+    count: number;
+  }>;
 }
-
 const getPerformanceTypeIcon = (type: string) => {
   switch (type) {
     case 'SINGING':
@@ -69,7 +75,6 @@ const getPerformanceTypeIcon = (type: string) => {
       return <HelpCircle className="h-4 w-4" />;
   }
 };
-
 const getPerformanceTypeName = (type: string) => {
   switch (type) {
     case 'SINGING':
@@ -86,30 +91,35 @@ const getPerformanceTypeName = (type: string) => {
       return 'Khác';
   }
 };
-
-export default function ShowAnalyticsPage({ params }: { params: { id: string } }) {
+export default function ShowAnalyticsPage({
+  params,
+}: {
+  params: {
+    id: string;
+  };
+}) {
   const showId = parseInt(params.id);
-
-  const { data: analytics, isLoading, refetch } = useQuery({
+  const {
+    data: analytics,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['show-analytics', showId],
     queryFn: () => get<ShowAnalytics>(`/admin/shows/${showId}/analytics`),
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
-
   const getCapacityColor = (percentage: number | null) => {
     if (percentage === null) return 'bg-gray-200';
     if (percentage >= 90) return 'bg-red-500';
     if (percentage >= 75) return 'bg-yellow-500';
     return 'bg-green-500';
   };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Phân Tích & Báo Cáo</h1>
-          <p className="text-neutral-600 flex items-center gap-2">
+          <p className="flex items-center gap-2 text-neutral-600">
             {analytics ? (
               <>
                 {analytics.showTitle}
@@ -126,25 +136,25 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
         <div className="flex gap-2">
           <Link href={`/admin/shows/${showId}/check-in`}>
             <Button variant="outline">
-              <Ticket className="h-4 w-4 mr-2" />
+              <Ticket className="mr-2 h-4 w-4" />
               Check-in
             </Button>
           </Link>
           <Link href={`/admin/shows/${showId}/activity-log`}>
             <Button variant="outline">
-              <BarChart3 className="h-4 w-4 mr-2" />
+              <BarChart3 className="mr-2 h-4 w-4" />
               Nhật ký
             </Button>
           </Link>
           <Button variant="outline" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Làm mới
           </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => (
             <Card key={i}>
               <CardContent className="pt-6">
@@ -155,12 +165,10 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
         </div>
       ) : analytics ? (
         <>
-          {/* Key Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Attendance */}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <Card>
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <Users className="h-8 w-8 text-blue-500" />
                   <Badge
                     variant={
@@ -180,7 +188,7 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
                   {analytics.maxCapacity && <span>/ {analytics.maxCapacity} max</span>}
                 </p>
                 {analytics.maxCapacity && (
-                  <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
                     <div
                       className={`h-full ${getCapacityColor(analytics.attendancePercentage)} transition-all`}
                       style={{ width: `${Math.min(analytics.attendancePercentage || 0, 100)}%` }}
@@ -190,40 +198,38 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
               </CardContent>
             </Card>
 
-            {/* Total Registrations */}
             <Card>
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <Mic2 className="h-8 w-8 text-purple-500" />
                   <TrendingUp className="h-5 w-5 text-green-500" />
                 </div>
                 <p className="text-3xl font-bold">{analytics.totalRegistrations}</p>
                 <p className="text-sm text-neutral-600">Đăng ký biểu diễn</p>
-                <div className="flex gap-2 mt-2">
+                <div className="mt-2 flex gap-2">
                   <Badge variant="secondary" className="text-xs">
                     {analytics.pendingRegistrations} chờ
                   </Badge>
-                  <Badge variant="default" className="text-xs bg-green-600">
+                  <Badge variant="default" className="bg-green-600 text-xs">
                     {analytics.performedRegistrations} xong
                   </Badge>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Verifications */}
             <Card>
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <CheckCircle2 className="h-8 w-8 text-green-500" />
                 </div>
                 <p className="text-3xl font-bold">{analytics.totalVerifications}</p>
                 <p className="text-sm text-neutral-600">Xác thực vé</p>
-                <div className="flex gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs flex items-center gap-1">
+                <div className="mt-2 flex gap-2">
+                  <Badge variant="outline" className="flex items-center gap-1 text-xs">
                     <QrCode className="h-3 w-3" />
                     {analytics.qrScanVerifications}
                   </Badge>
-                  <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <Badge variant="outline" className="flex items-center gap-1 text-xs">
                     <Keyboard className="h-3 w-3" />
                     {analytics.manualEntryVerifications}
                   </Badge>
@@ -231,10 +237,9 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
               </CardContent>
             </Card>
 
-            {/* No-Show Rate */}
             <Card>
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <XCircle className="h-8 w-8 text-red-500" />
                   <Badge
                     variant={analytics.noShowRate > 20 ? 'destructive' : 'secondary'}
@@ -245,16 +250,14 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
                 </div>
                 <p className="text-3xl font-bold">{analytics.noShowRate}%</p>
                 <p className="text-sm text-neutral-600">Tỷ lệ vắng mặt</p>
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="mt-1 text-xs text-neutral-400">
                   {analytics.cancelledRegistrations} đăng ký bị hủy
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Registration Status Breakdown */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -265,16 +268,32 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
               <CardContent>
                 <div className="space-y-4">
                   {[
-                    { label: 'Chờ duyệt', value: analytics.pendingRegistrations, color: 'bg-yellow-500' },
-                    { label: 'Đã duyệt', value: analytics.approvedRegistrations, color: 'bg-blue-500' },
-                    { label: 'Đã biểu diễn', value: analytics.performedRegistrations, color: 'bg-green-500' },
-                    { label: 'Đã hủy', value: analytics.cancelledRegistrations, color: 'bg-red-500' },
+                    {
+                      label: 'Chờ duyệt',
+                      value: analytics.pendingRegistrations,
+                      color: 'bg-yellow-500',
+                    },
+                    {
+                      label: 'Đã duyệt',
+                      value: analytics.approvedRegistrations,
+                      color: 'bg-blue-500',
+                    },
+                    {
+                      label: 'Đã biểu diễn',
+                      value: analytics.performedRegistrations,
+                      color: 'bg-green-500',
+                    },
+                    {
+                      label: 'Đã hủy',
+                      value: analytics.cancelledRegistrations,
+                      color: 'bg-red-500',
+                    },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${item.color}`} />
+                      <div className={`h-3 w-3 rounded-full ${item.color}`} />
                       <span className="flex-1 text-sm">{item.label}</span>
                       <span className="font-bold">{item.value}</span>
-                      <span className="text-xs text-neutral-500 w-12 text-right">
+                      <span className="w-12 text-right text-xs text-neutral-500">
                         {analytics.totalRegistrations > 0
                           ? Math.round((item.value / analytics.totalRegistrations) * 100)
                           : 0}
@@ -284,8 +303,7 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
                   ))}
                 </div>
 
-                {/* Visual Bar */}
-                <div className="mt-4 h-4 rounded-full overflow-hidden flex">
+                <div className="mt-4 flex h-4 overflow-hidden rounded-full">
                   {analytics.totalRegistrations > 0 && (
                     <>
                       <div
@@ -318,7 +336,6 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
               </CardContent>
             </Card>
 
-            {/* Performance Types */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -328,8 +345,8 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
               </CardHeader>
               <CardContent>
                 {analytics.mostPopularPerformanceTypes.length === 0 ? (
-                  <div className="text-center py-8 text-neutral-500">
-                    <Music className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <div className="py-8 text-center text-neutral-500">
+                    <Music className="mx-auto mb-2 h-8 w-8 opacity-50" />
                     <p className="text-sm">Chưa có dữ liệu</p>
                   </div>
                 ) : (
@@ -337,18 +354,19 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
                     {analytics.mostPopularPerformanceTypes.map((pt, index) => {
                       const maxCount = analytics.mostPopularPerformanceTypes[0]?.count || 1;
                       const percentage = (pt.count / maxCount) * 100;
-
                       return (
                         <div key={pt.type} className="relative">
-                          <div className="flex items-center justify-between mb-1">
+                          <div className="mb-1 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="text-lg font-bold text-neutral-400">#{index + 1}</span>
+                              <span className="text-lg font-bold text-neutral-400">
+                                #{index + 1}
+                              </span>
                               {getPerformanceTypeIcon(pt.type)}
                               <span className="font-medium">{getPerformanceTypeName(pt.type)}</span>
                             </div>
                             <Badge variant="secondary">{pt.count}</Badge>
                           </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-2 overflow-hidden rounded-full bg-gray-100">
                             <div
                               className="h-full bg-purple-500 transition-all"
                               style={{ width: `${percentage}%` }}
@@ -361,9 +379,9 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
                 )}
 
                 {analytics.averagePerformanceDuration && (
-                  <div className="mt-4 pt-4 border-t">
+                  <div className="mt-4 border-t pt-4">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-neutral-600 flex items-center gap-1">
+                      <span className="flex items-center gap-1 text-neutral-600">
                         <Clock className="h-4 w-4" />
                         Thời lượng trung bình
                       </span>
@@ -377,23 +395,20 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
             </Card>
           </div>
 
-          {/* Activity Breakdown */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
                 Phân tích hoạt động ({analytics.totalActivities} tổng)
               </CardTitle>
-              <CardDescription>
-                Tổng hợp tất cả hoạt động liên quan đến sự kiện này
-              </CardDescription>
+              <CardDescription>Tổng hợp tất cả hoạt động liên quan đến sự kiện này</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-7">
                 {Object.entries(analytics.activityBreakdown).map(([type, count]) => (
-                  <div key={type} className="text-center p-3 bg-neutral-50 rounded-lg">
+                  <div key={type} className="rounded-lg bg-neutral-50 p-3 text-center">
                     <p className="text-2xl font-bold">{count}</p>
-                    <p className="text-xs text-neutral-600 truncate">
+                    <p className="truncate text-xs text-neutral-600">
                       {type === 'REGISTRATION' && 'Đăng ký'}
                       {type === 'CANCELLATION' && 'Hủy'}
                       {type === 'STATUS_CHANGE' && 'Đổi TT'}
@@ -408,7 +423,6 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
             </CardContent>
           </Card>
 
-          {/* Registration Timeline (Simple) */}
           {analytics.registrationsOverTime.length > 0 && (
             <Card>
               <CardHeader>
@@ -418,22 +432,21 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-end gap-2 h-32">
+                <div className="flex h-32 items-end gap-2">
                   {analytics.registrationsOverTime.map((item) => {
                     const maxCount = Math.max(
                       ...analytics.registrationsOverTime.map((i) => i.count),
                       1
                     );
                     const height = (item.count / maxCount) * 100;
-
                     return (
-                      <div key={item.date} className="flex-1 flex flex-col items-center">
-                        <span className="text-xs font-bold mb-1">{item.count}</span>
+                      <div key={item.date} className="flex flex-1 flex-col items-center">
+                        <span className="mb-1 text-xs font-bold">{item.count}</span>
                         <div
-                          className="w-full bg-blue-500 rounded-t transition-all"
+                          className="w-full rounded-t bg-blue-500 transition-all"
                           style={{ height: `${Math.max(height, 5)}%` }}
                         />
-                        <span className="text-xs text-neutral-500 mt-1">
+                        <span className="mt-1 text-xs text-neutral-500">
                           {new Date(item.date).toLocaleDateString('vi-VN', {
                             day: '2-digit',
                             month: '2-digit',
@@ -447,11 +460,10 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
             </Card>
           )}
 
-          {/* Quick Links */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Link href={`/admin/shows/${showId}/registrations`}>
-              <Card className="hover:bg-neutral-50 transition-colors cursor-pointer">
-                <CardContent className="pt-6 flex items-center justify-between">
+              <Card className="cursor-pointer transition-colors hover:bg-neutral-50">
+                <CardContent className="flex items-center justify-between pt-6">
                   <div>
                     <p className="font-medium">Quản lý đăng ký</p>
                     <p className="text-sm text-neutral-500">Xem và duyệt tiết mục</p>
@@ -462,8 +474,8 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
             </Link>
 
             <Link href={`/admin/shows/${showId}/check-in`}>
-              <Card className="hover:bg-neutral-50 transition-colors cursor-pointer">
-                <CardContent className="pt-6 flex items-center justify-between">
+              <Card className="cursor-pointer transition-colors hover:bg-neutral-50">
+                <CardContent className="flex items-center justify-between pt-6">
                   <div>
                     <p className="font-medium">Quét vé Check-in</p>
                     <p className="text-sm text-neutral-500">Xác thực vé khán giả</p>
@@ -474,8 +486,8 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
             </Link>
 
             <Link href={`/admin/shows/${showId}/activity-log`}>
-              <Card className="hover:bg-neutral-50 transition-colors cursor-pointer">
-                <CardContent className="pt-6 flex items-center justify-between">
+              <Card className="cursor-pointer transition-colors hover:bg-neutral-50">
+                <CardContent className="flex items-center justify-between pt-6">
                   <div>
                     <p className="font-medium">Nhật ký hoạt động</p>
                     <p className="text-sm text-neutral-500">Xem lịch sử chi tiết</p>
@@ -487,8 +499,8 @@ export default function ShowAnalyticsPage({ params }: { params: { id: string } }
           </div>
         </>
       ) : (
-        <div className="text-center py-12 text-neutral-500">
-          <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+        <div className="py-12 text-center text-neutral-500">
+          <BarChart3 className="mx-auto mb-2 h-12 w-12 opacity-50" />
           <p>Không thể tải dữ liệu phân tích</p>
           <Button variant="outline" className="mt-4" onClick={() => refetch()}>
             Thử lại

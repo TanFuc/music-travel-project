@@ -22,9 +22,7 @@ import { ImageProcessingService } from './image-processing.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 @ApiTags('media/process')
 @Controller('media/process')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,7 +30,6 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 @ApiBearerAuth()
 export class ImageProcessingController {
   constructor(private readonly imageProcessingService: ImageProcessingService) {}
-
   @Post('remove-background')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -57,14 +54,14 @@ export class ImageProcessingController {
       }),
     )
     file: Express.Multer.File,
-    @Query('threshold') threshold?: string,
+    @Query('threshold')
+    threshold?: string,
   ) {
     const thresholdValue = threshold ? parseInt(threshold, 10) : 250;
     const processedBuffer = await this.imageProcessingService.removeWhiteBackground(
       file.buffer,
       thresholdValue,
     );
-
     return {
       success: true,
       data: processedBuffer.toString('base64'),
@@ -72,7 +69,6 @@ export class ImageProcessingController {
       size: processedBuffer.length,
     };
   }
-
   @Post('logo-circle')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -98,7 +94,6 @@ export class ImageProcessingController {
     file: Express.Multer.File,
   ) {
     const processedBuffer = await this.imageProcessingService.transformLogoToCircle(file.buffer);
-
     return {
       success: true,
       data: processedBuffer.toString('base64'),
@@ -106,7 +101,6 @@ export class ImageProcessingController {
       size: processedBuffer.length,
     };
   }
-
   @Post('extract-colors')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -132,13 +126,11 @@ export class ImageProcessingController {
     file: Express.Multer.File,
   ) {
     const colors = await this.imageProcessingService.extractColors(file.buffer);
-
     return {
       success: true,
       ...colors,
     };
   }
-
   @Post('resize')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -165,27 +157,27 @@ export class ImageProcessingController {
       }),
     )
     file: Express.Multer.File,
-    @Query('width') width: string,
-    @Query('height') height?: string,
-    @Query('format') format?: 'jpeg' | 'png' | 'webp',
+    @Query('width')
+    width: string,
+    @Query('height')
+    height?: string,
+    @Query('format')
+    format?: 'jpeg' | 'png' | 'webp',
   ) {
     const widthValue = parseInt(width, 10) || 800;
     const heightValue = height ? parseInt(height, 10) : undefined;
     const formatValue = format || 'webp';
-
     const processedBuffer = await this.imageProcessingService.resizeImage(
       file.buffer,
       widthValue,
       heightValue,
       formatValue,
     );
-
     const mimeTypes = {
       jpeg: 'image/jpeg',
       png: 'image/png',
       webp: 'image/webp',
     };
-
     return {
       success: true,
       data: processedBuffer.toString('base64'),
@@ -193,7 +185,6 @@ export class ImageProcessingController {
       size: processedBuffer.length,
     };
   }
-
   @Post('thumbnail')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -218,14 +209,14 @@ export class ImageProcessingController {
       }),
     )
     file: Express.Multer.File,
-    @Query('size') size?: string,
+    @Query('size')
+    size?: string,
   ) {
     const sizeValue = size ? parseInt(size, 10) : 150;
     const processedBuffer = await this.imageProcessingService.generateThumbnail(
       file.buffer,
       sizeValue,
     );
-
     return {
       success: true,
       data: processedBuffer.toString('base64'),
@@ -233,7 +224,6 @@ export class ImageProcessingController {
       size: processedBuffer.length,
     };
   }
-
   @Post('metadata')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')

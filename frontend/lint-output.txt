@@ -1,0 +1,175 @@
+
+> frontend@1.0.0 lint C:\Users\nguye\OneDrive\Desktop\Project\FSell-music-travel-project\frontend
+> next lint --fix
+
+
+./src/app/(auth)/register/page.tsx
+50:21  Error: 'confirmPassword' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/app/(main)/checkout/page.tsx
+111:185  Error: 'removeSingerPackage' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+123:18  Error: Unexpected console statement.  no-console
+743:27  Error: 'response' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+754:24  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/(main)/page.tsx
+41:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/(main)/profile/bookings/[code]/page.tsx
+108:11  Error: 'router' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/app/(main)/profile/page.tsx
+87:11  Error: 'paymentConfig' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+88:11  Error: 'StatusIcon' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+174:36  Error: 'authUser' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+185:19  Error: 'wallet' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+235:19  Error: 'singerRegistrations' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/app/(main)/register-singer/page.tsx
+13:11  Error: 'SingerPackage' is defined but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/app/(main)/search/page.tsx
+92:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+104:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/(main)/shows/page.tsx
+49:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/(main)/shows/[slug]/page.tsx
+75:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+115:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+129:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/(main)/tickets/page.tsx
+36:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/(main)/tours/page.tsx
+72:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/(main)/tours/[slug]/page.tsx
+61:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+103:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+117:12  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+134:11  Error: 'hasSlots' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/app/admin/banners/page.tsx
+41:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/admin/home-stages/create/page.tsx
+37:11  Error: 'imageUrl' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+45:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/admin/home-stages/page.tsx
+38:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/admin/home-stages/[id]/page.tsx
+65:11  Error: 'imageUrl' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+73:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/admin/shows/[id]/page.tsx
+61:7  Error: 'ticketStatusColors' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/app/admin/shows/[id]/qr-codes/page.tsx
+41:12  Error: 'showUrl' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+41:21  Error: 'setShowUrl' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/app/admin/stages/page.tsx
+19:18  Error: 'setPage' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/app/admin/stages/[stageId]/seat-map/page.tsx
+53:8  Warning: React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+66:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+81:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+97:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+115:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/app/admin/support/page.tsx
+36:21  Error: 'setFaqPage' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/app/register-performance/page.tsx
+68:67  Error: 'setValue' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/components/admin/BannerForm.tsx
+64:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/components/admin/SeatMapEditor.tsx
+42:7  Error: 'ZONE_COLORS' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+195:132  Error: Unexpected console statement.  no-console
+
+./src/components/admin/ShowFormModal.tsx
+20:11  Error: 'Stage' is defined but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+65:7  Error: 'DEFAULT_COLORS' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+130:21  Error: 'ticketFields' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+130:43  Error: 'appendTicket' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+130:65  Error: 'removeTicket' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+218:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/components/client/SearchResultsClient.tsx
+122:20  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/components/client/TicketBookingClient.tsx
+21:58  Error: 'ticketClasses' is assigned a value but never used. Allowed unused args must match /^_/u.  unused-imports/no-unused-vars
+23:12  Error: 'selectedClass' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+24:11  Error: 'handleAddToCart' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/components/common/ErrorBoundary.tsx
+22:30  Error: 'error' is defined but never used. Allowed unused args must match /^_/u.  unused-imports/no-unused-vars
+22:44  Error: 'errorInfo' is defined but never used. Allowed unused args must match /^_/u.  unused-imports/no-unused-vars
+
+./src/components/common/Link.tsx
+4:7  Error: 'PREFETCH_ON_HOVER_ROUTES' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/components/common/WebVitals.tsx
+4:25  Error: 'metric' is defined but never used. Allowed unused args must match /^_/u.  unused-imports/no-unused-vars
+
+./src/components/home/ToursSection.tsx
+41:11  Error: 'formatDate' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/components/layout/Header.tsx
+48:20  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/components/maps/LocationMap.tsx
+186:8  Warning: React Hook useEffect has a missing dependency: 'initMap'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/payment/BankQRPayment.tsx
+26:8  Warning: React Hook useEffect has a missing dependency: 'generateQR'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+53:16  Error: 'err' is defined but never used.  unused-imports/no-unused-vars
+
+./src/components/payment/BankSelector.tsx
+22:8  Warning: React Hook useEffect has a missing dependency: 'loadBanks'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+29:16  Error: 'error' is defined but never used.  unused-imports/no-unused-vars
+
+./src/components/payment/PaymentQRModal.tsx
+52:11  Error: 'handleOpenBankApp' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+84:16  Error: 'err' is defined but never used.  unused-imports/no-unused-vars
+96:8  Warning: React Hook useEffect has missing dependencies: 'error', 'expirationSeconds', 'generateQR', 'loading', and 'qrData'. Either include them or remove the dependency array. If 'setTimeLeft' needs the current value of 'expirationSeconds', you can also switch to useReducer instead of useState and read 'expirationSeconds' in the reducer.  react-hooks/exhaustive-deps
+
+./src/components/seo/PublicBreadcrumbJsonLd.tsx
+34:20  Error: React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+
+./src/components/shows/GeneralAdmissionView.tsx
+22:40  Error: 'showId' is defined but never used. Allowed unused args must match /^_/u.  unused-imports/no-unused-vars
+36:11  Error: 'handleSelect' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/components/shows/SeatMap.tsx
+24:12  Error: 'lockId' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/components/shows/SeatMapEditor.tsx
+95:42  Error: 'onSave' is defined but never used. Allowed unused args must match /^_/u.  unused-imports/no-unused-vars
+116:69  Error: 'refetchLayout' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/components/shows/ShowCard.tsx
+51:16  Error: 'e' is defined but never used.  unused-imports/no-unused-vars
+
+./src/components/shows/WishlistButton.tsx
+59:19  Error: 'isAdded' is assigned a value but never used. Allowed unused vars must match /^_/u.  unused-imports/no-unused-vars
+
+./src/lib/api.ts
+65:16  Error: 'refreshError' is defined but never used.  unused-imports/no-unused-vars
+
+./src/services/payment.service.ts
+121:16  Error: 'err' is defined but never used.  unused-imports/no-unused-vars
+143:16  Error: 'err' is defined but never used.  unused-imports/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

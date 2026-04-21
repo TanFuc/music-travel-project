@@ -1,20 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { $Enums } from '@prisma/client';
 import { CacheService } from '@/cache/cache.service';
 import { CacheKeys } from '@/cache/cache-keys.constant';
-
+import { R2StorageService } from '@/modules/media/r2/r2-storage.service';
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-  ) { }
-
+    private readonly r2StorageService: R2StorageService,
+  ) {}
   async getDashboardStats() {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
     const [
       totalUsers,
       newUsersThisMonth,
@@ -27,25 +27,20 @@ export class AdminService {
       totalRevenue,
       revenueThisMonth,
     ] = await Promise.all([
-      // Users
       this.prisma.user.count({ where: { deletedAt: null } }),
       this.prisma.user.count({
         where: { deletedAt: null, createdAt: { gte: firstDayOfMonth } },
       }),
-      // Shows
       this.prisma.show.count({ where: { deletedAt: null } }),
       this.prisma.show.count({
         where: { status: 'UPCOMING', performTime: { gte: now }, deletedAt: null },
       }),
-      // Tours
       this.prisma.tour.count({ where: { deletedAt: null } }),
       this.prisma.tourSchedule.count({
         where: { status: 'OPEN', startDate: { gte: now }, deletedAt: null },
       }),
-      // Bookings
       this.prisma.booking.count(),
       this.prisma.booking.count({ where: { status: 'PENDING' } }),
-      // Revenue
       this.prisma.transaction.aggregate({
         where: { status: 'SUCCESS' },
         _sum: { amount: true },
@@ -55,7 +50,6 @@ export class AdminService {
         _sum: { amount: true },
       }),
     ]);
-
     return {
       users: {
         total: totalUsers,
@@ -77,12 +71,10 @@ export class AdminService {
       },
     };
   }
-
   async getRevenueStats() {
     const today = new Date();
     const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-
     const [thisMonthRevenue, lastMonthRevenue, dailyRevenue] = await Promise.all([
       this.prisma.transaction.aggregate({
         where: { status: 'SUCCESS', createdAt: { gte: thisMonth } },
@@ -101,14 +93,12 @@ export class AdminService {
         _sum: { amount: true },
       }),
     ]);
-
     return {
       thisMonth: thisMonthRevenue._sum.amount || 0,
       lastMonth: lastMonthRevenue._sum.amount || 0,
       dailyRevenue,
     };
   }
-
   async getRecentBookings() {
     const bookings = await this.prisma.booking.findMany({
       take: 10,
@@ -123,10 +113,8 @@ export class AdminService {
         },
       },
     });
-
     return { items: bookings };
   }
-
   async getUpcomingShows() {
     return this.prisma.show.findMany({
       where: { status: 'UPCOMING', performTime: { gte: new Date() }, deletedAt: null },
@@ -138,23 +126,18 @@ export class AdminService {
       },
     });
   }
-
-  // ============================================================================
-  // USERS MANAGEMENT
-  // ============================================================================
   async getUsers(page: number = 1, limit: number = 20, search?: string) {
     const skip = (page - 1) * limit;
     const where = search
       ? {
-        deletedAt: null,
-        OR: [
-          { fullName: { contains: search, mode: 'insensitive' as const } },
-          { phoneNumber: { contains: search } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }
+          deletedAt: null,
+          OR: [
+            { fullName: { contains: search, mode: 'insensitive' as const } },
+            { phoneNumber: { contains: search } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
       : { deletedAt: null };
-
     const [items, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
@@ -173,7 +156,6 @@ export class AdminService {
       }),
       this.prisma.user.count({ where }),
     ]);
-
     return {
       items,
       meta: {
@@ -184,7 +166,6 @@ export class AdminService {
       },
     };
   }
-
   async getUserById(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -205,14 +186,11 @@ export class AdminService {
         },
       },
     });
-
     if (!user) {
       throw new Error('User not found');
     }
-
     return user;
   }
-
   async createUser(data: {
     phoneNumber: string;
     fullName: string;
@@ -220,19 +198,14 @@ export class AdminService {
     password: string;
     role: 'USER' | 'STAFF' | 'ADMIN' | 'PARTNER';
   }) {
-    // Check if phone number already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { phoneNumber: data.phoneNumber },
     });
-
     if (existingUser) {
       throw new Error('Phone number already exists');
     }
-
-    // Hash password
-    const bcrypt = require('bcrypt');
+    const bcrypt = require('bcryptjs');
     const passwordHash = await bcrypt.hash(data.password, 10);
-
     return this.prisma.user.create({
       data: {
         phoneNumber: data.phoneNumber,
@@ -253,7 +226,6 @@ export class AdminService {
       },
     });
   }
-
   async updateUser(
     id: number,
     data: {
@@ -264,11 +236,9 @@ export class AdminService {
     },
   ) {
     const user = await this.prisma.user.findUnique({ where: { id } });
-
     if (!user) {
       throw new Error('User not found');
     }
-
     return this.prisma.user.update({
       where: { id },
       data,
@@ -283,28 +253,21 @@ export class AdminService {
       },
     });
   }
-
   async deleteUser(id: number) {
     const user = await this.prisma.user.findUnique({ where: { id } });
-
     if (!user) {
       throw new Error('User not found');
     }
-
-    // Soft delete
     return this.prisma.user.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
   async toggleUserStatus(id: number) {
     const user = await this.prisma.user.findUnique({ where: { id } });
-
     if (!user) {
       throw new Error('User not found');
     }
-
     return this.prisma.user.update({
       where: { id },
       data: { isActive: !user.isActive },
@@ -314,13 +277,8 @@ export class AdminService {
       },
     });
   }
-
-  // ============================================================================
-  // SHOWS MANAGEMENT
-  // ============================================================================
   async getShows(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-
     const [items, total] = await Promise.all([
       this.prisma.show.findMany({
         where: { deletedAt: null },
@@ -336,7 +294,6 @@ export class AdminService {
       }),
       this.prisma.show.count({ where: { deletedAt: null } }),
     ]);
-
     return {
       items,
       meta: {
@@ -347,7 +304,6 @@ export class AdminService {
       },
     };
   }
-
   async getShowById(id: number) {
     const show = await this.prisma.show.findUnique({
       where: { id },
@@ -361,7 +317,6 @@ export class AdminService {
     if (!show) throw new Error('Show not found');
     return show;
   }
-
   async createShow(data: {
     title: string;
     description?: string;
@@ -376,7 +331,6 @@ export class AdminService {
       },
     });
   }
-
   async updateShow(
     id: number,
     data: Partial<{
@@ -396,7 +350,6 @@ export class AdminService {
   ) {
     const show = await this.prisma.show.findUnique({ where: { id } });
     if (!show) throw new Error('Show not found');
-
     return this.prisma.show.update({
       where: { id },
       data,
@@ -405,32 +358,22 @@ export class AdminService {
       },
     });
   }
-
   async deleteShow(id: number) {
     const show = await this.prisma.show.findUnique({ where: { id } });
     if (!show) throw new Error('Show not found');
-
-    // Soft delete
     return this.prisma.show.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
   async updateShowStatus(id: number, status: 'UPCOMING' | 'ONGOING' | 'ENDED' | 'CANCELLED') {
     const show = await this.prisma.show.findUnique({ where: { id } });
     if (!show) throw new Error('Show not found');
-
     return this.prisma.show.update({
       where: { id },
       data: { status },
     });
   }
-
-  /**
-   * Create a show with full configuration including artists, ticket classes, and tickets
-   * Uses a transaction to ensure data consistency
-   */
   async createShowFull(
     data: {
       title: string;
@@ -459,18 +402,13 @@ export class AdminService {
     },
     createdBy: number,
   ) {
-    // Verify stage exists
     const stage = await this.prisma.stage.findUnique({
       where: { id: data.stageId },
       include: { physicalSeats: true },
     });
     if (!stage) throw new Error('Stage not found');
-
     return this.prisma.$transaction(async (tx) => {
-      // 1. Generate slug from title
       const slug = this.generateSlug(data.title);
-
-      // 2. Create the show
       const show = await tx.show.create({
         data: {
           title: data.title,
@@ -488,13 +426,9 @@ export class AdminService {
           createdBy,
         },
       });
-
-      // 3. Handle artists
       if (data.artists && data.artists.length > 0) {
         for (const artistData of data.artists) {
           let artistId = artistData.artistId;
-
-          // Create new artist if no existing ID provided
           if (!artistId && artistData.name) {
             const newArtist = await tx.artist.create({
               data: {
@@ -505,7 +439,6 @@ export class AdminService {
             });
             artistId = newArtist.id;
           }
-
           if (artistId) {
             await tx.showArtist.create({
               data: {
@@ -517,12 +450,8 @@ export class AdminService {
           }
         }
       }
-
-      // 4. Create ticket classes and generate tickets
       for (let i = 0; i < data.ticketClasses.length; i++) {
         const tcData = data.ticketClasses[i];
-
-        // Create ticket class
         const ticketClass = await tx.ticketClass.create({
           data: {
             showId: show.id,
@@ -532,20 +461,15 @@ export class AdminService {
             totalQuantity: tcData.quantity,
           },
         });
-
-        // Generate tickets for this class (General Admission - no seat assignment)
         const ticketsToCreate = Array.from({ length: tcData.quantity }, (_, idx) => ({
           showId: show.id,
           ticketClassId: ticketClass.id,
           ticketCode: `${show.id}-${ticketClass.id}-${String(idx + 1).padStart(4, '0')}`,
           status: 'AVAILABLE' as const,
-          physicalSeatId: null, // No seat assignment for General Admission
+          physicalSeatId: null,
         }));
-
         await tx.ticket.createMany({ data: ticketsToCreate });
       }
-
-      // 5. Return the created show with relations
       return tx.show.findUnique({
         where: { id: show.id },
         include: {
@@ -557,27 +481,19 @@ export class AdminService {
       });
     });
   }
-
-  /**
-   * Generate URL-friendly slug from title
-   */
   private generateSlug(title: string): string {
     return title
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .replace(/[\u0300-\u036f]/g, '')
       .replace(/đ/g, 'd')
       .replace(/Đ/g, 'd')
-      .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-') // Replace multiple hyphens
-      .replace(/^-+|-+$/g, '') // Trim hyphens
-      .concat('-', Date.now().toString(36)); // Add unique suffix
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .concat('-', Date.now().toString(36));
   }
-
-  // ============================================================================
-  // ARTISTS MANAGEMENT
-  // ============================================================================
   async getArtists(page: number = 1, limit: number = 50, search?: string) {
     const skip = (page - 1) * limit;
     const where = {
@@ -586,7 +502,6 @@ export class AdminService {
         name: { contains: search, mode: 'insensitive' as const },
       }),
     };
-
     const [items, total] = await Promise.all([
       this.prisma.artist.findMany({
         where,
@@ -604,7 +519,6 @@ export class AdminService {
       }),
       this.prisma.artist.count({ where }),
     ]);
-
     return {
       items,
       meta: {
@@ -615,7 +529,6 @@ export class AdminService {
       },
     };
   }
-
   async getArtistById(id: number) {
     const artist = await this.prisma.artist.findUnique({
       where: { id },
@@ -630,9 +543,12 @@ export class AdminService {
     if (!artist) throw new Error('Artist not found');
     return artist;
   }
-
   async createArtist(
-    data: { name: string; bio?: string; socialLinks?: Record<string, string> },
+    data: {
+      name: string;
+      bio?: string;
+      socialLinks?: Record<string, string>;
+    },
     createdBy: number,
   ) {
     return this.prisma.artist.create({
@@ -651,15 +567,17 @@ export class AdminService {
       },
     });
   }
-
   async updateArtist(
     id: number,
-    data: { name?: string; bio?: string; socialLinks?: Record<string, string> },
+    data: {
+      name?: string;
+      bio?: string;
+      socialLinks?: Record<string, string>;
+    },
     updatedBy: number,
   ) {
     const artist = await this.prisma.artist.findUnique({ where: { id } });
     if (!artist) throw new Error('Artist not found');
-
     return this.prisma.artist.update({
       where: { id },
       data: {
@@ -668,31 +586,22 @@ export class AdminService {
       },
     });
   }
-
   async deleteArtist(id: number) {
     const artist = await this.prisma.artist.findUnique({
       where: { id },
       include: { _count: { select: { shows: true } } },
     });
     if (!artist) throw new Error('Artist not found');
-
-    // Prevent deletion if artist has shows
     if (artist._count.shows > 0) {
       throw new Error('Cannot delete artist with existing shows');
     }
-
     return this.prisma.artist.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
-  // ============================================================================
-  // TOURS MANAGEMENT
-  // ============================================================================
   async getTours(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-
     const [items, total] = await Promise.all([
       this.prisma.tour.findMany({
         where: { deletedAt: null },
@@ -707,7 +616,6 @@ export class AdminService {
       }),
       this.prisma.tour.count({ where: { deletedAt: null } }),
     ]);
-
     return {
       items,
       meta: {
@@ -718,7 +626,6 @@ export class AdminService {
       },
     };
   }
-
   async getTourById(id: number) {
     const tour = await this.prisma.tour.findUnique({
       where: { id },
@@ -731,7 +638,6 @@ export class AdminService {
     if (!tour) throw new Error('Tour not found');
     return tour;
   }
-
   async createTour(data: {
     title: string;
     description?: string;
@@ -747,7 +653,6 @@ export class AdminService {
       },
     });
   }
-
   async updateTour(
     id: number,
     data: Partial<{
@@ -760,26 +665,19 @@ export class AdminService {
   ) {
     const tour = await this.prisma.tour.findUnique({ where: { id } });
     if (!tour) throw new Error('Tour not found');
-
     return this.prisma.tour.update({
       where: { id },
       data,
     });
   }
-
   async deleteTour(id: number) {
     const tour = await this.prisma.tour.findUnique({ where: { id } });
     if (!tour) throw new Error('Tour not found');
-
     return this.prisma.tour.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
-  // ============================================================================
-  // TICKETS CRUD
-  // ============================================================================
   async getTicketById(id: number) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
@@ -794,7 +692,6 @@ export class AdminService {
     if (!ticket) throw new Error('Ticket not found');
     return ticket;
   }
-
   async getTicketByCode(code: string) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { ticketCode: code },
@@ -810,35 +707,29 @@ export class AdminService {
     if (!ticket) throw new Error('Không tìm thấy vé');
     return ticket;
   }
-
   async updateTicketStatus(
     id: number,
     status: 'AVAILABLE' | 'LOCKED' | 'SOLD' | 'USED' | 'CANCELLED',
   ) {
     const ticket = await this.prisma.ticket.findUnique({ where: { id } });
     if (!ticket) throw new Error('Ticket not found');
-
     const updateData: any = { status };
     if (status === 'USED') {
       updateData.isCheckedIn = true;
       updateData.checkedInAt = new Date();
     }
-
     return this.prisma.ticket.update({
       where: { id },
       data: updateData,
     });
   }
-
   async checkInTicket(code: string, showId: number) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { ticketCode: code },
     });
-
     if (!ticket) throw new Error('Không tìm thấy vé');
     if (ticket.status === $Enums.TicketStatus.USED) throw new Error('Vé đã được sử dụng');
     if (ticket.status === $Enums.TicketStatus.CANCELLED) throw new Error('Vé đã bị hủy');
-
     return this.prisma.ticket.update({
       where: { ticketCode: code },
       data: {
@@ -849,10 +740,6 @@ export class AdminService {
       },
     });
   }
-
-  // ============================================================================
-  // PAYMENTS CRUD
-  // ============================================================================
   async getPaymentById(id: number) {
     const payment = await this.prisma.transaction.findUnique({
       where: { id },
@@ -868,26 +755,19 @@ export class AdminService {
     if (!payment) throw new Error('Payment not found');
     return payment;
   }
-
   async updatePaymentStatus(id: number, status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED') {
     const payment = await this.prisma.transaction.findUnique({ where: { id } });
     if (!payment) throw new Error('Payment not found');
-
     return this.prisma.transaction.update({
       where: { id },
       data: { status },
     });
   }
-
-  // ============================================================================
-  // MEDIA CRUD
-  // ============================================================================
   async getMediaById(id: number) {
     const media = await this.prisma.media.findUnique({ where: { id } });
     if (!media) throw new Error('Media not found');
     return media;
   }
-
   async createMedia(data: {
     url: string;
     type: 'IMAGE' | 'VIDEO';
@@ -902,7 +782,6 @@ export class AdminService {
       },
     });
   }
-
   async updateMedia(
     id: number,
     data: Partial<{
@@ -912,23 +791,36 @@ export class AdminService {
   ) {
     const media = await this.prisma.media.findUnique({ where: { id } });
     if (!media) throw new Error('Media not found');
-
-    return this.prisma.media.update({
+    const updatedMedia = await this.prisma.media.update({
       where: { id },
       data,
     });
+    if (data.url && data.url !== media.url) {
+      await this.deleteR2FileByUrl(media.url, `update media ${id}`);
+    }
+    return updatedMedia;
   }
-
   async deleteMedia(id: number) {
     const media = await this.prisma.media.findUnique({ where: { id } });
     if (!media) throw new Error('Media not found');
-
-    return this.prisma.media.delete({ where: { id } });
+    const deletedMedia = await this.prisma.media.delete({ where: { id } });
+    await this.deleteR2FileByUrl(media.url, `delete media ${id}`);
+    return deletedMedia;
   }
-
-  // ============================================================================
-  // BOOKINGS MANAGEMENT
-  // ============================================================================
+  private async deleteR2FileByUrl(url?: string, reason?: string): Promise<void> {
+    if (!url) {
+      return;
+    }
+    const key = this.r2StorageService.getKeyFromUrl(url);
+    if (!key) {
+      return;
+    }
+    try {
+      await this.r2StorageService.deleteObject(key);
+    } catch (error) {
+      this.logger.warn(`Failed to remove old R2 object (${reason || 'unknown reason'}): ${key}`);
+    }
+  }
   async getBookings(
     page: number = 1,
     limit: number = 20,
@@ -941,12 +833,8 @@ export class AdminService {
     },
   ) {
     const skip = (page - 1) * limit;
-
-    // Build where clause
     const where: any = {};
-
     if (filters?.status) {
-      // Handle combined status filters
       if (filters.status === 'PROCESSED') {
         where.status = { in: ['CONFIRMED', 'COMPLETED'] };
       } else if (filters.status === 'PENDING') {
@@ -955,11 +843,9 @@ export class AdminService {
         where.status = filters.status;
       }
     }
-
     if (filters?.paymentStatus) {
       where.paymentStatus = filters.paymentStatus;
     }
-
     if (filters?.search) {
       where.OR = [
         { bookingCode: { contains: filters.search, mode: 'insensitive' } },
@@ -967,7 +853,6 @@ export class AdminService {
         { user: { phoneNumber: { contains: filters.search } } },
       ];
     }
-
     if (filters?.fromDate || filters?.toDate) {
       where.createdAt = {};
       if (filters.fromDate) {
@@ -979,7 +864,6 @@ export class AdminService {
         where.createdAt.lte = endDate;
       }
     }
-
     const [items, total] = await Promise.all([
       this.prisma.booking.findMany({
         where,
@@ -1022,8 +906,6 @@ export class AdminService {
       }),
       this.prisma.booking.count({ where }),
     ]);
-
-    // Transform items to include computed fields
     const transformedItems = items.map((booking) => {
       const paidTransaction = booking.transactions[0];
       return {
@@ -1046,7 +928,11 @@ export class AdminService {
           quantity: item.quantity,
           unitPrice: Number(item.originalPrice),
           subtotal: Number(item.originalPrice) * item.quantity,
-          productName: item.ticket?.show?.title || item.tourSchedule?.tour?.title || item.singerPackage?.name || 'N/A',
+          productName:
+            item.ticket?.show?.title ||
+            item.tourSchedule?.tour?.title ||
+            item.singerPackage?.name ||
+            'N/A',
           ticketClass: item.ticket?.ticketClass || null,
           ticketTier: item.ticketTier || null,
           singerPackage: item.singerPackage || null,
@@ -1055,7 +941,6 @@ export class AdminService {
         })),
       };
     });
-
     return {
       items: transformedItems,
       meta: {
@@ -1066,14 +951,9 @@ export class AdminService {
       },
     };
   }
-
-  // ============================================================================
-  // TICKETS MANAGEMENT
-  // ============================================================================
   async getTickets(page: number = 1, limit: number = 20, showId?: number) {
     const skip = (page - 1) * limit;
     const where = showId ? { showId } : {};
-
     const [items, total] = await Promise.all([
       this.prisma.ticket.findMany({
         where,
@@ -1090,7 +970,6 @@ export class AdminService {
       }),
       this.prisma.ticket.count({ where }),
     ]);
-
     return {
       items,
       meta: {
@@ -1101,13 +980,8 @@ export class AdminService {
       },
     };
   }
-
-  // ============================================================================
-  // PAYMENTS MANAGEMENT
-  // ============================================================================
   async getPayments(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-
     const [items, total] = await Promise.all([
       this.prisma.transaction.findMany({
         skip,
@@ -1123,7 +997,6 @@ export class AdminService {
       }),
       this.prisma.transaction.count(),
     ]);
-
     return {
       items,
       meta: {
@@ -1134,13 +1007,8 @@ export class AdminService {
       },
     };
   }
-
-  // ============================================================================
-  // VOUCHERS MANAGEMENT
-  // ============================================================================
   async getVouchers(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-
     const [items, total] = await Promise.all([
       this.prisma.voucher.findMany({
         skip,
@@ -1152,7 +1020,6 @@ export class AdminService {
       }),
       this.prisma.voucher.count(),
     ]);
-
     return {
       items,
       meta: {
@@ -1163,10 +1030,6 @@ export class AdminService {
       },
     };
   }
-
-  // ============================================================================
-  // MEDIA MANAGEMENT
-  // ============================================================================
   async getMedia(
     page: number = 1,
     limit: number = 20,
@@ -1174,7 +1037,6 @@ export class AdminService {
   ) {
     const skip = (page - 1) * limit;
     const where = targetType ? { targetType } : {};
-
     const [items, total] = await Promise.all([
       this.prisma.media.findMany({
         where,
@@ -1184,7 +1046,6 @@ export class AdminService {
       }),
       this.prisma.media.count({ where }),
     ]);
-
     return {
       items,
       meta: {
@@ -1195,13 +1056,8 @@ export class AdminService {
       },
     };
   }
-
-  // ============================================================================
-  // NOTIFICATIONS MANAGEMENT
-  // ============================================================================
   async getNotifications(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-
     const [items, total] = await Promise.all([
       this.prisma.notification.findMany({
         skip,
@@ -1213,7 +1069,6 @@ export class AdminService {
       }),
       this.prisma.notification.count(),
     ]);
-
     return {
       items,
       meta: {
@@ -1224,10 +1079,6 @@ export class AdminService {
       },
     };
   }
-
-  // ============================================================================
-  // VOUCHERS CRUD
-  // ============================================================================
   async getVoucherById(id: number) {
     const voucher = await this.prisma.voucher.findUnique({
       where: { id },
@@ -1238,7 +1089,6 @@ export class AdminService {
     if (!voucher) throw new Error('Voucher not found');
     return voucher;
   }
-
   async createVoucher(data: {
     code: string;
     discountType: 'PERCENT' | 'FIXED_AMOUNT';
@@ -1251,7 +1101,6 @@ export class AdminService {
   }) {
     const existing = await this.prisma.voucher.findUnique({ where: { code: data.code } });
     if (existing) throw new Error('Voucher code already exists');
-
     return this.prisma.voucher.create({
       data: {
         ...data,
@@ -1260,7 +1109,6 @@ export class AdminService {
       },
     });
   }
-
   async updateVoucher(
     id: number,
     data: Partial<{
@@ -1274,20 +1122,13 @@ export class AdminService {
   ) {
     const voucher = await this.prisma.voucher.findUnique({ where: { id } });
     if (!voucher) throw new Error('Voucher not found');
-
     return this.prisma.voucher.update({ where: { id }, data });
   }
-
   async deleteVoucher(id: number) {
     const voucher = await this.prisma.voucher.findUnique({ where: { id } });
     if (!voucher) throw new Error('Voucher not found');
-
     return this.prisma.voucher.delete({ where: { id } });
   }
-
-  // ============================================================================
-  // BOOKINGS CRUD
-  // ============================================================================
   async getBookingById(id: number) {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
@@ -1321,8 +1162,24 @@ export class AdminService {
                 tour: { select: { id: true, title: true, description: true, duration: true } },
               },
             },
-            ticketTier: { select: { name: true, price: true, description: true, benefits: true, colorCode: true } },
-            singerPackage: { select: { name: true, price: true, description: true, benefits: true, colorCode: true } },
+            ticketTier: {
+              select: {
+                name: true,
+                price: true,
+                description: true,
+                benefits: true,
+                colorCode: true,
+              },
+            },
+            singerPackage: {
+              select: {
+                name: true,
+                price: true,
+                description: true,
+                benefits: true,
+                colorCode: true,
+              },
+            },
           },
         },
         transactions: {
@@ -1343,22 +1200,20 @@ export class AdminService {
         },
       },
     });
-
     if (!booking) throw new Error('Booking not found');
-
-    // Get item type label
     const getItemTypeLabel = (itemType: string) => {
       switch (itemType) {
-        case 'SHOW_TICKET': return 'Vé xem show';
-        case 'TOUR': return 'Tour du lịch';
-        case 'SINGER_PACKAGE': return 'Gói ca sĩ';
-        default: return itemType;
+        case 'SHOW_TICKET':
+          return 'Vé xem show';
+        case 'TOUR':
+          return 'Tour du lịch';
+        case 'SINGER_PACKAGE':
+          return 'Gói ca sĩ';
+        default:
+          return itemType;
       }
     };
-
-    // Transform response
-    const paidTransaction = booking.transactions.find(t => t.status === 'SUCCESS');
-
+    const paidTransaction = booking.transactions.find((t) => t.status === 'SUCCESS');
     return {
       id: booking.id,
       bookingCode: booking.bookingCode,
@@ -1380,34 +1235,48 @@ export class AdminService {
         quantity: item.quantity,
         unitPrice: Number(item.originalPrice),
         subtotal: Number(item.originalPrice) * item.quantity,
-        productName: item.ticket?.show?.title || item.tourSchedule?.tour?.title || item.singerPackage?.name || 'N/A',
-        show: item.ticket?.show ? {
-          ...item.ticket.show,
-          startDate: item.ticket.show.performTime,
-        } : null,
-        tour: item.tourSchedule ? {
-          ...item.tourSchedule.tour,
-          departureDate: item.tourSchedule.startDate,
-        } : null,
-        ticketClass: item.ticket?.ticketClass ? {
-          name: item.ticket.ticketClass.name,
-          price: Number(item.ticket.ticketClass.price),
-          colorCode: item.ticket.ticketClass.colorCode,
-        } : null,
-        ticketTier: item.ticketTier ? {
-          name: item.ticketTier.name,
-          price: Number(item.ticketTier.price),
-          description: item.ticketTier.description,
-          benefits: item.ticketTier.benefits,
-          colorCode: item.ticketTier.colorCode,
-        } : null,
-        singerPackage: item.singerPackage ? {
-          name: item.singerPackage.name,
-          price: Number(item.singerPackage.price),
-          description: item.singerPackage.description,
-          benefits: item.singerPackage.benefits,
-          colorCode: item.singerPackage.colorCode,
-        } : null,
+        productName:
+          item.ticket?.show?.title ||
+          item.tourSchedule?.tour?.title ||
+          item.singerPackage?.name ||
+          'N/A',
+        show: item.ticket?.show
+          ? {
+              ...item.ticket.show,
+              startDate: item.ticket.show.performTime,
+            }
+          : null,
+        tour: item.tourSchedule
+          ? {
+              ...item.tourSchedule.tour,
+              departureDate: item.tourSchedule.startDate,
+            }
+          : null,
+        ticketClass: item.ticket?.ticketClass
+          ? {
+              name: item.ticket.ticketClass.name,
+              price: Number(item.ticket.ticketClass.price),
+              colorCode: item.ticket.ticketClass.colorCode,
+            }
+          : null,
+        ticketTier: item.ticketTier
+          ? {
+              name: item.ticketTier.name,
+              price: Number(item.ticketTier.price),
+              description: item.ticketTier.description,
+              benefits: item.ticketTier.benefits,
+              colorCode: item.ticketTier.colorCode,
+            }
+          : null,
+        singerPackage: item.singerPackage
+          ? {
+              name: item.singerPackage.name,
+              price: Number(item.singerPackage.price),
+              description: item.singerPackage.description,
+              benefits: item.singerPackage.benefits,
+              colorCode: item.singerPackage.colorCode,
+            }
+          : null,
       })),
       transactions: booking.transactions.map((t) => ({
         id: t.id,
@@ -1419,36 +1288,27 @@ export class AdminService {
       })),
     };
   }
-
   async updateBookingStatus(
     id: number,
     status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
   ) {
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new Error('Booking not found');
-
     const updated = await this.prisma.booking.update({
       where: { id },
       data: { status },
     });
-
-    // Invalidate user's booking cache so profile page shows updated status
     await this.invalidateUserBookingCache(booking.userId, booking.bookingCode);
-
     return updated;
   }
-
   async cancelBooking(id: number, reason?: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
       include: { items: true },
     });
     if (!booking) throw new Error('Booking not found');
-
-    // Release tickets back to available
     if (booking.items.length > 0) {
       const ticketIds = booking.items.filter((item) => item.ticketId).map((item) => item.ticketId!);
-
       if (ticketIds.length > 0) {
         await this.prisma.ticket.updateMany({
           where: { id: { in: ticketIds } },
@@ -1456,7 +1316,6 @@ export class AdminService {
         });
       }
     }
-
     const updated = await this.prisma.booking.update({
       where: { id },
       data: {
@@ -1464,16 +1323,9 @@ export class AdminService {
         note: reason,
       },
     });
-
-    // Invalidate user's booking cache so profile page shows updated status
     await this.invalidateUserBookingCache(booking.userId, booking.bookingCode);
-
     return updated;
   }
-
-  /**
-   * Invalidate all booking-related caches for a user
-   */
   private async invalidateUserBookingCache(userId: number, bookingCode: string) {
     await this.cache.delMany([
       CacheKeys.bookingByCode(bookingCode),
@@ -1482,10 +1334,6 @@ export class AdminService {
       `${CacheKeys.userBookings(userId)}:singer`,
     ]);
   }
-
-  // ============================================================================
-  // NOTIFICATIONS CRUD
-  // ============================================================================
   async createNotification(data: {
     userId: number;
     title: string;
@@ -1499,21 +1347,17 @@ export class AdminService {
       },
     });
   }
-
   async markNotificationAsRead(id: number) {
     return this.prisma.notification.update({
       where: { id },
       data: { isRead: true },
     });
   }
-
   async deleteNotification(id: number) {
     const notification = await this.prisma.notification.findUnique({ where: { id } });
     if (!notification) throw new Error('Notification not found');
-
     return this.prisma.notification.delete({ where: { id } });
   }
-
   async broadcastNotification(data: {
     title: string;
     message: string;
@@ -1521,8 +1365,6 @@ export class AdminService {
     userIds?: number[];
   }) {
     let targetUserIds = data.userIds;
-
-    // If no specific users, send to all active users
     if (!targetUserIds || targetUserIds.length === 0) {
       const users = await this.prisma.user.findMany({
         where: { isActive: true, deletedAt: null },
@@ -1530,7 +1372,6 @@ export class AdminService {
       });
       targetUserIds = users.map((u) => u.id);
     }
-
     const notifications = targetUserIds.map((userId) => ({
       userId,
       title: data.title,
@@ -1538,18 +1379,12 @@ export class AdminService {
       type: data.type,
       isRead: false,
     }));
-
     return this.prisma.notification.createMany({
       data: notifications,
     });
   }
-
-  // ============================================================================
-  // STAGES MANAGEMENT
-  // ============================================================================
   async getStages(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-
     const [items, total] = await Promise.all([
       this.prisma.stage.findMany({
         skip,
@@ -1562,7 +1397,6 @@ export class AdminService {
       }),
       this.prisma.stage.count(),
     ]);
-
     return {
       items,
       meta: {
@@ -1573,7 +1407,6 @@ export class AdminService {
       },
     };
   }
-
   async getStageById(id: number) {
     const stage = await this.prisma.stage.findUnique({
       where: { id },

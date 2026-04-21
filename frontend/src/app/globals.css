@@ -66,6 +66,9 @@
     -webkit-text-size-adjust: 100%;
     /* Simplified background for maximum speed */
     background: #ffffff;
+    /* Fix layout shift when radix ui select opens */
+    padding-right: 0px !important;
+    pointer-events: auto !important;
   }
 
   /* Only use gradient on Large screens and with simple background-color for better mixing */
@@ -119,6 +122,7 @@
 
   html {
     scroll-behavior: smooth;
+    scrollbar-gutter: stable;
   }
 }
 

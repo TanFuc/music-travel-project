@@ -2,15 +2,11 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '@/prisma/prisma.service';
 import { WishlistTargetType } from '@prisma/client';
 import { ToggleWishlistDto } from './dto/toggle-wishlist.dto';
-
 @Injectable()
 export class WishlistService {
   constructor(private readonly prisma: PrismaService) {}
-
   async toggleWishlist(userId: number, dto: ToggleWishlistDto) {
     const { targetType, targetId } = dto;
-
-    // Verify target exists
     if (targetType === WishlistTargetType.SHOW) {
       const show = await this.prisma.show.findUnique({ where: { id: targetId } });
       if (!show) throw new NotFoundException('Show not found');
@@ -20,7 +16,6 @@ export class WishlistService {
     } else {
       throw new BadRequestException('Invalid target type');
     }
-
     const existing = await this.prisma.wishlist.findUnique({
       where: {
         userId_targetType_targetId: {
@@ -30,7 +25,6 @@ export class WishlistService {
         },
       },
     });
-
     if (existing) {
       await this.prisma.wishlist.delete({
         where: {
@@ -53,25 +47,18 @@ export class WishlistService {
       return { isWishlisted: true };
     }
   }
-
   async getMyWishlist(userId: number) {
     const wishlist = await this.prisma.wishlist.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
-
     if (!wishlist.length) return [];
-
-    // Group by target type to fetch details efficiently
     const showIds = wishlist
       .filter((item) => item.targetType === WishlistTargetType.SHOW)
       .map((item) => item.targetId);
-
     const tourIds = wishlist
       .filter((item) => item.targetType === WishlistTargetType.TOUR)
       .map((item) => item.targetId);
-
-    // Fetch details in parallel
     const [shows, tours] = await Promise.all([
       this.prisma.show.findMany({
         where: { id: { in: showIds } },
@@ -112,8 +99,6 @@ export class WishlistService {
         },
       }),
     ]);
-
-    // Map back to wishlist structure with details attached
     return wishlist.map((item) => {
       let details: any = null;
       if (item.targetType === WishlistTargetType.SHOW) {
@@ -124,24 +109,17 @@ export class WishlistService {
         }
       } else if (item.targetType === WishlistTargetType.TOUR) {
         const tour = tours.find((t) => t.id === item.targetId);
-        // Extract banner from properties if needed
         const props = tour?.properties as Record<string, any> | null;
         const bannerUrl = props?.bannerUrl || null;
         details = tour ? { ...tour, bannerUrl } : null;
       }
-
       return {
         ...item,
         details,
       };
     });
   }
-
-  async checkStatus(
-    userId: number,
-    targetType: WishlistTargetType,
-    targetId: number,
-  ) {
+  async checkStatus(userId: number, targetType: WishlistTargetType, targetId: number) {
     const existing = await this.prisma.wishlist.findUnique({
       where: {
         userId_targetType_targetId: {

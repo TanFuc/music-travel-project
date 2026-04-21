@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { Link } from '@/components/common/Link';
 import { useRouter } from 'next/navigation';
@@ -7,13 +6,19 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/auth.store';
 import { post } from '@/lib/api';
 import { usePageTitle } from '@/hooks/usePageTitle';
-
 const loginSchema = z.object({
   phoneNumber: z
     .string()
@@ -21,9 +26,7 @@ const loginSchema = z.object({
     .regex(/^0[3-9]\d{8,9}$/, 'Số điện thoại không hợp lệ'),
   password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
 });
-
 type LoginForm = z.infer<typeof loginSchema>;
-
 interface LoginResponse {
   accessToken: string;
   refreshToken: string;
@@ -35,13 +38,11 @@ interface LoginResponse {
     role: string;
   };
 }
-
 export default function LoginPage() {
   usePageTitle();
   const router = useRouter();
   const { login } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -49,28 +50,30 @@ export default function LoginPage() {
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
-
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     try {
       const response = await post<LoginResponse>('/auth/login', data);
       login(response.user, response.accessToken, response.refreshToken);
       toast.success('Đăng nhập thành công!');
-
-      // Redirect based on role
       if (response.user.role === 'ADMIN' || response.user.role === 'STAFF') {
         router.push('/admin/dashboard');
       } else {
         router.push('/shows');
       }
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
+      const err = error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      };
       toast.error(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <Card>
       <CardHeader className="text-center">
@@ -97,15 +100,8 @@ export default function LoginPage() {
             <label htmlFor="password" className="text-sm font-medium">
               Mật khẩu
             </label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="********"
-              {...register('password')}
-            />
-            {errors.password && (
-              <p className="text-sm text-error-500">{errors.password.message}</p>
-            )}
+            <Input id="password" type="password" placeholder="********" {...register('password')} />
+            {errors.password && <p className="text-sm text-error-500">{errors.password.message}</p>}
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-4">

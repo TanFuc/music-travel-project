@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { get, post } from '@/lib/api';
@@ -22,7 +21,6 @@ import {
   Keyboard,
   Camera,
 } from 'lucide-react';
-
 interface VerificationResult {
   success: boolean;
   message: string;
@@ -51,7 +49,6 @@ interface VerificationResult {
     details?: string;
   };
 }
-
 interface AttendanceStats {
   showId: number;
   showTitle: string;
@@ -74,23 +71,24 @@ interface AttendanceStats {
     isReEntry: boolean;
   }>;
 }
-
-export default function ShowCheckInPage({ params }: { params: { id: string } }) {
+export default function ShowCheckInPage({
+  params,
+}: {
+  params: {
+    id: string;
+  };
+}) {
   const showId = parseInt(params.id);
   const queryClient = useQueryClient();
   const [ticketCode, setTicketCode] = useState('');
   const [scanMode, setScanMode] = useState<'manual' | 'qr'>('manual');
   const [lastResult, setLastResult] = useState<VerificationResult | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Fetch attendance stats
   const { data: stats, isLoading: isLoadingStats } = useQuery({
     queryKey: ['show-attendance', showId],
     queryFn: () => get<AttendanceStats>(`/shows/${showId}/verifications/attendance`),
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 5000,
   });
-
-  // Verify ticket mutation
   const verifyMutation = useMutation({
     mutationFn: (code: string) =>
       post<VerificationResult>('/tickets/verify', {
@@ -105,13 +103,11 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
         toast.success(result.message, {
           description: `${result.ticketInfo?.holderName} - ${result.ticketInfo?.ticketTier || result.ticketInfo?.ticketClass || 'Standard'}`,
         });
-        // Play success sound
         playSound('success');
       } else {
         toast.error(result.message, {
           description: result.error?.details,
         });
-        // Play error sound
         playSound('error');
       }
       setTicketCode('');
@@ -130,34 +126,23 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
       playSound('error');
     },
   });
-
-  // Play sound effect
   const playSound = (type: 'success' | 'error') => {
     try {
       const audio = new Audio(type === 'success' ? '/sounds/success.mp3' : '/sounds/error.mp3');
-      audio.play().catch(() => {}); // Ignore errors if audio not available
-    } catch {
-      // Ignore audio errors
-    }
+      audio.play().catch(() => {});
+    } catch {}
   };
-
-  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (ticketCode.trim()) {
       verifyMutation.mutate(ticketCode.trim());
     }
   };
-
-  // Focus input on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-
-  // Keyboard shortcut listener for barcode scanners
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // If input is not focused and user types, focus the input
       if (document.activeElement !== inputRef.current && /^[a-zA-Z0-9-]$/.test(e.key)) {
         inputRef.current?.focus();
       }
@@ -165,17 +150,14 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
-
   const getCapacityColor = (percentage: number | null) => {
     if (percentage === null) return 'bg-gray-200';
     if (percentage >= 90) return 'bg-red-500';
     if (percentage >= 75) return 'bg-yellow-500';
     return 'bg-green-500';
   };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Check-In Khán Giả</h1>
@@ -187,31 +169,34 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
           variant="outline"
           onClick={() => queryClient.invalidateQueries({ queryKey: ['show-attendance', showId] })}
         >
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCw className="mr-2 h-4 w-4" />
           Làm mới
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-neutral-600">Hiện tại</p>
                 <p className="text-3xl font-bold">
-                  {isLoadingStats ? <Skeleton className="h-9 w-16" /> : stats?.currentAttendance || 0}
+                  {isLoadingStats ? (
+                    <Skeleton className="h-9 w-16" />
+                  ) : (
+                    stats?.currentAttendance || 0
+                  )}
                 </p>
               </div>
               <Users className="h-8 w-8 text-blue-500" />
             </div>
             {stats?.maxCapacity && (
               <div className="mt-2">
-                <div className="flex justify-between text-xs text-neutral-500 mb-1">
+                <div className="mb-1 flex justify-between text-xs text-neutral-500">
                   <span>Sức chứa: {stats.maxCapacity}</span>
                   <span>{stats.attendancePercentage}%</span>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2 overflow-hidden rounded-full bg-gray-200">
                   <div
                     className={`h-full ${getCapacityColor(stats.attendancePercentage)} transition-all`}
                     style={{ width: `${Math.min(stats.attendancePercentage || 0, 100)}%` }}
@@ -228,7 +213,11 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
               <div>
                 <p className="text-sm text-neutral-600">Tổng xác thực</p>
                 <p className="text-3xl font-bold text-green-600">
-                  {isLoadingStats ? <Skeleton className="h-9 w-16" /> : stats?.successfulVerifications || 0}
+                  {isLoadingStats ? (
+                    <Skeleton className="h-9 w-16" />
+                  ) : (
+                    stats?.successfulVerifications || 0
+                  )}
                 </p>
               </div>
               <CheckCircle2 className="h-8 w-8 text-green-500" />
@@ -273,7 +262,6 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
         </Card>
       </div>
 
-      {/* Verification Input */}
       <Card className="border-2 border-dashed">
         <CardHeader className="text-center">
           <CardTitle className="flex items-center justify-center gap-2">
@@ -285,14 +273,13 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Mode Toggle */}
-          <div className="flex justify-center gap-2 mb-4">
+          <div className="mb-4 flex justify-center gap-2">
             <Button
               variant={scanMode === 'manual' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setScanMode('manual')}
             >
-              <Keyboard className="h-4 w-4 mr-2" />
+              <Keyboard className="mr-2 h-4 w-4" />
               Nhập mã
             </Button>
             <Button
@@ -300,20 +287,19 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
               size="sm"
               onClick={() => setScanMode('qr')}
             >
-              <Camera className="h-4 w-4 mr-2" />
+              <Camera className="mr-2 h-4 w-4" />
               Quét QR
             </Button>
           </div>
 
-          {/* Input Form */}
-          <form onSubmit={handleSubmit} className="flex gap-2 max-w-xl mx-auto">
+          <form onSubmit={handleSubmit} className="mx-auto flex max-w-xl gap-2">
             <Input
               ref={inputRef}
               type="text"
               placeholder="Nhập mã vé (VD: TK-XXXXX-XXXXX)"
               value={ticketCode}
               onChange={(e) => setTicketCode(e.target.value.toUpperCase())}
-              className="text-center text-lg font-mono h-14"
+              className="h-14 text-center font-mono text-lg"
               autoComplete="off"
               autoFocus
             />
@@ -331,21 +317,20 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
             </Button>
           </form>
 
-          {/* Last Result */}
           {lastResult && (
             <div
-              className={`mt-6 p-6 rounded-lg text-center ${
-                lastResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-              }`}
+              className={`mt-6 rounded-lg p-6 text-center ${lastResult.success ? 'border border-green-200 bg-green-50' : 'border border-red-200 bg-red-50'}`}
             >
-              <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="mb-2 flex items-center justify-center gap-2">
                 {lastResult.success ? (
                   <CheckCircle2 className="h-10 w-10 text-green-500" />
                 ) : (
                   <XCircle className="h-10 w-10 text-red-500" />
                 )}
               </div>
-              <h3 className={`text-xl font-bold ${lastResult.success ? 'text-green-700' : 'text-red-700'}`}>
+              <h3
+                className={`text-xl font-bold ${lastResult.success ? 'text-green-700' : 'text-red-700'}`}
+              >
                 {lastResult.message}
               </h3>
               {lastResult.ticketInfo && (
@@ -353,7 +338,9 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
                   <p className="font-medium">{lastResult.ticketInfo.holderName}</p>
                   <p>
                     {lastResult.ticketInfo.ticketCode} •{' '}
-                    {lastResult.ticketInfo.ticketTier || lastResult.ticketInfo.ticketClass || 'Standard'}
+                    {lastResult.ticketInfo.ticketTier ||
+                      lastResult.ticketInfo.ticketClass ||
+                      'Standard'}
                   </p>
                 </div>
               )}
@@ -370,7 +357,6 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
         </CardContent>
       </Card>
 
-      {/* Recent Verifications */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -386,8 +372,8 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
               ))}
             </div>
           ) : !stats?.recentVerifications?.length ? (
-            <div className="text-center py-8 text-neutral-500">
-              <Ticket className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <div className="py-8 text-center text-neutral-500">
+              <Ticket className="mx-auto mb-2 h-12 w-12 opacity-50" />
               <p>Chưa có xác thực nào</p>
             </div>
           ) : (
@@ -395,13 +381,13 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
               {stats.recentVerifications.map((v) => (
                 <div
                   key={v.id}
-                  className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg"
+                  className="flex items-center justify-between rounded-lg bg-neutral-50 p-3"
                 >
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
                     <div>
                       <p className="font-medium">{v.holderName}</p>
-                      <p className="text-sm text-neutral-500 font-mono">{v.ticketCode}</p>
+                      <p className="font-mono text-sm text-neutral-500">{v.ticketCode}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -419,9 +405,8 @@ export default function ShowCheckInPage({ params }: { params: { id: string } }) 
         </CardContent>
       </Card>
 
-      {/* Capacity Warning */}
       {stats?.attendancePercentage && stats.attendancePercentage >= 90 && (
-        <div className="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-pulse">
+        <div className="fixed bottom-4 right-4 flex animate-pulse items-center gap-2 rounded-lg bg-red-500 px-6 py-3 text-white shadow-lg">
           <AlertCircle className="h-5 w-5" />
           <span className="font-medium">Gần đầy! {stats.attendancePercentage}% sức chứa</span>
         </div>

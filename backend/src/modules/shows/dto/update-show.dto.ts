@@ -9,7 +9,6 @@ import {
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ShowStatus } from '@prisma/client';
-
 export class UpdateShowDto {
   @ApiPropertyOptional({
     example: 'Concert ABC 2024 - Updated',
@@ -19,7 +18,6 @@ export class UpdateShowDto {
   @IsString()
   @MinLength(3, { message: 'Tiêu đề phải có ít nhất 3 ký tự.' })
   title?: string;
-
   @ApiPropertyOptional({
     example: 'An amazing concert featuring top artists...',
     description: 'Show description',
@@ -27,7 +25,6 @@ export class UpdateShowDto {
   @IsOptional()
   @IsString()
   description?: string;
-
   @ApiPropertyOptional({
     example: 1,
     description: 'Stage ID',
@@ -35,7 +32,6 @@ export class UpdateShowDto {
   @IsOptional()
   @IsInt({ message: 'ID sân khấu phải là số nguyên.' })
   stageId?: number;
-
   @ApiPropertyOptional({
     example: '2024-03-15T19:00:00Z',
     description: 'Performance time',
@@ -43,7 +39,6 @@ export class UpdateShowDto {
   @IsOptional()
   @IsDateString({}, { message: 'Thời gian biểu diễn không hợp lệ.' })
   performTime?: string;
-
   @ApiPropertyOptional({
     example: '2024-03-15T17:00:00Z',
     description: 'Check-in time',
@@ -51,7 +46,6 @@ export class UpdateShowDto {
   @IsOptional()
   @IsDateString({}, { message: 'Thời gian check-in không hợp lệ.' })
   checkInTime?: string;
-
   @ApiPropertyOptional({
     example: 'UPCOMING',
     description: 'Show status',
@@ -60,7 +54,6 @@ export class UpdateShowDto {
   @IsOptional()
   @IsEnum(ShowStatus, { message: 'Trạng thái không hợp lệ.' })
   status?: ShowStatus;
-
   @ApiPropertyOptional({
     example: { dresscode: 'White', hashtag: '#ShowABC' },
     description: 'Additional properties',
@@ -68,7 +61,6 @@ export class UpdateShowDto {
   @IsOptional()
   @IsObject()
   properties?: Record<string, unknown>;
-
   @ApiPropertyOptional({
     example: 'Concert ABC 2024 | Best Music Event',
     description: 'SEO meta title',
@@ -76,7 +68,6 @@ export class UpdateShowDto {
   @IsOptional()
   @IsString()
   metaTitle?: string;
-
   @ApiPropertyOptional({
     example: 'Join us for the biggest concert of 2024...',
     description: 'SEO meta description',
@@ -84,7 +75,6 @@ export class UpdateShowDto {
   @IsOptional()
   @IsString()
   metaDescription?: string;
-
   @ApiPropertyOptional({
     example: 'concert, music, 2024',
     description: 'SEO meta keywords',
@@ -92,7 +82,6 @@ export class UpdateShowDto {
   @IsOptional()
   @IsString()
   metaKeywords?: string;
-
   @ApiPropertyOptional({ example: 1, description: 'Branch ID' })
   @IsOptional()
   @IsInt()

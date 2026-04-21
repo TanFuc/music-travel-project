@@ -1,29 +1,29 @@
 import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { cn } from '@/lib/utils';
-
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
   className?: string;
 }
-
 const sizeClasses = {
   sm: 'w-8 h-8',
   md: 'w-10 h-10',
   lg: 'w-16 h-16',
   xl: 'w-24 h-24',
 };
-
 export function Logo({ size = 'md', showText = true, className }: LogoProps) {
   return (
-    <Link href="/" className={cn('flex items-center gap-2 sm:gap-3 group flex-shrink-0', className)}>
+    <Link
+      href="/"
+      className={cn('group flex flex-shrink-0 items-center gap-2 sm:gap-3', className)}
+    >
       <div
         className={cn(
-          'relative rounded-full overflow-hidden bg-white flex-shrink-0',
-          'shadow-md border-2 border-brand-500/30',
+          'relative flex-shrink-0 overflow-hidden rounded-full bg-white',
+          'border-2 border-brand-500/30 shadow-md',
           'transition-all duration-300',
-          'group-hover:border-brand-500/50 group-hover:shadow-lg group-hover:scale-105',
+          'group-hover:scale-105 group-hover:border-brand-500/50 group-hover:shadow-lg',
           sizeClasses[size]
         )}
       >
@@ -37,7 +37,7 @@ export function Logo({ size = 'md', showText = true, className }: LogoProps) {
         />
       </div>
       {showText && (
-        <span className="font-display text-base sm:text-lg font-bold text-brand-600 whitespace-nowrap">
+        <span className="whitespace-nowrap font-display text-base font-bold text-brand-600 sm:text-lg">
           Music & Travel
         </span>
       )}

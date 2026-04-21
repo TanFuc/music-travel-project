@@ -18,7 +18,6 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { CreateShowFullDto } from '../shows/dto/create-show-full.dto';
-
 @ApiTags('admin')
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,54 +25,50 @@ import { CreateShowFullDto } from '../shows/dto/create-show-full.dto';
 @ApiBearerAuth()
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
-
   @Get('dashboard')
   @ApiOperation({ summary: 'Get dashboard statistics' })
   @ApiResponse({ status: 200, description: 'Dashboard stats retrieved successfully' })
   async getDashboard() {
     return this.adminService.getDashboardStats();
   }
-
   @Get('revenue')
   @ApiOperation({ summary: 'Get revenue statistics' })
   async getRevenue() {
     return this.adminService.getRevenueStats();
   }
-
   @Get('recent-bookings')
   @ApiOperation({ summary: 'Get recent bookings' })
   async getRecentBookings() {
     return this.adminService.getRecentBookings();
   }
-
   @Get('upcoming-shows')
   @ApiOperation({ summary: 'Get upcoming shows' })
   async getUpcomingShows() {
     return this.adminService.getUpcomingShows();
   }
-
-  // ============================================================================
-  // USERS MANAGEMENT
-  // ============================================================================
   @Get('users')
   @ApiOperation({ summary: 'Get all users with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   async getUsers(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
-    @Query('search') search?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
+    @Query('search')
+    search?: string,
   ) {
     return this.adminService.getUsers(page, limit, search);
   }
-
   @Get('users/:id')
   @ApiOperation({ summary: 'Get user by ID' })
-  async getUserById(@Param('id', ParseIntPipe) id: number) {
+  async getUserById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getUserById(id);
   }
-
   @Post('users')
   @ApiOperation({ summary: 'Create new user' })
   async createUser(
@@ -88,11 +83,11 @@ export class AdminController {
   ) {
     return this.adminService.createUser(createUserDto);
   }
-
   @Patch('users/:id')
   @ApiOperation({ summary: 'Update user' })
   async updateUser(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe)
+    id: number,
     @Body()
     updateUserDto: {
       fullName?: string;
@@ -103,39 +98,42 @@ export class AdminController {
   ) {
     return this.adminService.updateUser(id, updateUserDto);
   }
-
   @Delete('users/:id')
   @ApiOperation({ summary: 'Delete user (soft delete)' })
-  async deleteUser(@Param('id', ParseIntPipe) id: number) {
+  async deleteUser(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.deleteUser(id);
   }
-
   @Patch('users/:id/toggle-status')
   @ApiOperation({ summary: 'Toggle user active status' })
-  async toggleUserStatus(@Param('id', ParseIntPipe) id: number) {
+  async toggleUserStatus(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.toggleUserStatus(id);
   }
-
-  // ============================================================================
-  // SHOWS MANAGEMENT
-  // ============================================================================
   @Get('shows')
   @ApiOperation({ summary: 'Get all shows with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getShows(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
   ) {
     return this.adminService.getShows(page, limit);
   }
-
   @Get('shows/:id')
   @ApiOperation({ summary: 'Get show by ID' })
-  async getShowById(@Param('id', ParseIntPipe) id: number) {
+  async getShowById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getShowById(id);
   }
-
   @Post('shows')
   @ApiOperation({ summary: 'Create show' })
   async createShow(
@@ -150,11 +148,11 @@ export class AdminController {
   ) {
     return this.adminService.createShow(data);
   }
-
   @Patch('shows/:id')
   @ApiOperation({ summary: 'Update show' })
   async updateShow(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe)
+    id: number,
     @Body()
     data: Partial<{
       title: string;
@@ -166,118 +164,140 @@ export class AdminController {
   ) {
     return this.adminService.updateShow(id, data);
   }
-
   @Delete('shows/:id')
   @ApiOperation({ summary: 'Delete show' })
-  async deleteShow(@Param('id', ParseIntPipe) id: number) {
+  async deleteShow(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.deleteShow(id);
   }
-
   @Patch('shows/:id/status')
   @ApiOperation({ summary: 'Update show status' })
   async updateShowStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data: { status: 'UPCOMING' | 'ONGOING' | 'ENDED' | 'CANCELLED' },
+    @Param('id', ParseIntPipe)
+    id: number,
+    @Body()
+    data: {
+      status: 'UPCOMING' | 'ONGOING' | 'ENDED' | 'CANCELLED';
+    },
   ) {
     return this.adminService.updateShowStatus(id, data.status);
   }
-
   @Post('shows/full')
   @ApiOperation({
     summary: 'Create show with full configuration (artists, ticket classes, tickets)',
   })
   @ApiResponse({ status: 201, description: 'Show created successfully with all related data' })
-  async createShowFull(@Body() data: CreateShowFullDto, @Req() req: any) {
+  async createShowFull(
+    @Body()
+    data: CreateShowFullDto,
+    @Req()
+    req: any,
+  ) {
     return this.adminService.createShowFull(data, req.user.id);
   }
-
-  // ============================================================================
-  // ARTISTS MANAGEMENT
-  // ============================================================================
   @Get('artists')
   @ApiOperation({ summary: 'Get all artists with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   async getArtists(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number = 50,
-    @Query('search') search?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe)
+    limit: number = 50,
+    @Query('search')
+    search?: string,
   ) {
     return this.adminService.getArtists(page, limit, search);
   }
-
   @Get('artists/:id')
   @ApiOperation({ summary: 'Get artist by ID' })
-  async getArtistById(@Param('id', ParseIntPipe) id: number) {
+  async getArtistById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getArtistById(id);
   }
-
   @Post('artists')
   @ApiOperation({ summary: 'Create new artist' })
   async createArtist(
-    @Body() data: { name: string; bio?: string; socialLinks?: Record<string, string> },
-    @Req() req: any,
+    @Body()
+    data: {
+      name: string;
+      bio?: string;
+      socialLinks?: Record<string, string>;
+    },
+    @Req()
+    req: any,
   ) {
     return this.adminService.createArtist(data, req.user.id);
   }
-
   @Patch('artists/:id')
   @ApiOperation({ summary: 'Update artist' })
   async updateArtist(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data: { name?: string; bio?: string; socialLinks?: Record<string, string> },
-    @Req() req: any,
+    @Param('id', ParseIntPipe)
+    id: number,
+    @Body()
+    data: {
+      name?: string;
+      bio?: string;
+      socialLinks?: Record<string, string>;
+    },
+    @Req()
+    req: any,
   ) {
     return this.adminService.updateArtist(id, data, req.user.id);
   }
-
   @Delete('artists/:id')
   @ApiOperation({ summary: 'Delete artist (soft delete)' })
-  async deleteArtist(@Param('id', ParseIntPipe) id: number) {
+  async deleteArtist(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.deleteArtist(id);
   }
-
-  // ============================================================================
-  // STAGES MANAGEMENT
-  // ============================================================================
   @Get('stages')
   @ApiOperation({ summary: 'Get all stages with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getStages(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
   ) {
     return this.adminService.getStages(page, limit);
   }
-
   @Get('stages/:id')
   @ApiOperation({ summary: 'Get stage by ID' })
-  async getStageById(@Param('id', ParseIntPipe) id: number) {
+  async getStageById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getStageById(id);
   }
-
-  // ============================================================================
-  // TOURS MANAGEMENT
-  // ============================================================================
   @Get('tours')
   @ApiOperation({ summary: 'Get all tours with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getTours(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
   ) {
     return this.adminService.getTours(page, limit);
   }
-
   @Get('tours/:id')
   @ApiOperation({ summary: 'Get tour by ID' })
-  async getTourById(@Param('id', ParseIntPipe) id: number) {
+  async getTourById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getTourById(id);
   }
-
   @Post('tours')
   @ApiOperation({ summary: 'Create tour' })
   async createTour(
@@ -292,11 +312,11 @@ export class AdminController {
   ) {
     return this.adminService.createTour(data);
   }
-
   @Patch('tours/:id')
   @ApiOperation({ summary: 'Update tour' })
   async updateTour(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe)
+    id: number,
     @Body()
     data: Partial<{
       title: string;
@@ -308,68 +328,82 @@ export class AdminController {
   ) {
     return this.adminService.updateTour(id, data);
   }
-
   @Delete('tours/:id')
   @ApiOperation({ summary: 'Delete tour' })
-  async deleteTour(@Param('id', ParseIntPipe) id: number) {
+  async deleteTour(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.deleteTour(id);
   }
-
-  // ============================================================================
   @Get('tickets/:id')
   @ApiOperation({ summary: 'Get ticket by ID' })
-  async getTicketById(@Param('id', ParseIntPipe) id: number) {
+  async getTicketById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getTicketById(id);
   }
-
   @Get('tickets/search/:code')
   @ApiOperation({ summary: 'Find ticket by serial/code' })
-  async getTicketByCode(@Param('code') code: string) {
+  async getTicketByCode(
+    @Param('code')
+    code: string,
+  ) {
     return this.adminService.getTicketByCode(code);
   }
-
   @Patch('tickets/:id/status')
   @ApiOperation({ summary: 'Update ticket status' })
   async updateTicketStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data: { status: 'AVAILABLE' | 'LOCKED' | 'SOLD' | 'USED' | 'CANCELLED' },
+    @Param('id', ParseIntPipe)
+    id: number,
+    @Body()
+    data: {
+      status: 'AVAILABLE' | 'LOCKED' | 'SOLD' | 'USED' | 'CANCELLED';
+    },
   ) {
     return this.adminService.updateTicketStatus(id, data.status);
   }
-
   @Patch('tickets/check-in/:code')
   @ApiOperation({ summary: 'Check in ticket by code' })
-  async checkInTicket(@Param('code') code: string, @Body() data: { showId: number }) {
+  async checkInTicket(
+    @Param('code')
+    code: string,
+    @Body()
+    data: {
+      showId: number;
+    },
+  ) {
     return this.adminService.checkInTicket(code, data.showId);
   }
-
-  // ============================================================================
-  // PAYMENTS CRUD
-  // ============================================================================
   @Get('payments/:id')
   @ApiOperation({ summary: 'Get payment by ID' })
-  async getPaymentById(@Param('id', ParseIntPipe) id: number) {
+  async getPaymentById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getPaymentById(id);
   }
-
   @Patch('payments/:id/status')
   @ApiOperation({ summary: 'Update payment status' })
   async updatePaymentStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data: { status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED' },
+    @Param('id', ParseIntPipe)
+    id: number,
+    @Body()
+    data: {
+      status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+    },
   ) {
     return this.adminService.updatePaymentStatus(id, data.status);
   }
-
-  // ============================================================================
-  // MEDIA CRUD
-  // ============================================================================
   @Get('media/:id')
   @ApiOperation({ summary: 'Get media by ID' })
-  async getMediaById(@Param('id', ParseIntPipe) id: number) {
+  async getMediaById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getMediaById(id);
   }
-
   @Post('media')
   @ApiOperation({ summary: 'Create media' })
   async createMedia(
@@ -384,11 +418,11 @@ export class AdminController {
   ) {
     return this.adminService.createMedia(data);
   }
-
   @Patch('media/:id')
   @ApiOperation({ summary: 'Update media' })
   async updateMedia(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe)
+    id: number,
     @Body()
     data: Partial<{
       url: string;
@@ -397,112 +431,133 @@ export class AdminController {
   ) {
     return this.adminService.updateMedia(id, data);
   }
-
   @Delete('media/:id')
   @ApiOperation({ summary: 'Delete media' })
-  async deleteMedia(@Param('id', ParseIntPipe) id: number) {
+  async deleteMedia(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.deleteMedia(id);
   }
-
-  // ============================================================================
-  // BOOKINGS MANAGEMENT
-  // ============================================================================
   @Get('bookings')
   @ApiOperation({ summary: 'Get all bookings with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'MANUAL_REVIEW', 'CONFIRMED', 'CANCELLED', 'COMPLETED'] })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'MANUAL_REVIEW', 'CONFIRMED', 'CANCELLED', 'COMPLETED'],
+  })
   @ApiQuery({ name: 'paymentStatus', required: false, enum: ['PAID', 'UNPAID'] })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by booking code, customer name or phone' })
-  @ApiQuery({ name: 'fromDate', required: false, type: String, description: 'Filter from date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'toDate', required: false, type: String, description: 'Filter to date (YYYY-MM-DD)' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by booking code, customer name or phone',
+  })
+  @ApiQuery({
+    name: 'fromDate',
+    required: false,
+    type: String,
+    description: 'Filter from date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: false,
+    type: String,
+    description: 'Filter to date (YYYY-MM-DD)',
+  })
   async getBookings(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
-    @Query('status') status?: string,
-    @Query('paymentStatus') paymentStatus?: string,
-    @Query('search') search?: string,
-    @Query('fromDate') fromDate?: string,
-    @Query('toDate') toDate?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
+    @Query('status')
+    status?: string,
+    @Query('paymentStatus')
+    paymentStatus?: string,
+    @Query('search')
+    search?: string,
+    @Query('fromDate')
+    fromDate?: string,
+    @Query('toDate')
+    toDate?: string,
   ) {
-    return this.adminService.getBookings(page, limit, { status, paymentStatus, search, fromDate, toDate });
+    return this.adminService.getBookings(page, limit, {
+      status,
+      paymentStatus,
+      search,
+      fromDate,
+      toDate,
+    });
   }
-
-  // ============================================================================
-  // TICKETS MANAGEMENT
-  // ============================================================================
   @Get('tickets')
   @ApiOperation({ summary: 'Get all tickets with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'showId', required: false, type: Number })
   async getTickets(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
-    @Query('showId') showId?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
+    @Query('showId')
+    showId?: string,
   ) {
     const parsedShowId = showId ? parseInt(showId, 10) : undefined;
     return this.adminService.getTickets(page, limit, parsedShowId);
   }
-
-  // ============================================================================
-  // PAYMENTS MANAGEMENT
-  // ============================================================================
   @Get('payments')
   @ApiOperation({ summary: 'Get all payments/transactions with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getPayments(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
   ) {
     return this.adminService.getPayments(page, limit);
   }
-
-  // ============================================================================
-  // VOUCHERS MANAGEMENT
-  // ============================================================================
   @Get('vouchers')
   @ApiOperation({ summary: 'Get all vouchers with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getVouchers(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
   ) {
     return this.adminService.getVouchers(page, limit);
   }
-
-  // ============================================================================
-  // MEDIA MANAGEMENT
-  // ============================================================================
   @Get('media')
   @ApiOperation({ summary: 'Get all media with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'targetType', required: false, enum: ['SHOW', 'TOUR', 'STAGE', 'ARTIST'] })
   async getMedia(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
-    @Query('targetType') targetType?: 'SHOW' | 'TOUR' | 'STAGE' | 'ARTIST',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
+    @Query('targetType')
+    targetType?: 'SHOW' | 'TOUR' | 'STAGE' | 'ARTIST',
   ) {
     return this.adminService.getMedia(page, limit, targetType);
   }
-
-  // ============================================================================
-  // NOTIFICATIONS MANAGEMENT
-  // ============================================================================
   @Get('notifications')
   @ApiOperation({ summary: 'Get all notifications with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getNotifications(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+    page: number = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number = 20,
   ) {
     return this.adminService.getNotifications(page, limit);
   }
-
   @Post('notifications')
   @ApiOperation({ summary: 'Create notification' })
   async createNotification(
@@ -516,7 +571,6 @@ export class AdminController {
   ) {
     return this.adminService.createNotification(data);
   }
-
   @Post('notifications/broadcast')
   @ApiOperation({ summary: 'Broadcast notification to multiple users' })
   async broadcastNotification(
@@ -530,28 +584,30 @@ export class AdminController {
   ) {
     return this.adminService.broadcastNotification(data);
   }
-
   @Patch('notifications/:id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
-  async markNotificationAsRead(@Param('id', ParseIntPipe) id: number) {
+  async markNotificationAsRead(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.markNotificationAsRead(id);
   }
-
   @Delete('notifications/:id')
   @ApiOperation({ summary: 'Delete notification' })
-  async deleteNotification(@Param('id', ParseIntPipe) id: number) {
+  async deleteNotification(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.deleteNotification(id);
   }
-
-  // ============================================================================
-  // VOUCHERS CRUD
-  // ============================================================================
   @Get('vouchers/:id')
   @ApiOperation({ summary: 'Get voucher by ID' })
-  async getVoucherById(@Param('id', ParseIntPipe) id: number) {
+  async getVoucherById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getVoucherById(id);
   }
-
   @Post('vouchers')
   @ApiOperation({ summary: 'Create voucher' })
   async createVoucher(
@@ -569,11 +625,11 @@ export class AdminController {
   ) {
     return this.adminService.createVoucher(data);
   }
-
   @Patch('vouchers/:id')
   @ApiOperation({ summary: 'Update voucher' })
   async updateVoucher(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe)
+    id: number,
     @Body()
     data: Partial<{
       discountValue: number;
@@ -586,34 +642,44 @@ export class AdminController {
   ) {
     return this.adminService.updateVoucher(id, data);
   }
-
   @Delete('vouchers/:id')
   @ApiOperation({ summary: 'Delete voucher' })
-  async deleteVoucher(@Param('id', ParseIntPipe) id: number) {
+  async deleteVoucher(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.deleteVoucher(id);
   }
-
-  // ============================================================================
-  // BOOKINGS CRUD
-  // ============================================================================
   @Get('bookings/:id')
   @ApiOperation({ summary: 'Get booking by ID' })
-  async getBookingById(@Param('id', ParseIntPipe) id: number) {
+  async getBookingById(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.adminService.getBookingById(id);
   }
-
   @Patch('bookings/:id/status')
   @ApiOperation({ summary: 'Update booking status' })
   async updateBookingStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data: { status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' },
+    @Param('id', ParseIntPipe)
+    id: number,
+    @Body()
+    data: {
+      status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+    },
   ) {
     return this.adminService.updateBookingStatus(id, data.status);
   }
-
   @Post('bookings/:id/cancel')
   @ApiOperation({ summary: 'Cancel booking' })
-  async cancelBooking(@Param('id', ParseIntPipe) id: number, @Body() data?: { reason?: string }) {
+  async cancelBooking(
+    @Param('id', ParseIntPipe)
+    id: number,
+    @Body()
+    data?: {
+      reason?: string;
+    },
+  ) {
     return this.adminService.cancelBooking(id, data?.reason);
   }
 }

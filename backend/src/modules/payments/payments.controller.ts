@@ -17,72 +17,88 @@ import { CreateRefundDto } from './dto/refund.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { Public } from '@/common/decorators/public.decorator';
-
 @ApiTags('payments')
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
-
   @Post('checkout')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Process payment checkout' })
   @ApiResponse({ status: 201, description: 'Payment processed successfully' })
   async checkout(
-    @CurrentUser() user: JwtPayload,
-    @Body() checkoutDto: CheckoutDto,
-    @Ip() ipAddress: string,
+    @CurrentUser()
+    user: JwtPayload,
+    @Body()
+    checkoutDto: CheckoutDto,
+    @Ip()
+    ipAddress: string,
   ) {
     return this.paymentsService.checkout(user.sub, checkoutDto, ipAddress);
   }
-
   @Get('transactions/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get transaction status' })
   @ApiResponse({ status: 200, description: 'Transaction status retrieved' })
   async getTransactionStatus(
-    @CurrentUser() user: JwtPayload,
-    @Param('id', ParseIntPipe) transactionId: number,
+    @CurrentUser()
+    user: JwtPayload,
+    @Param('id', ParseIntPipe)
+    transactionId: number,
   ) {
     return this.paymentsService.getTransactionStatus(transactionId, user.sub);
   }
-
   @Public()
   @Post('webhook/:gateway')
   @ApiOperation({ summary: 'Payment gateway webhook' })
   @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
   async webhook(
-    @Param('gateway') gateway: string,
-    @Body() payload: Record<string, unknown>,
-    @Headers() headers: Record<string, string>,
+    @Param('gateway')
+    gateway: string,
+    @Body()
+    payload: Record<string, unknown>,
+    @Headers()
+    headers: Record<string, string>,
   ) {
     return this.paymentsService.handleWebhook(gateway, payload, headers);
   }
-
   @Public()
   @Get('webhook/:gateway')
   @ApiOperation({ summary: 'Payment gateway return URL (for VNPay)' })
   @ApiResponse({ status: 200, description: 'Payment return processed' })
-  async webhookGet(@Param('gateway') gateway: string, @Query() params: Record<string, string>) {
+  async webhookGet(
+    @Param('gateway')
+    gateway: string,
+    @Query()
+    params: Record<string, string>,
+  ) {
     return this.paymentsService.handleWebhook(gateway, params as Record<string, unknown>);
   }
-
   @Post('refunds')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a refund for a booking' })
   @ApiResponse({ status: 201, description: 'Refund created successfully' })
-  async createRefund(@CurrentUser() user: JwtPayload, @Body() refundDto: CreateRefundDto) {
+  async createRefund(
+    @CurrentUser()
+    user: JwtPayload,
+    @Body()
+    refundDto: CreateRefundDto,
+  ) {
     return this.paymentsService.createRefund(user.sub, refundDto);
   }
-
   @Get('refunds/:bookingCode')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get refunds for a booking' })
   @ApiResponse({ status: 200, description: 'Refunds retrieved successfully' })
-  async getRefunds(@CurrentUser() user: JwtPayload, @Param('bookingCode') bookingCode: string) {
+  async getRefunds(
+    @CurrentUser()
+    user: JwtPayload,
+    @Param('bookingCode')
+    bookingCode: string,
+  ) {
     return this.paymentsService.getRefundsByBooking(user.sub, bookingCode);
   }
 }

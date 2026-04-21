@@ -1,15 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateActivityLogDto, ShowActivityType, ShowAnalyticsDto } from './dto/show-activity.dto';
-
 @Injectable()
 export class ShowActivityService {
   constructor(private readonly prisma: PrismaService) {}
-
-  // ============================================================================
-  // ACTIVITY LOGGING
-  // ============================================================================
-
   async createActivityLog(dto: CreateActivityLogDto) {
     return this.prisma.showActivityLog.create({
       data: {
@@ -30,7 +24,6 @@ export class ShowActivityService {
       },
     });
   }
-
   async logRegistration(
     showId: number,
     registrationId: number,
@@ -40,7 +33,6 @@ export class ShowActivityService {
     ipAddress?: string,
   ) {
     const performerName = guestName || (userId ? await this.getUserName(userId) : 'Unknown');
-
     return this.createActivityLog({
       showId,
       activityType: ShowActivityType.REGISTRATION,
@@ -52,7 +44,6 @@ export class ShowActivityService {
       ipAddress,
     });
   }
-
   async logCancellation(
     showId: number,
     registrationId: number,
@@ -64,7 +55,6 @@ export class ShowActivityService {
   ) {
     const actorId = isAdminAction ? adminId : userId || undefined;
     const actorName = actorId ? await this.getUserName(actorId) : 'Unknown';
-
     return this.createActivityLog({
       showId,
       activityType: ShowActivityType.CANCELLATION,
@@ -77,7 +67,6 @@ export class ShowActivityService {
       metadata: { registrationId, songTitle, reason, isAdminAction, adminId },
     });
   }
-
   async logStatusChange(
     showId: number,
     registrationId: number,
@@ -87,7 +76,6 @@ export class ShowActivityService {
     notes?: string,
   ) {
     const adminName = await this.getUserName(adminId);
-
     return this.createActivityLog({
       showId,
       activityType: ShowActivityType.STATUS_CHANGE,
@@ -98,14 +86,16 @@ export class ShowActivityService {
       metadata: { registrationId, oldStatus, newStatus, notes },
     });
   }
-
   async logQueueReorder(
     showId: number,
     adminId: number,
-    changes: { registrationId: number; oldPosition: number; newPosition: number }[],
+    changes: {
+      registrationId: number;
+      oldPosition: number;
+      newPosition: number;
+    }[],
   ) {
     const adminName = await this.getUserName(adminId);
-
     return this.createActivityLog({
       showId,
       activityType: ShowActivityType.QUEUE_REORDER,
@@ -114,7 +104,6 @@ export class ShowActivityService {
       metadata: { changes },
     });
   }
-
   async logAdminAction(
     showId: number,
     adminId: number,
@@ -122,7 +111,6 @@ export class ShowActivityService {
     details?: Record<string, any>,
   ) {
     const adminName = await this.getUserName(adminId);
-
     return this.createActivityLog({
       showId,
       activityType: ShowActivityType.ADMIN_ACTION,
@@ -131,11 +119,6 @@ export class ShowActivityService {
       metadata: details,
     });
   }
-
-  // ============================================================================
-  // ACTIVITY RETRIEVAL
-  // ============================================================================
-
   async getShowActivityLogs(
     showId: number,
     filters: {
@@ -152,29 +135,22 @@ export class ShowActivityService {
     const show = await this.prisma.show.findUnique({
       where: { id: showId },
     });
-
     if (!show) {
       throw new NotFoundException('Show not found');
     }
-
     const where: any = { showId };
-
     if (filters.activityType) {
       where.activityType = filters.activityType;
     }
-
     if (filters.actorId) {
       where.actorId = filters.actorId;
     }
-
     if (filters.targetType) {
       where.targetType = filters.targetType;
     }
-
     if (filters.search) {
       where.description = { contains: filters.search, mode: 'insensitive' };
     }
-
     if (filters.startDate || filters.endDate) {
       where.createdAt = {};
       if (filters.startDate) {
@@ -184,11 +160,9 @@ export class ShowActivityService {
         where.createdAt.lte = new Date(filters.endDate);
       }
     }
-
     const page = filters.page || 1;
     const limit = filters.limit || 20;
     const skip = (page - 1) * limit;
-
     const [logs, total] = await Promise.all([
       this.prisma.showActivityLog.findMany({
         where,
@@ -203,7 +177,6 @@ export class ShowActivityService {
       }),
       this.prisma.showActivityLog.count({ where }),
     ]);
-
     return {
       show: {
         id: show.id,
@@ -233,16 +206,13 @@ export class ShowActivityService {
       },
     };
   }
-
   async getActivitySummary(showId: number) {
     const show = await this.prisma.show.findUnique({
       where: { id: showId },
     });
-
     if (!show) {
       throw new NotFoundException('Show not found');
     }
-
     const activityTypes = [
       'REGISTRATION',
       'CANCELLATION',
@@ -252,7 +222,6 @@ export class ShowActivityService {
       'QUEUE_REORDER',
       'CHECK_IN',
     ];
-
     const counts = await Promise.all(
       activityTypes.map((type) =>
         this.prisma.showActivityLog.count({
@@ -260,14 +229,11 @@ export class ShowActivityService {
         }),
       ),
     );
-
     const breakdown: Record<string, number> = {};
     activityTypes.forEach((type, index) => {
       breakdown[type] = counts[index];
     });
-
     const total = counts.reduce((sum, count) => sum + count, 0);
-
     const recentActivities = await this.prisma.showActivityLog.findMany({
       where: { showId },
       take: 5,
@@ -278,7 +244,6 @@ export class ShowActivityService {
         },
       },
     });
-
     return {
       showId,
       showTitle: show.title,
@@ -293,21 +258,13 @@ export class ShowActivityService {
       })),
     };
   }
-
-  // ============================================================================
-  // ANALYTICS
-  // ============================================================================
-
   async getShowAnalytics(showId: number): Promise<ShowAnalyticsDto> {
     const show = await this.prisma.show.findUnique({
       where: { id: showId },
     });
-
     if (!show) {
       throw new NotFoundException('Show not found');
     }
-
-    // Registration stats
     const [
       totalRegistrations,
       pendingRegistrations,
@@ -321,8 +278,6 @@ export class ShowActivityService {
       this.prisma.performanceRegistration.count({ where: { showId, status: 'PERFORMED' } }),
       this.prisma.performanceRegistration.count({ where: { showId, status: 'CANCELLED' } }),
     ]);
-
-    // Check for no-shows (registrations marked as cancelled with no-show note)
     const noShowCount = await this.prisma.performanceRegistration.count({
       where: {
         showId,
@@ -330,10 +285,7 @@ export class ShowActivityService {
         reviewNote: { contains: 'No show', mode: 'insensitive' },
       },
     });
-
     const noShowRate = totalRegistrations > 0 ? (noShowCount / totalRegistrations) * 100 : 0;
-
-    // Verification stats
     const [totalVerifications, qrScanVerifications, manualEntryVerifications] = await Promise.all([
       this.prisma.ticketVerification.count({ where: { showId } }),
       this.prisma.ticketVerification.count({ where: { showId, verificationMethod: 'QR_SCAN' } }),
@@ -341,39 +293,28 @@ export class ShowActivityService {
         where: { showId, verificationMethod: 'MANUAL_ENTRY' },
       }),
     ]);
-
-    // Activity stats
     const activityCounts = await this.prisma.showActivityLog.groupBy({
       by: ['activityType'],
       where: { showId },
       _count: { id: true },
     });
-
     const activityBreakdown: Record<string, number> = {};
     activityCounts.forEach((item) => {
       activityBreakdown[item.activityType] = item._count.id;
     });
-
     const totalActivities = Object.values(activityBreakdown).reduce((sum, count) => sum + count, 0);
-
-    // Performance type stats
     const performanceTypes = await this.prisma.performanceRegistration.groupBy({
       by: ['performanceType'],
       where: { showId },
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
     });
-
-    // Average performance duration
     const avgDuration = await this.prisma.performanceRegistration.aggregate({
       where: { showId, duration: { not: null } },
       _avg: { duration: true },
     });
-
-    // Registrations over time (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
     const registrationsByDay = await this.prisma.performanceRegistration.groupBy({
       by: ['registeredAt'],
       where: {
@@ -382,26 +323,21 @@ export class ShowActivityService {
       },
       _count: { id: true },
     });
-
-    // Group by date (simplified)
-    const registrationsOverTime: Array<{ date: string; count: number }> = [];
+    const registrationsOverTime: Array<{
+      date: string;
+      count: number;
+    }> = [];
     const dateMap = new Map<string, number>();
-
     registrationsByDay.forEach((item) => {
       const dateStr = item.registeredAt.toISOString().split('T')[0];
       dateMap.set(dateStr, (dateMap.get(dateStr) || 0) + item._count.id);
     });
-
     dateMap.forEach((count, date) => {
       registrationsOverTime.push({ date, count });
     });
-
     registrationsOverTime.sort((a, b) => a.date.localeCompare(b.date));
-
-    // Verifications over time (last 24 hours, by hour)
     const oneDayAgo = new Date();
     oneDayAgo.setHours(oneDayAgo.getHours() - 24);
-
     const verificationsByHour = await this.prisma.ticketVerification.groupBy({
       by: ['verifiedAt'],
       where: {
@@ -410,20 +346,19 @@ export class ShowActivityService {
       },
       _count: { id: true },
     });
-
     const hourMap = new Map<string, number>();
     verificationsByHour.forEach((item) => {
-      const hour = item.verifiedAt.toISOString().slice(0, 13); // YYYY-MM-DDTHH
+      const hour = item.verifiedAt.toISOString().slice(0, 13);
       hourMap.set(hour, (hourMap.get(hour) || 0) + item._count.id);
     });
-
-    const verificationsOverTime: Array<{ time: string; count: number }> = [];
+    const verificationsOverTime: Array<{
+      time: string;
+      count: number;
+    }> = [];
     hourMap.forEach((count, time) => {
       verificationsOverTime.push({ time, count });
     });
-
     verificationsOverTime.sort((a, b) => a.time.localeCompare(b.time));
-
     return {
       showId: show.id,
       showTitle: show.title,
@@ -453,7 +388,6 @@ export class ShowActivityService {
       })),
     };
   }
-
   async exportActivityLogs(showId: number, format: 'csv' | 'json') {
     const logs = await this.prisma.showActivityLog.findMany({
       where: { showId },
@@ -462,12 +396,9 @@ export class ShowActivityService {
         actor: { select: { fullName: true } },
       },
     });
-
     if (format === 'json') {
       return logs;
     }
-
-    // CSV format
     const headers = [
       'ID',
       'Type',
@@ -486,14 +417,8 @@ export class ShowActivityService {
       `"${log.description.replace(/"/g, '""')}"`,
       log.createdAt.toISOString(),
     ]);
-
     return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
   }
-
-  // ============================================================================
-  // HELPERS
-  // ============================================================================
-
   private async getUserName(userId: number): Promise<string> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

@@ -6,7 +6,6 @@ import {
   AdminVerificationController,
 } from './ticket-verification.controller';
 import { PrismaModule } from '@/prisma/prisma.module';
-
 @Module({
   imports: [PrismaModule],
   controllers: [

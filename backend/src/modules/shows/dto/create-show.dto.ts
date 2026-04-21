@@ -8,7 +8,6 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
 export class CreateShowDto {
   @ApiProperty({
     example: 'Concert ABC 2024',
@@ -18,7 +17,6 @@ export class CreateShowDto {
   @IsString()
   @MinLength(3, { message: 'Tiêu đề phải có ít nhất 3 ký tự.' })
   title: string;
-
   @ApiPropertyOptional({
     example: 'An amazing concert featuring top artists...',
     description: 'Show description',
@@ -26,7 +24,6 @@ export class CreateShowDto {
   @IsOptional()
   @IsString()
   description?: string;
-
   @ApiProperty({
     example: 1,
     description: 'Stage ID',
@@ -34,7 +31,6 @@ export class CreateShowDto {
   @IsNotEmpty({ message: 'Sân khấu không được để trống.' })
   @IsInt({ message: 'ID sân khấu phải là số nguyên.' })
   stageId: number;
-
   @ApiProperty({
     example: '2024-03-15T19:00:00Z',
     description: 'Performance time',
@@ -42,7 +38,6 @@ export class CreateShowDto {
   @IsNotEmpty({ message: 'Thời gian biểu diễn không được để trống.' })
   @IsDateString({}, { message: 'Thời gian biểu diễn không hợp lệ.' })
   performTime: string;
-
   @ApiPropertyOptional({
     example: '2024-03-15T17:00:00Z',
     description: 'Check-in time',
@@ -50,7 +45,6 @@ export class CreateShowDto {
   @IsOptional()
   @IsDateString({}, { message: 'Thời gian check-in không hợp lệ.' })
   checkInTime?: string;
-
   @ApiPropertyOptional({
     example: { dresscode: 'White', hashtag: '#ShowABC' },
     description: 'Additional properties',
@@ -58,7 +52,6 @@ export class CreateShowDto {
   @IsOptional()
   @IsObject()
   properties?: Record<string, unknown>;
-
   @ApiPropertyOptional({
     example: 'Concert ABC 2024 | Best Music Event',
     description: 'SEO meta title',
@@ -66,7 +59,6 @@ export class CreateShowDto {
   @IsOptional()
   @IsString()
   metaTitle?: string;
-
   @ApiPropertyOptional({
     example: 'Join us for the biggest concert of 2024...',
     description: 'SEO meta description',
@@ -74,7 +66,6 @@ export class CreateShowDto {
   @IsOptional()
   @IsString()
   metaDescription?: string;
-
   @ApiPropertyOptional({ example: 1, description: 'Branch ID' })
   @IsOptional()
   @IsInt()

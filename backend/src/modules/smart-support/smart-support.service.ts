@@ -1,7 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ComplaintStatus, Prisma } from '@prisma/client';
-
 export interface CreateQuestionDto {
   question: string;
   answer: string;
@@ -9,7 +8,6 @@ export interface CreateQuestionDto {
   displayOrder?: number;
   isActive?: boolean;
 }
-
 export interface UpdateQuestionDto {
   question?: string;
   answer?: string;
@@ -17,7 +15,6 @@ export interface UpdateQuestionDto {
   displayOrder?: number;
   isActive?: boolean;
 }
-
 export interface CreateComplaintDto {
   content: string;
   orderId?: number;
@@ -25,18 +22,13 @@ export interface CreateComplaintDto {
   guestEmail?: string;
   guestPhone?: string;
 }
-
 export interface ReplyComplaintDto {
   adminReply: string;
   status?: ComplaintStatus;
 }
-
 @Injectable()
 export class SmartSupportService {
   constructor(private readonly prisma: PrismaService) {}
-
-  // ================ FAQ / Support Questions ================
-
   async createQuestion(dto: CreateQuestionDto, createdBy: number) {
     return this.prisma.supportQuestion.create({
       data: {
@@ -49,16 +41,13 @@ export class SmartSupportService {
       },
     });
   }
-
   async updateQuestion(id: number, dto: UpdateQuestionDto, updatedBy: number) {
     const question = await this.prisma.supportQuestion.findUnique({
       where: { id },
     });
-
     if (!question) {
       throw new NotFoundException('Câu hỏi không tồn tại');
     }
-
     return this.prisma.supportQuestion.update({
       where: { id },
       data: {
@@ -71,41 +60,31 @@ export class SmartSupportService {
       },
     });
   }
-
   async deleteQuestion(id: number) {
     const question = await this.prisma.supportQuestion.findUnique({
       where: { id },
     });
-
     if (!question) {
       throw new NotFoundException('Câu hỏi không tồn tại');
     }
-
     return this.prisma.supportQuestion.delete({
       where: { id },
     });
   }
-
   async getQuestionById(id: number) {
     const question = await this.prisma.supportQuestion.findUnique({
       where: { id },
     });
-
     if (!question) {
       throw new NotFoundException('Câu hỏi không tồn tại');
     }
-
     return question;
   }
-
-  // Public: Get all active FAQs grouped by category
   async getPublicFAQs() {
     const questions = await this.prisma.supportQuestion.findMany({
       where: { isActive: true },
       orderBy: [{ category: 'asc' }, { displayOrder: 'asc' }],
     });
-
-    // Group by category
     const grouped: Record<string, typeof questions> = {};
     for (const q of questions) {
       if (!grouped[q.category]) {
@@ -113,18 +92,18 @@ export class SmartSupportService {
       }
       grouped[q.category].push(q);
     }
-
     return grouped;
   }
-
-  // Admin: Get all FAQs with pagination
-  async getAllQuestions(options: { page?: number; limit?: number; category?: string; isActive?: boolean }) {
+  async getAllQuestions(options: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    isActive?: boolean;
+  }) {
     const { page = 1, limit = 20, category, isActive } = options;
-
     const where: Prisma.SupportQuestionWhereInput = {};
     if (category) where.category = category;
     if (isActive !== undefined) where.isActive = isActive;
-
     const [data, total] = await Promise.all([
       this.prisma.supportQuestion.findMany({
         where,
@@ -134,7 +113,6 @@ export class SmartSupportService {
       }),
       this.prisma.supportQuestion.count({ where }),
     ]);
-
     return {
       data,
       meta: {
@@ -145,8 +123,6 @@ export class SmartSupportService {
       },
     };
   }
-
-  // Get distinct categories
   async getCategories() {
     const result = await this.prisma.supportQuestion.findMany({
       select: { category: true },
@@ -155,15 +131,10 @@ export class SmartSupportService {
     });
     return result.map((r) => r.category);
   }
-
-  // ================ Complaints ================
-
   async createComplaint(dto: CreateComplaintDto, userId?: number) {
-    // Validate: either userId or guest info must be provided
     if (!userId && !dto.guestEmail && !dto.guestPhone) {
       throw new BadRequestException('Vui lòng cung cấp email hoặc số điện thoại');
     }
-
     return this.prisma.complaint.create({
       data: {
         content: dto.content,
@@ -176,7 +147,6 @@ export class SmartSupportService {
       },
     });
   }
-
   async getComplaintById(id: number) {
     const complaint = await this.prisma.complaint.findUnique({
       where: { id },
@@ -191,20 +161,20 @@ export class SmartSupportService {
         },
       },
     });
-
     if (!complaint) {
       throw new NotFoundException('Khiếu nại không tồn tại');
     }
-
     return complaint;
   }
-
-  // Get user's complaints
-  async getMyComplaints(userId: number, options: { page?: number; limit?: number }) {
+  async getMyComplaints(
+    userId: number,
+    options: {
+      page?: number;
+      limit?: number;
+    },
+  ) {
     const { page = 1, limit = 10 } = options;
-
     const where: Prisma.ComplaintWhereInput = { userId };
-
     const [data, total] = await Promise.all([
       this.prisma.complaint.findMany({
         where,
@@ -214,7 +184,6 @@ export class SmartSupportService {
       }),
       this.prisma.complaint.count({ where }),
     ]);
-
     return {
       data,
       meta: {
@@ -225,8 +194,6 @@ export class SmartSupportService {
       },
     };
   }
-
-  // Admin: Get all complaints with filters
   async getAllComplaints(options: {
     page?: number;
     limit?: number;
@@ -236,9 +203,7 @@ export class SmartSupportService {
     endDate?: Date;
   }) {
     const { page = 1, limit = 20, status, search, startDate, endDate } = options;
-
     const where: Prisma.ComplaintWhereInput = {};
-
     if (status) where.status = status;
     if (search) {
       where.OR = [
@@ -254,7 +219,6 @@ export class SmartSupportService {
       if (startDate) where.createdAt.gte = startDate;
       if (endDate) where.createdAt.lte = endDate;
     }
-
     const [data, total] = await Promise.all([
       this.prisma.complaint.findMany({
         where,
@@ -274,7 +238,6 @@ export class SmartSupportService {
       }),
       this.prisma.complaint.count({ where }),
     ]);
-
     return {
       data,
       meta: {
@@ -285,17 +248,13 @@ export class SmartSupportService {
       },
     };
   }
-
-  // Admin: Reply to complaint
   async replyToComplaint(id: number, dto: ReplyComplaintDto, repliedBy: number) {
     const complaint = await this.prisma.complaint.findUnique({
       where: { id },
     });
-
     if (!complaint) {
       throw new NotFoundException('Khiếu nại không tồn tại');
     }
-
     return this.prisma.complaint.update({
       where: { id },
       data: {
@@ -306,24 +265,18 @@ export class SmartSupportService {
       },
     });
   }
-
-  // Admin: Update complaint status
   async updateComplaintStatus(id: number, status: ComplaintStatus) {
     const complaint = await this.prisma.complaint.findUnique({
       where: { id },
     });
-
     if (!complaint) {
       throw new NotFoundException('Khiếu nại không tồn tại');
     }
-
     return this.prisma.complaint.update({
       where: { id },
       data: { status },
     });
   }
-
-  // Get complaint statistics
   async getComplaintStats() {
     const [total, newCount, processingCount, resolvedCount] = await Promise.all([
       this.prisma.complaint.count(),
@@ -331,7 +284,6 @@ export class SmartSupportService {
       this.prisma.complaint.count({ where: { status: 'PROCESSING' } }),
       this.prisma.complaint.count({ where: { status: 'RESOLVED' } }),
     ]);
-
     return {
       total,
       new: newCount,

@@ -6,7 +6,6 @@ import {
   AdminComplaintsController,
 } from './smart-support.controller';
 import { PrismaModule } from '@/prisma/prisma.module';
-
 @Module({
   imports: [PrismaModule],
   controllers: [SmartSupportController, AdminFAQController, AdminComplaintsController],

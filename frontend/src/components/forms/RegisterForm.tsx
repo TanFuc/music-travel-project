@@ -1,5 +1,4 @@
 'use client';
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@/components/common/Link';
@@ -10,12 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { registerSchema, RegisterFormData } from '@/lib/validations/auth.schema';
-
 export function RegisterForm() {
   const { register: registerUser, isRegistering } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -25,25 +22,21 @@ export function RegisterForm() {
     defaultValues: {
       fullName: '',
       phoneNumber: '',
-
       password: '',
       confirmPassword: '',
     },
   });
-
   const onSubmit = (data: RegisterFormData) => {
     registerUser({
       fullName: data.fullName,
       phoneNumber: data.phoneNumber,
-
       password: data.password,
     });
   };
-
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="mx-auto w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-display">Đăng Ký</CardTitle>
+        <CardTitle className="font-display text-2xl">Đăng Ký</CardTitle>
         <CardDescription>Tạo tài khoản mới để bắt đầu đặt vé</CardDescription>
       </CardHeader>
       <CardContent>
@@ -53,7 +46,7 @@ export function RegisterForm() {
               Họ và tên <span className="text-error-500">*</span>
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+              <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
               <Input
                 id="fullName"
                 type="text"
@@ -62,9 +55,7 @@ export function RegisterForm() {
                 {...register('fullName')}
               />
             </div>
-            {errors.fullName && (
-              <p className="text-sm text-error-500">{errors.fullName.message}</p>
-            )}
+            {errors.fullName && <p className="text-sm text-error-500">{errors.fullName.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -72,7 +63,7 @@ export function RegisterForm() {
               Số điện thoại <span className="text-error-500">*</span>
             </label>
             <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+              <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
               <Input
                 id="phoneNumber"
                 type="tel"
@@ -86,14 +77,12 @@ export function RegisterForm() {
             )}
           </div>
 
-
-
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
               Mật khẩu <span className="text-error-500">*</span>
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -109,9 +98,7 @@ export function RegisterForm() {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {errors.password && (
-              <p className="text-sm text-error-500">{errors.password.message}</p>
-            )}
+            {errors.password && <p className="text-sm text-error-500">{errors.password.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -119,7 +106,7 @@ export function RegisterForm() {
               Xác nhận mật khẩu <span className="text-error-500">*</span>
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -154,7 +141,7 @@ export function RegisterForm() {
 
         <div className="mt-6 text-center text-sm">
           <span className="text-neutral-600">Đã có tài khoản? </span>
-          <Link href="/login" className="text-brand-500 hover:text-brand-600 font-medium">
+          <Link href="/login" className="font-medium text-brand-500 hover:text-brand-600">
             Đăng nhập
           </Link>
         </div>

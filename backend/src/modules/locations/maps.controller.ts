@@ -2,40 +2,46 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { MapsService } from './maps.service';
 import { Public } from '@/common/decorators/public.decorator';
-
 @ApiTags('maps')
 @Controller('maps')
 export class MapsController {
   constructor(private readonly mapsService: MapsService) {}
-
   @Public()
   @Get('geocode')
   @ApiOperation({ summary: 'Geocode an address to coordinates' })
   @ApiQuery({ name: 'address', description: 'Address to geocode' })
   @ApiResponse({ status: 200, description: 'Geocoding successful' })
-  async geocode(@Query('address') address: string) {
+  async geocode(
+    @Query('address')
+    address: string,
+  ) {
     return this.mapsService.geocodeAddress(address);
   }
-
   @Public()
   @Get('reverse-geocode')
   @ApiOperation({ summary: 'Reverse geocode coordinates to address' })
   @ApiQuery({ name: 'lat', description: 'Latitude' })
   @ApiQuery({ name: 'lng', description: 'Longitude' })
   @ApiResponse({ status: 200, description: 'Reverse geocoding successful' })
-  async reverseGeocode(@Query('lat') lat: string, @Query('lng') lng: string) {
+  async reverseGeocode(
+    @Query('lat')
+    lat: string,
+    @Query('lng')
+    lng: string,
+  ) {
     return this.mapsService.reverseGeocode(parseFloat(lat), parseFloat(lng));
   }
-
   @Public()
   @Get('place')
   @ApiOperation({ summary: 'Get place details by place ID' })
   @ApiQuery({ name: 'placeId', description: 'Google Place ID' })
   @ApiResponse({ status: 200, description: 'Place details retrieved' })
-  async getPlaceDetails(@Query('placeId') placeId: string) {
+  async getPlaceDetails(
+    @Query('placeId')
+    placeId: string,
+  ) {
     return this.mapsService.getPlaceDetails(placeId);
   }
-
   @Public()
   @Get('nearby')
   @ApiOperation({ summary: 'Search places nearby' })
@@ -45,10 +51,14 @@ export class MapsController {
   @ApiQuery({ name: 'type', description: 'Place type (e.g., restaurant, hotel)', required: false })
   @ApiResponse({ status: 200, description: 'Nearby places retrieved' })
   async searchNearby(
-    @Query('lat') lat: string,
-    @Query('lng') lng: string,
-    @Query('radius') radius?: string,
-    @Query('type') type?: string,
+    @Query('lat')
+    lat: string,
+    @Query('lng')
+    lng: string,
+    @Query('radius')
+    radius?: string,
+    @Query('type')
+    type?: string,
   ) {
     return this.mapsService.searchNearby(
       parseFloat(lat),
@@ -57,7 +67,6 @@ export class MapsController {
       type,
     );
   }
-
   @Public()
   @Get('directions')
   @ApiOperation({ summary: 'Get directions between two points' })
@@ -73,11 +82,16 @@ export class MapsController {
   })
   @ApiResponse({ status: 200, description: 'Directions retrieved' })
   async getDirections(
-    @Query('originLat') originLat: string,
-    @Query('originLng') originLng: string,
-    @Query('destLat') destLat: string,
-    @Query('destLng') destLng: string,
-    @Query('mode') mode?: 'driving' | 'walking' | 'transit',
+    @Query('originLat')
+    originLat: string,
+    @Query('originLng')
+    originLng: string,
+    @Query('destLat')
+    destLat: string,
+    @Query('destLng')
+    destLng: string,
+    @Query('mode')
+    mode?: 'driving' | 'walking' | 'transit',
   ) {
     return this.mapsService.getDirections(
       parseFloat(originLat),
@@ -87,7 +101,6 @@ export class MapsController {
       mode || 'driving',
     );
   }
-
   @Public()
   @Get('static-map')
   @ApiOperation({ summary: 'Get static map image URL' })
@@ -98,11 +111,16 @@ export class MapsController {
   @ApiQuery({ name: 'height', description: 'Image height', required: false })
   @ApiResponse({ status: 200, description: 'Static map URL generated' })
   async getStaticMapUrl(
-    @Query('lat') lat: string,
-    @Query('lng') lng: string,
-    @Query('zoom') zoom?: string,
-    @Query('width') width?: string,
-    @Query('height') height?: string,
+    @Query('lat')
+    lat: string,
+    @Query('lng')
+    lng: string,
+    @Query('zoom')
+    zoom?: string,
+    @Query('width')
+    width?: string,
+    @Query('height')
+    height?: string,
   ) {
     const url = this.mapsService.getStaticMapUrl(parseFloat(lat), parseFloat(lng), {
       zoom: zoom ? parseInt(zoom, 10) : undefined,
@@ -111,7 +129,6 @@ export class MapsController {
     });
     return { url };
   }
-
   @Public()
   @Get('embed-url')
   @ApiOperation({ summary: 'Get embed URL for iframe' })
@@ -120,9 +137,12 @@ export class MapsController {
   @ApiQuery({ name: 'zoom', description: 'Zoom level', required: false })
   @ApiResponse({ status: 200, description: 'Embed URL generated' })
   async getEmbedUrl(
-    @Query('lat') lat: string,
-    @Query('lng') lng: string,
-    @Query('zoom') zoom?: string,
+    @Query('lat')
+    lat: string,
+    @Query('lng')
+    lng: string,
+    @Query('zoom')
+    zoom?: string,
   ) {
     const url = this.mapsService.getEmbedUrl(
       parseFloat(lat),
@@ -131,7 +151,6 @@ export class MapsController {
     );
     return { url };
   }
-
   @Public()
   @Get('directions-link')
   @ApiOperation({ summary: 'Get Google Maps directions link' })
@@ -140,14 +159,16 @@ export class MapsController {
   @ApiQuery({ name: 'name', description: 'Destination name', required: false })
   @ApiResponse({ status: 200, description: 'Directions link generated' })
   async getDirectionsLink(
-    @Query('lat') lat: string,
-    @Query('lng') lng: string,
-    @Query('name') name?: string,
+    @Query('lat')
+    lat: string,
+    @Query('lng')
+    lng: string,
+    @Query('name')
+    name?: string,
   ) {
     const link = this.mapsService.getDirectionsLink(parseFloat(lat), parseFloat(lng), name);
     return { link };
   }
-
   @Public()
   @Get('distance')
   @ApiOperation({ summary: 'Calculate distance between two points' })
@@ -157,10 +178,14 @@ export class MapsController {
   @ApiQuery({ name: 'lng2', description: 'Second point longitude' })
   @ApiResponse({ status: 200, description: 'Distance calculated' })
   async calculateDistance(
-    @Query('lat1') lat1: string,
-    @Query('lng1') lng1: string,
-    @Query('lat2') lat2: string,
-    @Query('lng2') lng2: string,
+    @Query('lat1')
+    lat1: string,
+    @Query('lng1')
+    lng1: string,
+    @Query('lat2')
+    lat2: string,
+    @Query('lng2')
+    lng2: string,
   ) {
     const distanceKm = this.mapsService.calculateDistance(
       parseFloat(lat1),

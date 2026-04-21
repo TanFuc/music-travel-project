@@ -1,6 +1,5 @@
 import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
 export class DepositDto {
   @ApiProperty({
     example: 100000,

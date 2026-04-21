@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { Link } from '@/components/common/Link';
 import { useRouter } from 'next/navigation';
@@ -7,29 +6,34 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/auth.store';
 import { post } from '@/lib/api';
 import { usePageTitle } from '@/hooks/usePageTitle';
-
-const registerSchema = z.object({
-  fullName: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
-  phoneNumber: z
-    .string()
-    .min(1, 'Số điện thoại không được để trống')
-    .regex(/^0[3-9]\d{8,9}$/, 'Số điện thoại không hợp lệ'),
-
-  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Mật khẩu xác nhận không khớp',
-  path: ['confirmPassword'],
-});
-
+const registerSchema = z
+  .object({
+    fullName: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
+    phoneNumber: z
+      .string()
+      .min(1, 'Số điện thoại không được để trống')
+      .regex(/^0[3-9]\d{8,9}$/, 'Số điện thoại không hợp lệ'),
+    password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Mật khẩu xác nhận không khớp',
+    path: ['confirmPassword'],
+  });
 type RegisterForm = z.infer<typeof registerSchema>;
-
 interface RegisterResponse {
   accessToken: string;
   refreshToken: string;
@@ -41,13 +45,11 @@ interface RegisterResponse {
     role: string;
   };
 }
-
 export default function RegisterPage() {
   usePageTitle();
   const router = useRouter();
   const { login } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -55,7 +57,6 @@ export default function RegisterPage() {
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
-
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
     try {
@@ -65,13 +66,18 @@ export default function RegisterPage() {
       toast.success('Đăng ký thành công!');
       router.push('/shows');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
+      const err = error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      };
       toast.error(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <Card>
       <CardHeader className="text-center">
@@ -85,9 +91,7 @@ export default function RegisterPage() {
               Họ và tên
             </label>
             <Input id="fullName" placeholder="Nguyen Van A" {...register('fullName')} />
-            {errors.fullName && (
-              <p className="text-sm text-error-500">{errors.fullName.message}</p>
-            )}
+            {errors.fullName && <p className="text-sm text-error-500">{errors.fullName.message}</p>}
           </div>
           <div className="space-y-2">
             <label htmlFor="phoneNumber" className="text-sm font-medium">
@@ -109,9 +113,7 @@ export default function RegisterPage() {
               Mật khẩu
             </label>
             <Input id="password" type="password" placeholder="********" {...register('password')} />
-            {errors.password && (
-              <p className="text-sm text-error-500">{errors.password.message}</p>
-            )}
+            {errors.password && <p className="text-sm text-error-500">{errors.password.message}</p>}
           </div>
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium">

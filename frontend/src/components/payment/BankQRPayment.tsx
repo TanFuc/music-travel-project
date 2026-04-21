@@ -1,17 +1,15 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { 
-  Download, 
-  Copy, 
-  Share2, 
-  Smartphone, 
-  CreditCard, 
+import {
+  Download,
+  Copy,
+  Share2,
+  Smartphone,
+  CreditCard,
   Clock,
-  CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,19 +17,17 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/useToast';
 import { paymentService, BankQRRequest, BankQRResponse } from '@/services/payment.service';
 import BankQRSuccess from './BankQRSuccess';
-
 interface BankQRPaymentProps {
   paymentData: BankQRRequest;
   onSuccess?: () => void;
   onError?: (error: string) => void;
   className?: string;
 }
-
-export default function BankQRPayment({ 
-  paymentData, 
-  onSuccess, 
+export default function BankQRPayment({
+  paymentData,
+  onSuccess,
   onError,
-  className = '' 
+  className = '',
 }: BankQRPaymentProps) {
   const [qrData, setQrData] = useState<BankQRResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,11 +35,9 @@ export default function BankQRPayment({
   const [downloadingImage, setDownloadingImage] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
   const { toast } = useToast();
-
   useEffect(() => {
     generateQR();
   }, [paymentData]);
-
   const generateQR = async () => {
     try {
       setLoading(true);
@@ -58,10 +52,8 @@ export default function BankQRPayment({
       setLoading(false);
     }
   };
-
   const handleDownloadImage = async () => {
     if (!qrData) return;
-
     try {
       setDownloadingImage(true);
       const blob = await paymentService.generateQRImage(paymentData);
@@ -74,10 +66,8 @@ export default function BankQRPayment({
       setDownloadingImage(false);
     }
   };
-
   const handleCopyQR = async () => {
     if (!qrData) return;
-
     const success = await paymentService.copyToClipboard(qrData.qrContent);
     if (success) {
       toast.success('Đã sao chép mã QR');
@@ -85,51 +75,44 @@ export default function BankQRPayment({
       toast.error('Không thể sao chép');
     }
   };
-
   const handleShare = async () => {
     if (!qrData) return;
-
     const success = await paymentService.shareQR(qrData);
     if (!success) {
       toast.info('Trình duyệt không hỗ trợ chia sẻ');
     }
   };
-
   const handleOpenBankApp = () => {
     if (!qrData?.deeplink) return;
-
     paymentService.openBankApp(qrData.deeplink);
     toast.info('Chuyển hướng đến ứng dụng ngân hàng...');
   };
-
   const simulatePaymentSuccess = () => {
     setPaymentStatus('success');
     setTimeout(() => {
       onSuccess?.();
     }, 1000);
   };
-
   if (loading) {
     return (
-      <Card className={`w-full max-w-md mx-auto ${className}`}>
+      <Card className={`mx-auto w-full max-w-md ${className}`}>
         <CardContent className="flex items-center justify-center p-8">
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin" />
             <p>Đang tạo mã QR...</p>
           </div>
         </CardContent>
       </Card>
     );
   }
-
   if (error) {
     return (
-      <Card className={`w-full max-w-md mx-auto ${className}`}>
+      <Card className={`mx-auto w-full max-w-md ${className}`}>
         <CardContent className="p-6">
           <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Có lỗi xảy ra</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+            <h3 className="mb-2 text-lg font-semibold">Có lỗi xảy ra</h3>
+            <p className="mb-4 text-gray-600">{error}</p>
             <Button onClick={generateQR} variant="outline">
               Thử lại
             </Button>
@@ -138,10 +121,7 @@ export default function BankQRPayment({
       </Card>
     );
   }
-
   if (!qrData) return null;
-
-  // Show success screen
   if (paymentStatus === 'success') {
     return (
       <BankQRSuccess
@@ -159,10 +139,8 @@ export default function BankQRPayment({
       />
     );
   }
-
   return (
-    <div className={`w-full max-w-md mx-auto space-y-4 ${className}`}>
-      {/* Payment Status */}
+    <div className={`mx-auto w-full max-w-md space-y-4 ${className}`}>
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -170,13 +148,13 @@ export default function BankQRPayment({
             <Badge variant="secondary">
               {paymentStatus === 'pending' && (
                 <>
-                  <Clock className="h-3 w-3 mr-1" />
+                  <Clock className="mr-1 h-3 w-3" />
                   Chờ thanh toán
                 </>
               )}
               {paymentStatus === 'failed' && (
                 <>
-                  <AlertCircle className="h-3 w-3 mr-1" />
+                  <AlertCircle className="mr-1 h-3 w-3" />
                   Thất bại
                 </>
               )}
@@ -185,11 +163,10 @@ export default function BankQRPayment({
         </CardHeader>
       </Card>
 
-      {/* QR Code */}
       <Card>
         <CardContent className="p-6">
           <div className="text-center">
-            <div className="bg-white p-4 rounded-lg inline-block mb-4 shadow-sm">
+            <div className="mb-4 inline-block rounded-lg bg-white p-4 shadow-sm">
               <QRCodeSVG
                 value={qrData.qrContent}
                 size={200}
@@ -198,9 +175,8 @@ export default function BankQRPayment({
                 className="mx-auto"
               />
             </div>
-            
-            {/* Bank Info */}
-            <div className="space-y-2 mb-4">
+
+            <div className="mb-4 space-y-2">
               <div className="flex items-center justify-center gap-2">
                 <CreditCard className="h-4 w-4" />
                 <span className="font-medium">{qrData.bankName}</span>
@@ -213,15 +189,10 @@ export default function BankQRPayment({
                   {paymentService.formatAmount(qrData.amount)}
                 </p>
               )}
-              {qrData.description && (
-                <p className="text-sm text-gray-500">
-                  {qrData.description}
-                </p>
-              )}
+              {qrData.description && <p className="text-sm text-gray-500">{qrData.description}</p>}
             </div>
 
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="mb-4 grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -236,21 +207,12 @@ export default function BankQRPayment({
                 <span className="ml-1">Tải xuống</span>
               </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyQR}
-              >
+              <Button variant="outline" size="sm" onClick={handleCopyQR}>
                 <Copy className="h-4 w-4" />
                 <span className="ml-1">Sao chép</span>
               </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShare}
-                className="col-span-1"
-              >
+              <Button variant="outline" size="sm" onClick={handleShare} className="col-span-1">
                 <Share2 className="h-4 w-4" />
                 <span className="ml-1">Chia sẻ</span>
               </Button>
@@ -267,8 +229,7 @@ export default function BankQRPayment({
               )}
             </div>
 
-            {/* Instructions */}
-            <div className="text-xs text-gray-500 space-y-1">
+            <div className="space-y-1 text-xs text-gray-500">
               <p>• Mở ứng dụng ngân hàng và quét mã QR</p>
               <p>• Hoặc chụp ảnh mã QR để thanh toán sau</p>
               {paymentService.isMobile() && qrData.deeplink && (
@@ -279,14 +240,8 @@ export default function BankQRPayment({
         </CardContent>
       </Card>
 
-      {/* Test Success Button (for demo) */}
       {process.env.NODE_ENV === 'development' && paymentStatus === 'pending' && (
-        <Button 
-          onClick={simulatePaymentSuccess}
-          variant="outline"
-          size="sm"
-          className="w-full"
-        >
+        <Button onClick={simulatePaymentSuccess} variant="outline" size="sm" className="w-full">
           [Demo] Giả lập thanh toán thành công
         </Button>
       )}

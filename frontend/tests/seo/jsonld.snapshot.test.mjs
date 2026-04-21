@@ -60,8 +60,8 @@ const tourListingSample = [
 ];
 
 test('hreflang alternates snapshot', () => {
-  const alternatesDefault = buildLanguageAlternates('/shows/sample-show', 'https://musictravel.vn', false);
-  const alternatesEnglish = buildLanguageAlternates('/shows/sample-show', 'https://musictravel.vn', true);
+  const alternatesDefault = buildLanguageAlternates('/shows/sample-show', 'https://maichohanhtinhxanh.com', false);
+  const alternatesEnglish = buildLanguageAlternates('/shows/sample-show', 'https://maichohanhtinhxanh.com', true);
 
   assert.deepEqual(alternatesDefault, snapshot.alternatesDefault);
   assert.deepEqual(alternatesEnglish, snapshot.alternatesEnglish);

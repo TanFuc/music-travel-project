@@ -1,10 +1,8 @@
 import { get, post, del } from '@/lib/api';
 import { TicketTier } from '@/types/api.types';
-
 export interface LockTicketsRequest {
   ticketIds: number[];
 }
-
 export interface LockTicketsResponse {
   lockId: string;
   lockedTickets: number[];
@@ -12,19 +10,16 @@ export interface LockTicketsResponse {
   totalPrice: number;
   message: string;
 }
-
 export interface QRCodeResponse {
   qrDataUrl: string;
   expiresAt: string;
 }
-
 export interface QRBatchItem {
   ticketId: number;
   ticketCode: string;
   qrDataUrl: string;
   seatInfo: string | null;
 }
-
 export interface TicketWithDetails {
   id: number;
   ticketCode: string | null;
@@ -56,7 +51,6 @@ export interface TicketWithDetails {
     type: 'SEAT' | 'STANDING';
   } | null;
 }
-
 export interface SeatMapTicket {
   id: number;
   status: 'AVAILABLE' | 'LOCKED' | 'SOLD';
@@ -76,52 +70,25 @@ export interface SeatMapTicket {
     y: number | null;
   } | null;
 }
-
 export const ticketService = {
-  /**
-   * Get all ticket tiers (Public)
-   */
   getTiers: () => get<TicketTier[]>('/tickets/tiers'),
-
-  /**
-   * Lock tickets for purchase
-   */
   lockTickets: (ticketIds: number[]) =>
     post<LockTicketsResponse, LockTicketsRequest>('/tickets/lock', { ticketIds }),
-
-  /**
-   * Release a specific locked ticket
-   */
   releaseTicket: (ticketId: number) =>
-    del<{ message: string }>(`/tickets/lock/${ticketId}`),
-
-  /**
-   * Release all locked tickets for current user
-   */
+    del<{
+      message: string;
+    }>(`/tickets/lock/${ticketId}`),
   releaseAllTickets: () =>
-    del<{ releasedCount: number; message: string }>('/tickets/lock'),
-
-  /**
-   * Get QR code for a single ticket
-   */
-  getQRCode: (ticketId: number) =>
-    get<QRCodeResponse>(`/tickets/${ticketId}/qrcode`),
-
-  /**
-   * Get QR codes for all tickets in a booking
-   */
-  getQRBatch: (bookingId: number) =>
-    get<QRBatchItem[]>(`/tickets/booking/${bookingId}/qrcodes`),
-
-  /**
-   * Get all tickets for a booking
-   */
+    del<{
+      releasedCount: number;
+      message: string;
+    }>('/tickets/lock'),
+  getQRCode: (ticketId: number) => get<QRCodeResponse>(`/tickets/${ticketId}/qrcode`),
+  getQRBatch: (bookingId: number) => get<QRBatchItem[]>(`/tickets/booking/${bookingId}/qrcodes`),
   getTicketsByBooking: (bookingId: number) =>
     get<TicketWithDetails[]>(`/tickets/booking/${bookingId}`),
-
-  /**
-   * Validate ticket ownership
-   */
   validateOwnership: (ticketId: number) =>
-    get<{ isOwner: boolean }>(`/tickets/${ticketId}/validate`),
+    get<{
+      isOwner: boolean;
+    }>(`/tickets/${ticketId}/validate`),
 };

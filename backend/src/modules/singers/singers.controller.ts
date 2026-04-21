@@ -11,7 +11,6 @@ import {
   HttpCode,
   HttpStatus,
   Req,
-  BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -20,7 +19,6 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery,
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
@@ -34,8 +32,6 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { Public } from '@/common/decorators/public.decorator';
 import { SingerRegistrationStatus } from '@prisma/client';
 import { FastifyRequest } from 'fastify';
-
-// Extend FastifyRequest to include JWT user payload (see JwtStrategy)
 interface AuthenticatedRequest extends FastifyRequest {
   user?: {
     sub: number;
@@ -43,50 +39,54 @@ interface AuthenticatedRequest extends FastifyRequest {
     role: string;
   };
 }
-
 @ApiTags('singer-registrations')
 @Controller('singers')
 export class SingersController {
   constructor(private readonly singersService: SingersService) {}
-
   @Post('register')
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register as a singer' })
   @ApiResponse({ status: 201, description: 'Registration submitted successfully' })
   @ApiResponse({ status: 409, description: 'Phone number or email already registered' })
   @ApiResponse({ status: 429, description: 'Too many requests' })
-  async register(@Body() createDto: CreateSingerRegistrationDto, @Req() req: AuthenticatedRequest) {
-    // Registration does not require authentication; user linkage is handled in service by phone/email
+  async register(
+    @Body()
+    createDto: CreateSingerRegistrationDto,
+    @Req()
+    req: AuthenticatedRequest,
+  ) {
     const registration = await this.singersService.create(createDto);
     return {
       message: 'Đăng ký thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.',
       data: registration,
     };
   }
-
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all singer registrations (Admin/Staff only)' })
   @ApiResponse({ status: 200, description: 'Registrations retrieved successfully' })
-  async findAll(@Query() filterDto: SingerRegistrationFilterDto) {
+  async findAll(
+    @Query()
+    filterDto: SingerRegistrationFilterDto,
+  ) {
     return this.singersService.findAll(filterDto);
   }
-
   @Get('my-registrations')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user singer registrations' })
   @ApiResponse({ status: 200, description: 'User registrations retrieved successfully' })
-  async getMyRegistrations(@Req() req: AuthenticatedRequest) {
-    // JwtAuthGuard already ensures authentication; user is attached by JwtStrategy
+  async getMyRegistrations(
+    @Req()
+    req: AuthenticatedRequest,
+  ) {
     const userId = req.user!.sub;
     return this.singersService.findByUserId(userId);
   }
-
   @Get('statistics')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
@@ -96,7 +96,6 @@ export class SingersController {
   async getStatistics() {
     return this.singersService.getStatistics();
   }
-
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
@@ -105,10 +104,12 @@ export class SingersController {
   @ApiOperation({ summary: 'Get singer registration by ID (Admin/Staff only)' })
   @ApiResponse({ status: 200, description: 'Registration retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Registration not found' })
-  async findOne(@Param('id') id: string) {
+  async findOne(
+    @Param('id')
+    id: string,
+  ) {
     return this.singersService.findOne(id);
   }
-
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'STAFF')
@@ -118,10 +119,14 @@ export class SingersController {
   @ApiResponse({ status: 200, description: 'Registration updated successfully' })
   @ApiResponse({ status: 404, description: 'Registration not found' })
   @ApiResponse({ status: 409, description: 'Phone number or email already registered' })
-  async update(@Param('id') id: string, @Body() updateDto: UpdateSingerRegistrationDto) {
+  async update(
+    @Param('id')
+    id: string,
+    @Body()
+    updateDto: UpdateSingerRegistrationDto,
+  ) {
     return this.singersService.update(id, updateDto);
   }
-
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
@@ -131,15 +136,19 @@ export class SingersController {
   @ApiResponse({ status: 200, description: 'Status updated successfully' })
   @ApiResponse({ status: 404, description: 'Registration not found' })
   async updateStatus(
-    @Param('id') id: string,
-    @Body() body: { status: SingerRegistrationStatus; adminNotes?: string },
+    @Param('id')
+    id: string,
+    @Body()
+    body: {
+      status: SingerRegistrationStatus;
+      adminNotes?: string;
+    },
   ) {
     return this.singersService.updateStatus(id, body.status, body.adminNotes);
   }
-
   @Post('upload-voice-sample')
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 uploads per minute
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload voice sample file' })
   @ApiBody({
@@ -156,10 +165,12 @@ export class SingersController {
   })
   @ApiResponse({ status: 200, description: 'File uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid file format or size' })
-  async uploadVoiceSample(@Req() req: FastifyRequest) {
+  async uploadVoiceSample(
+    @Req()
+    req: FastifyRequest,
+  ) {
     return this.singersService.uploadVoiceSample(req);
   }
-
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
@@ -169,7 +180,10 @@ export class SingersController {
   @ApiOperation({ summary: 'Delete singer registration (Admin only)' })
   @ApiResponse({ status: 204, description: 'Registration deleted successfully' })
   @ApiResponse({ status: 404, description: 'Registration not found' })
-  async remove(@Param('id') id: string) {
+  async remove(
+    @Param('id')
+    id: string,
+  ) {
     await this.singersService.remove(id);
   }
 }

@@ -2,16 +2,16 @@
   "alternatesDefault": {
     "canonical": "/shows/sample-show",
     "languages": {
-      "vi-VN": "https://musictravel.vn/shows/sample-show",
-      "x-default": "https://musictravel.vn/shows/sample-show"
+      "vi-VN": "https://maichohanhtinhxanh.com/shows/sample-show",
+      "x-default": "https://maichohanhtinhxanh.com/shows/sample-show"
     }
   },
   "alternatesEnglish": {
     "canonical": "/shows/sample-show",
     "languages": {
-      "vi-VN": "https://musictravel.vn/shows/sample-show",
-      "x-default": "https://musictravel.vn/shows/sample-show",
-      "en-US": "https://musictravel.vn/en/shows/sample-show"
+      "vi-VN": "https://maichohanhtinhxanh.com/shows/sample-show",
+      "x-default": "https://maichohanhtinhxanh.com/shows/sample-show",
+      "en-US": "https://maichohanhtinhxanh.com/en/shows/sample-show"
     }
   },
   "showOffersCount": 2,

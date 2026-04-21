@@ -1,11 +1,9 @@
 import { api } from '@/lib/api';
-
 export interface WalletBalance {
   balance: number;
   currency: string;
   status: 'ACTIVE' | 'LOCKED';
 }
-
 export interface WalletTransaction {
   id: string;
   walletId: number;
@@ -17,7 +15,6 @@ export interface WalletTransaction {
   referenceId: string | null;
   createdAt: string;
 }
-
 export interface WithdrawalRequest {
   id: number;
   userId: number;
@@ -38,39 +35,28 @@ export interface WithdrawalRequest {
     email: string | null;
   };
 }
-
 export interface WithdrawRequestDto {
   amount: number;
   bankName: string;
   accountNumber: string;
   accountHolder: string;
 }
-
-// Get wallet balance
 export const getWalletBalance = async (): Promise<WalletBalance> => {
   const response = await api.get('/wallet');
   return response.data;
 };
-
-// Get transaction history
 export const getTransactions = async (params: { page?: number; limit?: number }) => {
   const response = await api.get('/wallet/transactions', { params });
   return response.data;
 };
-
-// Request withdrawal
 export const requestWithdrawal = async (dto: WithdrawRequestDto) => {
   const response = await api.post('/wallet/withdraw', dto);
   return response.data;
 };
-
-// Get my withdrawal requests
 export const getMyWithdrawalRequests = async (params: { page?: number; limit?: number }) => {
   const response = await api.get('/wallet/withdrawals', { params });
   return response.data;
 };
-
-// Admin: Get all withdrawal requests
 export const getAllWithdrawalRequests = async (params: {
   page?: number;
   limit?: number;
@@ -80,20 +66,14 @@ export const getAllWithdrawalRequests = async (params: {
   const response = await api.get('/admin/wallet/withdrawals', { params });
   return response.data;
 };
-
-// Admin: Get withdrawal stats
 export const getWithdrawalStats = async () => {
   const response = await api.get('/admin/wallet/withdrawals/stats');
   return response.data;
 };
-
-// Admin: Approve withdrawal
 export const approveWithdrawal = async (id: number, adminNote?: string) => {
   const response = await api.put(`/admin/wallet/withdrawals/${id}/approve`, { adminNote });
   return response.data;
 };
-
-// Admin: Reject withdrawal
 export const rejectWithdrawal = async (id: number, adminNote: string) => {
   const response = await api.put(`/admin/wallet/withdrawals/${id}/reject`, { adminNote });
   return response.data;

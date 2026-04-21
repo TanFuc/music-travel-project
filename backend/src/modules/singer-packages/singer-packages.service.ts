@@ -4,27 +4,22 @@ import { SingerPackageTemplate } from '@prisma/client';
 import { CreateSingerPackageDto } from './dto/create-singer-package.dto';
 import { UpdateSingerPackageDto } from './dto/update-singer-package.dto';
 import { SingerPackageFilterDto } from './dto/singer-package-filter.dto';
-
 @Injectable()
 export class SingerPackagesService {
   constructor(private readonly prisma: PrismaService) {}
-
   async create(
     createDto: CreateSingerPackageDto,
     createdBy?: number,
   ): Promise<SingerPackageTemplate> {
-    // Check for duplicate name
     const existingPackage = await this.prisma.singerPackageTemplate.findFirst({
       where: {
         name: createDto.name.trim(),
         isActive: true,
       },
     });
-
     if (existingPackage) {
       throw new ConflictException('Tên gói đã tồn tại');
     }
-
     return this.prisma.singerPackageTemplate.create({
       data: {
         ...createDto,
@@ -35,20 +30,15 @@ export class SingerPackagesService {
       },
     });
   }
-
   async findAll(filterDto: SingerPackageFilterDto) {
     const { page = 1, limit = 10, isActive, search } = filterDto;
-
     const safeLimit = Math.min(Math.max(limit, 1), 100);
     const safePage = Math.max(page, 1);
     const skip = (safePage - 1) * safeLimit;
-
     const where: any = {};
-
     if (typeof isActive === 'boolean') {
       where.isActive = isActive;
     }
-
     if (search) {
       const sanitizedSearch = search.trim().substring(0, 100);
       where.OR = [
@@ -57,7 +47,6 @@ export class SingerPackagesService {
         { description: { contains: sanitizedSearch, mode: 'insensitive' } },
       ];
     }
-
     const [packages, total] = await Promise.all([
       this.prisma.singerPackageTemplate.findMany({
         where,
@@ -74,7 +63,6 @@ export class SingerPackagesService {
       }),
       this.prisma.singerPackageTemplate.count({ where }),
     ]);
-
     return {
       data: packages,
       pagination: {
@@ -85,7 +73,6 @@ export class SingerPackagesService {
       },
     };
   }
-
   async findAllActive() {
     return this.prisma.singerPackageTemplate.findMany({
       where: {
@@ -101,7 +88,6 @@ export class SingerPackagesService {
       },
     });
   }
-
   async findOne(id: string): Promise<SingerPackageTemplate> {
     const packageTemplate = await this.prisma.singerPackageTemplate.findUnique({
       where: { id },
@@ -113,22 +99,17 @@ export class SingerPackagesService {
         },
       },
     });
-
     if (!packageTemplate) {
       throw new NotFoundException('Không tìm thấy gói đăng ký');
     }
-
     return packageTemplate;
   }
-
   async update(
     id: string,
     updateDto: UpdateSingerPackageDto,
     updatedBy?: number,
   ): Promise<SingerPackageTemplate> {
-    await this.findOne(id); // Check if exists
-
-    // Check for duplicate name if name is being updated
+    await this.findOne(id);
     if (updateDto.name) {
       const existingPackage = await this.prisma.singerPackageTemplate.findFirst({
         where: {
@@ -137,12 +118,10 @@ export class SingerPackagesService {
           isActive: true,
         },
       });
-
       if (existingPackage) {
         throw new ConflictException('Tên gói đã tồn tại');
       }
     }
-
     return this.prisma.singerPackageTemplate.update({
       where: { id },
       data: {
@@ -154,11 +133,8 @@ export class SingerPackagesService {
       },
     });
   }
-
   async remove(id: string): Promise<void> {
     const packageTemplate = await this.findOne(id);
-
-    // Check if there are active registrations using this package
     const registrationCount = await this.prisma.singerRegistration.count({
       where: {
         packageTemplateId: id,
@@ -167,16 +143,13 @@ export class SingerPackagesService {
         },
       },
     });
-
     if (registrationCount > 0) {
       throw new ConflictException('Không thể xóa gói có đăng ký đang hoạt động');
     }
-
     await this.prisma.singerPackageTemplate.delete({
       where: { id },
     });
   }
-
   async getStatistics() {
     const [totalPackages, activePackages, totalRegistrations, packageRegistrationStats] =
       await Promise.all([
@@ -202,7 +175,6 @@ export class SingerPackagesService {
           },
         }),
       ]);
-
     return {
       totalPackages,
       activePackages,

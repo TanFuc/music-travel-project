@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,28 +6,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { paymentService, BankInfo } from '@/services/payment.service';
 import { useToast } from '@/hooks/useToast';
-
 interface BankSelectorProps {
   selectedBank?: string;
   onBankSelect: (bankCode: string, bankInfo: BankInfo) => void;
   className?: string;
 }
-
 export default function BankSelector({
   selectedBank,
   onBankSelect,
-  className = ''
+  className = '',
 }: BankSelectorProps) {
   const [banks, setBanks] = useState<Record<string, BankInfo>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-
   useEffect(() => {
     loadBanks();
   }, []);
-
   const loadBanks = async () => {
     try {
       setLoading(true);
@@ -40,31 +35,27 @@ export default function BankSelector({
       setLoading(false);
     }
   };
-
-  const filteredBanks = Object.entries(banks).filter(([code, bank]) =>
-    bank.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bank.shortName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    code.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredBanks = Object.entries(banks).filter(
+    ([code, bank]) =>
+      bank.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bank.shortName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      code.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
   const selectedBankInfo = selectedBank ? banks[selectedBank] : null;
-
   const handleBankSelect = (bankCode: string, bankInfo: BankInfo) => {
     onBankSelect(bankCode, bankInfo);
     setIsOpen(false);
     setSearchTerm('');
   };
-
   if (loading) {
     return (
       <div className={className}>
         <div className="animate-pulse">
-          <div className="h-10 bg-gray-200 rounded-md"></div>
+          <div className="h-10 rounded-md bg-gray-200"></div>
         </div>
       </div>
     );
   }
-
   return (
     <div className={`relative ${className}`}>
       <Button
@@ -75,7 +66,7 @@ export default function BankSelector({
         <div className="flex items-center gap-2">
           {selectedBankInfo ? (
             <>
-              <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
+              <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-100">
                 <span className="text-xs font-bold text-blue-600">
                   {selectedBankInfo?.shortName?.substring(0, 2)}
                 </span>
@@ -90,11 +81,11 @@ export default function BankSelector({
       </Button>
 
       {isOpen && (
-        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden">
+        <Card className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-hidden">
           <CardContent className="p-0">
-            <div className="p-3 border-b">
+            <div className="border-b p-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                 <Input
                   placeholder="Tìm kiếm ngân hàng..."
                   value={searchTerm}
@@ -106,18 +97,16 @@ export default function BankSelector({
 
             <div className="max-h-60 overflow-y-auto">
               {filteredBanks.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  Không tìm thấy ngân hàng
-                </div>
+                <div className="p-4 text-center text-gray-500">Không tìm thấy ngân hàng</div>
               ) : (
                 filteredBanks.map(([code, bank]) => (
                   <button
                     key={code}
                     onClick={() => handleBankSelect(code, bank)}
-                    className="w-full p-3 text-left hover:bg-gray-50 flex items-center justify-between group"
+                    className="group flex w-full items-center justify-between p-3 text-left hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                      <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-100">
                         <span className="text-sm font-bold text-blue-600">
                           {bank.shortName?.substring(0, 2)}
                         </span>
@@ -127,9 +116,7 @@ export default function BankSelector({
                         <div className="text-sm text-gray-500">{code}</div>
                       </div>
                     </div>
-                    {selectedBank === code && (
-                      <Check className="h-4 w-4 text-blue-600" />
-                    )}
+                    {selectedBank === code && <Check className="h-4 w-4 text-blue-600" />}
                   </button>
                 ))
               )}
@@ -138,12 +125,7 @@ export default function BankSelector({
         </Card>
       )}
 
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      {isOpen && <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />}
     </div>
   );
 }

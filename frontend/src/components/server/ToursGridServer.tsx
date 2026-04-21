@@ -1,23 +1,26 @@
-/**
- * Server Component: ToursGridServer
- * Renders the tours grid with data passed from the server
- */
-
 import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { Clock, MapPin, Calendar, ArrowRight, Search } from 'lucide-react';
 import { CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-
 interface Tour {
   id: number;
   title: string;
   slug: string;
   duration: string;
-  departureLoc: { name: string; slug?: string } | null;
-  destinationLoc: { name: string; slug?: string } | null;
-  branch: { id: number; name: string } | null;
+  departureLoc: {
+    name: string;
+    slug?: string;
+  } | null;
+  destinationLoc: {
+    name: string;
+    slug?: string;
+  } | null;
+  branch: {
+    id: number;
+    name: string;
+  } | null;
   minPrice: number | null;
   thumbnailUrl?: string;
   nextSchedule: {
@@ -26,32 +29,29 @@ interface Tour {
     price: number;
   } | null;
 }
-
 interface ToursGridServerProps {
   tours: Tour[];
   emptyMessage?: string;
 }
-
 export function ToursGridServer({
   tours,
   emptyMessage = 'Không tìm thấy chuyến đi',
 }: ToursGridServerProps) {
   if (!tours || tours.length === 0) {
     return (
-      <div className="text-center py-24">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-50 mb-6">
-          <Search className="w-8 h-8 text-gray-300" />
+      <div className="py-24 text-center">
+        <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-gray-50">
+          <Search className="h-8 w-8 text-gray-300" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">{emptyMessage}</h3>
-        <p className="text-gray-500 mb-8 max-w-sm mx-auto">
+        <h3 className="mb-2 text-2xl font-bold text-gray-900">{emptyMessage}</h3>
+        <p className="mx-auto mb-8 max-w-sm text-gray-500">
           Chúng tôi không tìm thấy tour nào phù hợp với yêu cầu của bạn. Hãy thử thay đổi bộ lọc.
         </p>
       </div>
     );
   }
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
       {tours.map((tour, idx) => (
         <article
           key={tour.id}
@@ -62,8 +62,7 @@ export function ToursGridServer({
           }}
         >
           <Link href={`/tours/${tour.slug}`} className="group block h-full">
-            <div className="glass-card-premium h-full flex flex-col group-hover:border-brand-500/20">
-              {/* Image Header */}
+            <div className="glass-card-premium flex h-full flex-col group-hover:border-brand-500/20">
               <div className="relative h-64 overflow-hidden">
                 <Image
                   src={
@@ -75,13 +74,12 @@ export function ToursGridServer({
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-                {/* Badges on Image */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                <div className="absolute left-4 top-4 flex flex-col gap-2">
                   {tour.duration && (
-                    <Badge className="bg-white/90 backdrop-blur-md text-gray-900 border-none px-2 py-1 flex items-center gap-1.5 text-[10px] font-bold">
-                      <Clock className="w-3 h-3 text-brand-600" />
+                    <Badge className="flex items-center gap-1.5 border-none bg-white/90 px-2 py-1 text-[10px] font-bold text-gray-900 backdrop-blur-md">
+                      <Clock className="h-3 w-3 text-brand-600" />
                       {tour.duration}
                     </Badge>
                   )}
@@ -89,29 +87,27 @@ export function ToursGridServer({
 
                 {tour.branch && (
                   <div className="absolute bottom-4 left-4">
-                    <Badge className="bg-brand-600 text-white border-none px-3 py-1 text-[10px] font-bold shadow-lg shadow-brand-600/20 uppercase tracking-tighter">
+                    <Badge className="border-none bg-brand-600 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-white shadow-lg shadow-brand-600/20">
                       {tour.branch.name}
                     </Badge>
                   </div>
                 )}
               </div>
 
-              {/* Content */}
-              <CardContent className="p-6 flex-1 flex flex-col bg-white">
+              <CardContent className="flex flex-1 flex-col bg-white p-6">
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-brand-600 transition-colors line-clamp-2">
+                  <h3 className="mb-3 line-clamp-2 text-xl font-bold text-gray-900 transition-colors group-hover:text-brand-600">
                     {tour.title}
                   </h3>
 
-                  <div className="space-y-3 mb-6">
+                  <div className="mb-6 space-y-3">
                     {tour.destinationLoc && (
                       <div className="flex items-center gap-3 text-sm text-gray-500">
-                        <div className="p-1.5 rounded-lg bg-gray-50">
-                          <MapPin className="w-4 h-4 text-brand-500" />
+                        <div className="rounded-lg bg-gray-50 p-1.5">
+                          <MapPin className="h-4 w-4 text-brand-500" />
                         </div>
-                        <span className="font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                          {tour.departureLoc?.name}{' '}
-                          <ArrowRight className="inline w-3 h-3 mx-1" />{' '}
+                        <span className="overflow-hidden text-ellipsis whitespace-nowrap font-medium">
+                          {tour.departureLoc?.name} <ArrowRight className="mx-1 inline h-3 w-3" />{' '}
                           {tour.destinationLoc.name}
                         </span>
                       </div>
@@ -119,8 +115,8 @@ export function ToursGridServer({
 
                     {tour.nextSchedule && (
                       <div className="flex items-center gap-3 text-sm text-gray-500">
-                        <div className="p-1.5 rounded-lg bg-gray-50">
-                          <Calendar className="w-4 h-4 text-brand-500" />
+                        <div className="rounded-lg bg-gray-50 p-1.5">
+                          <Calendar className="h-4 w-4 text-brand-500" />
                         </div>
                         <span className="font-medium">
                           Khởi hành: {formatDate(tour.nextSchedule.startDate)}
@@ -130,9 +126,9 @@ export function ToursGridServer({
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-gray-50 flex items-center justify-between mt-auto">
+                <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-6">
                   <div>
-                    <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">
+                    <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-widest text-gray-400">
                       Giá từ
                     </span>
                     <div className="flex items-baseline gap-1">
@@ -142,8 +138,8 @@ export function ToursGridServer({
                     </div>
                   </div>
 
-                  <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all duration-300">
-                    <ArrowRight className="w-5 h-5" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-600 transition-all duration-300 group-hover:bg-brand-600 group-hover:text-white">
+                    <ArrowRight className="h-5 w-5" />
                   </div>
                 </div>
               </CardContent>

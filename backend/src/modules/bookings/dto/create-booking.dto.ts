@@ -1,45 +1,35 @@
 import { IsOptional, IsString, IsArray, IsInt, IsObject, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-
 class TourItemDto {
   @IsInt()
   scheduleId: number;
-
   @IsInt()
   quantity: number;
-
   @IsOptional()
   @IsArray()
   passengerInfo?: Record<string, unknown>[];
 }
-
 class TicketWithSeatDto {
   @IsInt()
   ticketId: number;
-
   @IsOptional()
   @IsInt()
   physicalSeatId?: number;
   phyiscalSeatId?: number;
 }
-
 export class TicketTierItemDto {
   @IsInt()
   tierId: number;
-
   @IsInt()
   quantity: number;
 }
-
 class SingerPackageItemDto {
   @IsString()
   packageId: string;
-
   @IsInt()
   quantity: number;
 }
-
 export class CreateBookingDto {
   @ApiPropertyOptional({
     type: [Number],
@@ -49,7 +39,6 @@ export class CreateBookingDto {
   @IsArray()
   @IsInt({ each: true })
   ticketIds?: number[];
-
   @ApiPropertyOptional({
     type: [TicketWithSeatDto],
     description: 'Array of tickets with physical seat IDs',
@@ -64,7 +53,6 @@ export class CreateBookingDto {
   @Type(() => TicketWithSeatDto)
   @Type(() => TicketWithSeatDto)
   ticketsWithSeats?: TicketWithSeatDto[];
-
   @ApiPropertyOptional({
     type: 'object',
     isArray: true,
@@ -76,14 +64,12 @@ export class CreateBookingDto {
   @ValidateNested({ each: true })
   @Type(() => TicketTierItemDto)
   ticketTiers?: TicketTierItemDto[];
-
   @ApiPropertyOptional({ type: [TourItemDto], description: 'Tour booking items' })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => TourItemDto)
   tourItems?: TourItemDto[];
-
   @ApiPropertyOptional({
     type: [SingerPackageItemDto],
     description: 'Singer package booking items',
@@ -93,17 +79,14 @@ export class CreateBookingDto {
   @ValidateNested({ each: true })
   @Type(() => SingerPackageItemDto)
   singerPackages?: SingerPackageItemDto[];
-
   @ApiPropertyOptional({ description: 'Voucher code' })
   @IsOptional()
   @IsString()
   voucherCode?: string;
-
   @ApiPropertyOptional({ description: 'Additional notes' })
   @IsOptional()
   @IsString()
   note?: string;
-
   @ApiPropertyOptional({ description: 'Additional metadata' })
   @IsOptional()
   @IsObject()

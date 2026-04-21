@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,8 +12,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { post, patch } from '@/lib/api';
 import { toast } from 'sonner';
-
-// Validation schema
 const ticketTierSchema = z.object({
   name: z.string().min(3, 'Tên vé phải có ít nhất 3 ký tự'),
   nameEn: z.string().optional().nullable(),
@@ -30,9 +27,7 @@ const ticketTierSchema = z.object({
   maxPerOrder: z.number().min(1).default(10),
   isActive: z.boolean().default(true),
 });
-
 type TicketTierFormData = z.infer<typeof ticketTierSchema>;
-
 interface TicketTier {
   id: number;
   name: string;
@@ -50,20 +45,21 @@ interface TicketTier {
   maxPerOrder: number;
   isActive: boolean;
 }
-
 interface TicketTierFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
   initialData?: TicketTier | null;
 }
-
 const DEFAULT_COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
-
-export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }: TicketTierFormModalProps) {
+export function TicketTierFormModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  initialData,
+}: TicketTierFormModalProps) {
   const queryClient = useQueryClient();
   const isEdit = !!initialData;
-
   const {
     register,
     handleSubmit,
@@ -89,11 +85,8 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
       isActive: true,
     },
   });
-
   const selectedColor = watch('colorCode');
   const isActive = watch('isActive');
-
-  // Populate form when editing
   useEffect(() => {
     if (initialData && isOpen) {
       reset({
@@ -129,8 +122,6 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
       });
     }
   }, [initialData, isOpen, reset]);
-
-  // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: TicketTierFormData) => post('/admin/ticket-tiers', data),
     onSuccess: () => {
@@ -143,8 +134,6 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo loại vé');
     },
   });
-
-  // Update mutation
   const updateMutation = useMutation({
     mutationFn: (data: TicketTierFormData) => patch(`/admin/ticket-tiers/${initialData?.id}`, data),
     onSuccess: () => {
@@ -157,7 +146,6 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật loại vé');
     },
   });
-
   const onSubmit = (data: TicketTierFormData) => {
     if (isEdit) {
       updateMutation.mutate(data);
@@ -165,29 +153,25 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
       createMutation.mutate(data);
     }
   };
-
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden mx-4">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+      <div className="relative mx-4 max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-xl font-bold">{isEdit ? 'Sửa loại vé' : 'Tạo loại vé mới'}</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={handleSubmit(onSubmit)} className="overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="p-6 space-y-6">
-            {/* Basic Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="max-h-[calc(90vh-140px)] overflow-y-auto"
+        >
+          <div className="space-y-6 p-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
                 <Label htmlFor="name">Tên loại vé *</Label>
                 <Input
@@ -196,7 +180,7 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
                   placeholder="VD: Vé Hạt Xanh - Green Solo"
                   className="mt-1"
                 />
-                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+                {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
               </div>
 
               <div>
@@ -218,7 +202,9 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
                   placeholder="350000"
                   className="mt-1"
                 />
-                {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
+                {errors.price && (
+                  <p className="mt-1 text-sm text-red-500">{errors.price.message}</p>
+                )}
               </div>
 
               <div>
@@ -230,11 +216,10 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
                   placeholder="400000"
                   className="mt-1"
                 />
-                <p className="text-xs text-neutral-500 mt-1">Để trống nếu không có giảm giá</p>
+                <p className="mt-1 text-xs text-neutral-500">Để trống nếu không có giảm giá</p>
               </div>
             </div>
 
-            {/* Description & Benefits */}
             <div className="space-y-4">
               <div>
                 <Label htmlFor="description">Mô tả</Label>
@@ -269,16 +254,14 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
               </div>
             </div>
 
-            {/* Color Selection */}
             <div>
               <Label>Màu sắc</Label>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="mt-2 flex items-center gap-2">
                 {DEFAULT_COLORS.map((color) => (
                   <button
                     key={color}
                     type="button"
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColor === color ? 'border-gray-900 scale-110' : 'border-transparent'
-                      }`}
+                    className={`h-8 w-8 rounded-full border-2 transition-all ${selectedColor === color ? 'scale-110 border-gray-900' : 'border-transparent'}`}
                     style={{ backgroundColor: color }}
                     onClick={() => setValue('colorCode', color)}
                   />
@@ -287,13 +270,12 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
                   type="color"
                   value={selectedColor || '#22C55E'}
                   onChange={(e) => setValue('colorCode', e.target.value)}
-                  className="w-10 h-8 p-0 border-0 cursor-pointer"
+                  className="h-8 w-10 cursor-pointer border-0 p-0"
                 />
               </div>
             </div>
 
-            {/* Quantity Settings */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div>
                 <Label htmlFor="totalQuantity">Tổng số vé</Label>
                 <Input
@@ -302,7 +284,7 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
                   {...register('totalQuantity', { valueAsNumber: true })}
                   className="mt-1"
                 />
-                <p className="text-xs text-neutral-500 mt-1">0 = không giới hạn</p>
+                <p className="mt-1 text-xs text-neutral-500">0 = không giới hạn</p>
               </div>
 
               <div>
@@ -336,10 +318,11 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
               </div>
             </div>
 
-            {/* Active Toggle */}
-            <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
+            <div className="flex items-center justify-between rounded-lg bg-neutral-50 p-4">
               <div>
-                <Label htmlFor="isActive" className="font-medium">Kích hoạt bán vé</Label>
+                <Label htmlFor="isActive" className="font-medium">
+                  Kích hoạt bán vé
+                </Label>
                 <p className="text-sm text-neutral-500">Cho phép hiển thị và bán loại vé này</p>
               </div>
               <Switch
@@ -350,8 +333,7 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-neutral-50">
+          <div className="flex items-center justify-end gap-3 border-t bg-neutral-50 px-6 py-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Hủy
             </Button>
@@ -360,7 +342,7 @@ export function TicketTierFormModal({ isOpen, onClose, onSuccess, initialData }:
               disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
               className="gap-2"
             >
-              {(isSubmitting || createMutation.isPending || updateMutation.isPending) ? (
+              {isSubmitting || createMutation.isPending || updateMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />

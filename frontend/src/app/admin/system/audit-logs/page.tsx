@@ -1,21 +1,9 @@
 'use client';
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import {
-  Search,
-  Filter,
-  Eye,
-  User,
-  Calendar,
-  Activity,
-  Database,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
-
+import { Filter, Eye, User, Database, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +32,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-
 import {
   getAuditLogs,
   getActionTypes,
@@ -53,7 +40,6 @@ import {
   computeDiff,
   type AuditLog,
 } from '@/services/audit.service';
-
 const getActionBadge = (action: string) => {
   switch (action) {
     case 'CREATE':
@@ -72,29 +58,26 @@ const getActionBadge = (action: string) => {
       return <Badge variant="outline">{action}</Badge>;
   }
 };
-
 const JsonDiff = ({ oldValue, newValue }: { oldValue: any; newValue: any }) => {
   const diff = computeDiff(oldValue, newValue);
-
   if (diff.length === 0) {
     return <p className="text-muted-foreground">Không có thay đổi</p>;
   }
-
   return (
     <div className="space-y-3">
       {diff.map(({ key, old: oldVal, new: newVal }) => (
-        <div key={key} className="border rounded-lg p-3">
-          <p className="font-medium text-sm mb-2">{key}</p>
+        <div key={key} className="rounded-lg border p-3">
+          <p className="mb-2 text-sm font-medium">{key}</p>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Trước</p>
-              <pre className="bg-red-50 p-2 rounded text-xs overflow-auto max-h-32 text-red-800">
+              <p className="mb-1 text-xs text-muted-foreground">Trước</p>
+              <pre className="max-h-32 overflow-auto rounded bg-red-50 p-2 text-xs text-red-800">
                 {oldVal === undefined ? '(không có)' : JSON.stringify(oldVal, null, 2)}
               </pre>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Sau</p>
-              <pre className="bg-green-50 p-2 rounded text-xs overflow-auto max-h-32 text-green-800">
+              <p className="mb-1 text-xs text-muted-foreground">Sau</p>
+              <pre className="max-h-32 overflow-auto rounded bg-green-50 p-2 text-xs text-green-800">
                 {newVal === undefined ? '(không có)' : JSON.stringify(newVal, null, 2)}
               </pre>
             </div>
@@ -104,7 +87,6 @@ const JsonDiff = ({ oldValue, newValue }: { oldValue: any; newValue: any }) => {
     </div>
   );
 };
-
 export default function AdminAuditLogsPage() {
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
@@ -117,8 +99,6 @@ export default function AdminAuditLogsPage() {
   });
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-
-  // Queries
   const { data: logsData, isLoading: logsLoading } = useQuery({
     queryKey: ['audit-logs', page, filters],
     queryFn: () =>
@@ -132,27 +112,22 @@ export default function AdminAuditLogsPage() {
         endDate: filters.endDate || undefined,
       }),
   });
-
   const { data: actionTypes } = useQuery({
     queryKey: ['audit-logs', 'actions'],
     queryFn: getActionTypes,
   });
-
   const { data: entityTypes } = useQuery({
     queryKey: ['audit-logs', 'entities'],
     queryFn: getEntityTypes,
   });
-
   const { data: modules } = useQuery({
     queryKey: ['audit-logs', 'modules'],
     queryFn: getModules,
   });
-
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setPage(1);
   };
-
   const clearFilters = () => {
     setFilters({
       action: '',
@@ -164,12 +139,10 @@ export default function AdminAuditLogsPage() {
     });
     setPage(1);
   };
-
   const viewDetail = (log: AuditLog) => {
     setSelectedLog(log);
     setDetailOpen(true);
   };
-
   return (
     <div className="space-y-6">
       <div>
@@ -177,7 +150,6 @@ export default function AdminAuditLogsPage() {
         <p className="text-muted-foreground">Theo dõi tất cả thay đổi trong hệ thống</p>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -186,13 +158,10 @@ export default function AdminAuditLogsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div>
               <Label>Hành động</Label>
-              <Select
-                value={filters.action}
-                onValueChange={(v) => handleFilterChange('action', v)}
-              >
+              <Select value={filters.action} onValueChange={(v) => handleFilterChange('action', v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tất cả" />
                 </SelectTrigger>
@@ -209,10 +178,7 @@ export default function AdminAuditLogsPage() {
 
             <div>
               <Label>Đối tượng</Label>
-              <Select
-                value={filters.entity}
-                onValueChange={(v) => handleFilterChange('entity', v)}
-              >
+              <Select value={filters.entity} onValueChange={(v) => handleFilterChange('entity', v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tất cả" />
                 </SelectTrigger>
@@ -229,10 +195,7 @@ export default function AdminAuditLogsPage() {
 
             <div>
               <Label>Module</Label>
-              <Select
-                value={filters.module}
-                onValueChange={(v) => handleFilterChange('module', v)}
-              >
+              <Select value={filters.module} onValueChange={(v) => handleFilterChange('module', v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tất cả" />
                 </SelectTrigger>
@@ -266,7 +229,7 @@ export default function AdminAuditLogsPage() {
             </div>
           </div>
 
-          <div className="flex justify-end mt-4">
+          <div className="mt-4 flex justify-end">
             <Button variant="outline" onClick={clearFilters}>
               Xóa bộ lọc
             </Button>
@@ -274,13 +237,10 @@ export default function AdminAuditLogsPage() {
         </CardContent>
       </Card>
 
-      {/* Logs Table */}
       <Card>
         <CardHeader>
           <CardTitle>Danh sách nhật ký</CardTitle>
-          <CardDescription>
-            Tổng cộng {logsData?.meta?.total || 0} bản ghi
-          </CardDescription>
+          <CardDescription>Tổng cộng {logsData?.meta?.total || 0} bản ghi</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -309,7 +269,7 @@ export default function AdminAuditLogsPage() {
                 ))
               ) : logsData?.data?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                     Không có dữ liệu
                   </TableCell>
                 </TableRow>
@@ -338,11 +298,7 @@ export default function AdminAuditLogsPage() {
                     </TableCell>
                     <TableCell className="font-mono text-sm">{log.entityId || '-'}</TableCell>
                     <TableCell>
-                      {log.module ? (
-                        <Badge variant="outline">{log.module}</Badge>
-                      ) : (
-                        '-'
-                      )}
+                      {log.module ? <Badge variant="outline">{log.module}</Badge> : '-'}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{log.ipAddress || '-'}</TableCell>
                     <TableCell>
@@ -356,9 +312,8 @@ export default function AdminAuditLogsPage() {
             </TableBody>
           </Table>
 
-          {/* Pagination */}
           {logsData?.meta && logsData.meta.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
+            <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 Trang {page} / {logsData.meta.totalPages}
               </p>
@@ -385,26 +340,25 @@ export default function AdminAuditLogsPage() {
         </CardContent>
       </Card>
 
-      {/* Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi tiết nhật ký</DialogTitle>
             <DialogDescription>
-              {selectedLog && format(new Date(selectedLog.createdAt), 'dd/MM/yyyy HH:mm:ss', { locale: vi })}
+              {selectedLog &&
+                format(new Date(selectedLog.createdAt), 'dd/MM/yyyy HH:mm:ss', { locale: vi })}
             </DialogDescription>
           </DialogHeader>
 
           {selectedLog && (
             <div className="space-y-6">
-              {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Người thực hiện</Label>
                   <p className="font-medium">
                     {selectedLog.user?.fullName || 'Hệ thống'}
                     {selectedLog.user && (
-                      <span className="text-muted-foreground ml-2">
+                      <span className="ml-2 text-muted-foreground">
                         ({selectedLog.user.phoneNumber})
                       </span>
                     )}
@@ -430,15 +384,14 @@ export default function AdminAuditLogsPage() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">User Agent</Label>
-                  <p className="text-xs truncate" title={selectedLog.userAgent || ''}>
+                  <p className="truncate text-xs" title={selectedLog.userAgent || ''}>
                     {selectedLog.userAgent || '-'}
                   </p>
                 </div>
               </div>
 
-              {/* Changes */}
               <div>
-                <Label className="text-muted-foreground mb-2 block">Thay đổi dữ liệu</Label>
+                <Label className="mb-2 block text-muted-foreground">Thay đổi dữ liệu</Label>
                 <JsonDiff oldValue={selectedLog.oldValue} newValue={selectedLog.newValue} />
               </div>
             </div>

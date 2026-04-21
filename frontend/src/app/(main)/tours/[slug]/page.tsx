@@ -1,14 +1,3 @@
-/**
- * Tour Detail Page - ISR (Incremental Static Regeneration)
- * Server Component with revalidation every 5 minutes
- *
- * Features:
- * - generateStaticParams to pre-render top 20 tours at build time
- * - generateMetadata for dynamic SEO
- * - Reduced client-side JavaScript bundle
- * - Better SEO with server-rendered content
- */
-
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
@@ -24,15 +13,13 @@ import {
   buildTourOffers,
   buildTourScheduleProductsJsonLd,
 } from '@/lib/seo-jsonld';
-
-// ISR - Revalidate every 5 minutes
 export const revalidate = 300;
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://musictravel.vn').replace(/\/$/, '');
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://maichohanhtinhxanh.com').replace(
+  /\/$/,
+  ''
+);
 const enableEnglishHreflang = process.env.NEXT_PUBLIC_ENABLE_EN_HREFLANG === 'true';
-
-// Types
 interface TourSchedule {
   id: number;
   startDate: string;
@@ -41,7 +28,6 @@ interface TourSchedule {
   bookedCount: number;
   status: string;
 }
-
 interface TourDetail {
   id: number;
   title: string;
@@ -59,58 +45,48 @@ interface TourDetail {
     id: number;
     name: string;
   } | null;
-  branch: { id: number; name: string } | null;
+  branch: {
+    id: number;
+    name: string;
+  } | null;
   schedules: TourSchedule[];
 }
-
-// Pre-generate top 20 tours at build time
 export async function generateStaticParams() {
   try {
-    const response = await fetch(
-      `${API_URL}/tours?limit=20&sortBy=createdAt&order=desc`
-    );
-
+    const response = await fetch(`${API_URL}/tours?limit=20&sortBy=createdAt&order=desc`);
     if (!response.ok) {
       return [];
     }
-
     const data = await response.json();
     const tours = data.data || data.items || [];
-
     return tours.map((tour: { slug: string }) => ({
       slug: tour.slug,
     }));
   } catch (error) {
-    console.error('Error generating static params:', error);
     return [];
   }
 }
-
-// Dynamic metadata for SEO
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: {
+    slug: string;
+  };
 }): Promise<Metadata> {
   try {
     const tour = await fetchTourData(params.slug);
-
     if (!tour) {
       return {
         title: 'Tour Not Found | Music Travel',
       };
     }
-
     const title = tour.metaTitle || `${tour.title} | Music Travel`;
     const description =
       tour.metaDescription ||
       tour.description?.replace(/<[^>]*>/g, '').substring(0, 160) ||
       `Khám phá ${tour.title} cùng Music Travel`;
     const ogImageUrl = `${SITE_URL}/tours/${params.slug}/opengraph-image`;
-
-    const thumbnailUrl = (tour.properties?.thumbnailUrl ||
-      tour.properties?.bannerUrl) as string;
-
+    const thumbnailUrl = (tour.properties?.thumbnailUrl || tour.properties?.bannerUrl) as string;
     return {
       title,
       description,
@@ -135,8 +111,6 @@ export async function generateMetadata({
     };
   }
 }
-
-// Fetch tour data on server
 async function fetchTourData(slug: string): Promise<TourDetail | null> {
   try {
     const tour = await fetchServer<TourDetail>(`/tours/${slug}`, {
@@ -145,30 +119,35 @@ async function fetchTourData(slug: string): Promise<TourDetail | null> {
     });
     return tour;
   } catch (error) {
-    console.error(`Error fetching tour ${slug}:`, error);
     return null;
   }
 }
-
 export default async function TourDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: {
+    slug: string;
+  };
 }) {
   const tour = await fetchTourData(params.slug);
-
   if (!tour) {
     notFound();
   }
-
   const nextSchedule = tour.schedules
     .filter((schedule) => schedule.status === 'OPEN')
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
-
-  const thumbnailUrl = (tour.properties?.thumbnailUrl || tour.properties?.bannerUrl) as string | undefined;
+  const thumbnailUrl = (tour.properties?.thumbnailUrl || tour.properties?.bannerUrl) as
+    | string
+    | undefined;
   const hasSlots = nextSchedule ? nextSchedule.capacity - nextSchedule.bookedCount > 0 : false;
-  const itineraryItems: Array<{ '@type': 'ListItem'; position: number; item: { '@type': 'Place'; name: string } }> = [];
-
+  const itineraryItems: Array<{
+    '@type': 'ListItem';
+    position: number;
+    item: {
+      '@type': 'Place';
+      name: string;
+    };
+  }> = [];
   if (tour.departureLoc) {
     itineraryItems.push({
       '@type': 'ListItem',
@@ -179,7 +158,6 @@ export default async function TourDetailPage({
       },
     });
   }
-
   if (tour.destinationLoc) {
     itineraryItems.push({
       '@type': 'ListItem',
@@ -190,7 +168,6 @@ export default async function TourDetailPage({
       },
     });
   }
-
   const tourSchema = {
     '@context': 'https://schema.org',
     '@type': 'TouristTrip',
@@ -202,9 +179,7 @@ export default async function TourDetailPage({
       itemListElement: itineraryItems,
     },
     touristType: 'Leisure',
-    offers: nextSchedule
-      ? buildTourOffers([...tour.schedules], params.slug)
-      : undefined,
+    offers: nextSchedule ? buildTourOffers([...tour.schedules], params.slug) : undefined,
     provider: {
       '@type': 'Organization',
       name: 'Mai Cho Hanh Tinh Xanh',
@@ -212,23 +187,17 @@ export default async function TourDetailPage({
     },
     url: toAbsoluteUrl(`/tours/${params.slug}`),
   };
-
   const tourScheduleProductsSchema = buildTourScheduleProductsJsonLd(tour, params.slug);
-
   return (
-    <div className="bg-neutral-50 min-h-screen pb-20">
+    <div className="min-h-screen bg-neutral-50 pb-20">
       <JsonLd data={tourSchema} />
       <JsonLd data={tourScheduleProductsSchema} />
       <Suspense fallback={<TourDetailSkeleton />}>
-        {/* Hero Banner - rendered by TourDetailServer */}
         <TourDetailServer tour={tour} />
 
-        {/* Main content and sidebar */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Column - Tour Details and Schedules */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Schedules Section - Client Component */}
+        <div className="container relative z-10 mx-auto -mt-20 px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            <div className="space-y-8 lg:col-span-2">
               <TourSchedulesClient
                 tourId={tour.id}
                 tourTitle={tour.title}
@@ -236,10 +205,8 @@ export default async function TourDetailPage({
               />
             </div>
 
-            {/* Right Sidebar - Sticky Booking Card */}
             <div className="lg:col-span-1">
-              <div className="lg:sticky lg:top-24 space-y-6">
-                {/* Booking Widget and Support Card - Client Component */}
+              <div className="space-y-6 lg:sticky lg:top-24">
                 <TourBookingClient
                   tourId={tour.id}
                   tourTitle={tour.title}

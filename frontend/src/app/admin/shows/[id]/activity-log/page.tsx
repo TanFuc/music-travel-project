@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { get } from '@/lib/api';
@@ -32,7 +31,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-
 interface ActivityLog {
   id: number;
   activityType: string;
@@ -47,7 +45,6 @@ interface ActivityLog {
   metadata: Record<string, any> | null;
   createdAt: string;
 }
-
 interface ActivityLogsResponse {
   show: {
     id: number;
@@ -61,7 +58,6 @@ interface ActivityLogsResponse {
     totalPages: number;
   };
 }
-
 interface ActivitySummary {
   showId: number;
   showTitle: string;
@@ -75,7 +71,6 @@ interface ActivitySummary {
     createdAt: string;
   }>;
 }
-
 const ACTIVITY_TYPES = [
   { value: 'ALL', label: 'Tất cả' },
   { value: 'REGISTRATION', label: 'Đăng ký' },
@@ -86,7 +81,6 @@ const ACTIVITY_TYPES = [
   { value: 'QUEUE_REORDER', label: 'Sắp xếp lại' },
   { value: 'CHECK_IN', label: 'Check-in' },
 ];
-
 const getActivityIcon = (type: string) => {
   switch (type) {
     case 'REGISTRATION':
@@ -107,7 +101,6 @@ const getActivityIcon = (type: string) => {
       return <CheckCircle2 className="h-4 w-4 text-gray-500" />;
   }
 };
-
 const getActivityColor = (type: string) => {
   switch (type) {
     case 'REGISTRATION':
@@ -128,15 +121,22 @@ const getActivityColor = (type: string) => {
       return 'bg-gray-100 text-gray-700';
   }
 };
-
-export default function ShowActivityLogPage({ params }: { params: { id: string } }) {
+export default function ShowActivityLogPage({
+  params,
+}: {
+  params: {
+    id: string;
+  };
+}) {
   const showId = parseInt(params.id);
   const [search, setSearch] = useState('');
   const [activityType, setActivityType] = useState('ALL');
   const [page, setPage] = useState(1);
-
-  // Fetch activity logs
-  const { data: logsData, isLoading: isLoadingLogs, refetch } = useQuery({
+  const {
+    data: logsData,
+    isLoading: isLoadingLogs,
+    refetch,
+  } = useQuery({
     queryKey: ['show-activity-logs', showId, activityType, search, page],
     queryFn: () =>
       get<ActivityLogsResponse>(
@@ -148,56 +148,50 @@ export default function ShowActivityLogPage({ params }: { params: { id: string }
         })}`
       ),
   });
-
-  // Fetch activity summary
   const { data: summary, isLoading: isLoadingSummary } = useQuery({
     queryKey: ['show-activity-summary', showId],
     queryFn: () => get<ActivitySummary>(`/admin/shows/${showId}/activity-summary`),
   });
-
-  // Export activity logs
   const handleExport = (format: 'csv' | 'json') => {
     window.open(`/api/v1/admin/shows/${showId}/activity-log/export?format=${format}`, '_blank');
   };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Nhật Ký Hoạt Động</h1>
           <p className="text-neutral-600">
-            {logsData?.show?.title || summary?.showTitle || 'Đang tải...'} - Theo dõi tất cả hoạt động liên quan
+            {logsData?.show?.title || summary?.showTitle || 'Đang tải...'} - Theo dõi tất cả hoạt
+            động liên quan
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => handleExport('csv')}>
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             CSV
           </Button>
           <Button variant="outline" onClick={() => handleExport('json')}>
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             JSON
           </Button>
           <Button variant="outline" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Làm mới
           </Button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
         {ACTIVITY_TYPES.filter((t) => t.value !== 'ALL').map((type) => (
           <Card
             key={type.value}
             className={`cursor-pointer transition-all ${activityType === type.value ? 'ring-2 ring-blue-500' : ''}`}
             onClick={() => setActivityType(activityType === type.value ? 'ALL' : type.value)}
           >
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-2 mb-1">
+            <CardContent className="pb-4 pt-4">
+              <div className="mb-1 flex items-center gap-2">
                 {getActivityIcon(type.value)}
-                <span className="text-xs font-medium truncate">{type.label}</span>
+                <span className="truncate text-xs font-medium">{type.label}</span>
               </div>
               <p className="text-2xl font-bold">
                 {isLoadingSummary ? (
@@ -211,13 +205,12 @@ export default function ShowActivityLogPage({ params }: { params: { id: string }
         ))}
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-4">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col gap-4 md:flex-row">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-neutral-400" />
                 <Input
                   placeholder="Tìm kiếm trong mô tả..."
                   value={search}
@@ -254,7 +247,6 @@ export default function ShowActivityLogPage({ params }: { params: { id: string }
         </CardContent>
       </Card>
 
-      {/* Activity Timeline */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -270,8 +262,8 @@ export default function ShowActivityLogPage({ params }: { params: { id: string }
               ))}
             </div>
           ) : !logsData?.data?.length ? (
-            <div className="text-center py-12 text-neutral-500">
-              <ClipboardList className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <div className="py-12 text-center text-neutral-500">
+              <ClipboardList className="mx-auto mb-2 h-12 w-12 opacity-50" />
               <p>Không tìm thấy hoạt động nào</p>
             </div>
           ) : (
@@ -279,10 +271,10 @@ export default function ShowActivityLogPage({ params }: { params: { id: string }
               {logsData.data.map((log) => (
                 <div
                   key={log.id}
-                  className="flex gap-4 p-4 border rounded-lg hover:bg-neutral-50 transition-colors"
+                  className="flex gap-4 rounded-lg border p-4 transition-colors hover:bg-neutral-50"
                 >
-                  <div className="flex-shrink-0 mt-1">{getActivityIcon(log.activityType)}</div>
-                  <div className="flex-1 min-w-0">
+                  <div className="mt-1 flex-shrink-0">{getActivityIcon(log.activityType)}</div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <Badge
@@ -295,21 +287,21 @@ export default function ShowActivityLogPage({ params }: { params: { id: string }
                         <p className="text-sm">{log.description}</p>
                         {log.metadata && Object.keys(log.metadata).length > 0 && (
                           <details className="mt-1">
-                            <summary className="text-xs text-neutral-500 cursor-pointer hover:text-neutral-700">
+                            <summary className="cursor-pointer text-xs text-neutral-500 hover:text-neutral-700">
                               Xem chi tiết
                             </summary>
-                            <pre className="mt-1 p-2 bg-neutral-100 rounded text-xs overflow-x-auto">
+                            <pre className="mt-1 overflow-x-auto rounded bg-neutral-100 p-2 text-xs">
                               {JSON.stringify(log.metadata, null, 2)}
                             </pre>
                           </details>
                         )}
                       </div>
-                      <div className="text-right text-sm text-neutral-500 whitespace-nowrap">
+                      <div className="whitespace-nowrap text-right text-sm text-neutral-500">
                         <p>{formatDateTime(log.createdAt)}</p>
                       </div>
                     </div>
                     {log.actor && (
-                      <div className="flex items-center gap-1 mt-2 text-xs text-neutral-500">
+                      <div className="mt-2 flex items-center gap-1 text-xs text-neutral-500">
                         <User className="h-3 w-3" />
                         <span>
                           {log.actor.name} ({log.actor.role})
@@ -322,9 +314,8 @@ export default function ShowActivityLogPage({ params }: { params: { id: string }
             </div>
           )}
 
-          {/* Pagination */}
           {logsData?.pagination && logsData.pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+            <div className="mt-6 flex items-center justify-between border-t pt-4">
               <p className="text-sm text-neutral-600">
                 Trang {logsData.pagination.page} / {logsData.pagination.totalPages}
               </p>

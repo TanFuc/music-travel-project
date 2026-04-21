@@ -1,6 +1,5 @@
 import { IsNotEmpty, IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
 export class RegisterDto {
   @ApiProperty({
     example: '0901234567',
@@ -12,7 +11,6 @@ export class RegisterDto {
     message: 'Số điện thoại không hợp lệ.',
   })
   phoneNumber: string;
-
   @ApiProperty({
     example: 'Password123',
     description: 'User password (min 8 characters)',
@@ -21,7 +19,6 @@ export class RegisterDto {
   @IsString()
   @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự.' })
   password: string;
-
   @ApiProperty({
     example: 'Nguyen Van A',
     description: 'Full name',

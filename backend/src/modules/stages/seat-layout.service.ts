@@ -9,7 +9,6 @@ import {
   BulkUpdateSeatsDto,
 } from './dto/create-seat-layout.dto';
 import { SeatType } from '@prisma/client';
-
 interface SeatPosition {
   zoneName: string;
   rowName: string;
@@ -18,41 +17,29 @@ interface SeatPosition {
   xPosition: number;
   yPosition: number;
 }
-
 @Injectable()
 export class SeatLayoutService {
   private readonly DEFAULT_SEAT_SPACING = 40;
   private readonly DEFAULT_ROW_SPACING = 45;
   private readonly DEFAULT_STAGE_DISTANCE = 100;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
   ) {}
-
-  /**
-   * Generate seats based on template
-   */
   async generateFromTemplate(dto: CreateSeatLayoutDto) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: dto.stageId },
     });
-
     if (!stage) {
       throw new NotFoundException('Sân khấu không tồn tại');
     }
-
-    // Clear existing seats for this stage
     await this.prisma.physicalSeat.deleteMany({
       where: { stageId: dto.stageId },
     });
-
     const seatSpacing = dto.seatSpacing ?? this.DEFAULT_SEAT_SPACING;
     const rowSpacing = dto.rowSpacing ?? this.DEFAULT_ROW_SPACING;
     const stageDistance = dto.stageDistance ?? this.DEFAULT_STAGE_DISTANCE;
-
     let allSeats: SeatPosition[] = [];
-
     switch (dto.template) {
       case SeatLayoutTemplate.THEATER_STANDARD:
         allSeats = this.generateTheaterLayout(dto.zones, seatSpacing, rowSpacing, stageDistance);
@@ -77,8 +64,6 @@ export class SeatLayoutService {
       default:
         throw new BadRequestException('Template không được hỗ trợ');
     }
-
-    // Bulk create seats
     const createdSeats = await this.prisma.physicalSeat.createMany({
       data: allSeats.map((seat) => ({
         stageId: dto.stageId,
@@ -90,20 +75,13 @@ export class SeatLayoutService {
         yPosition: seat.yPosition,
       })),
     });
-
-    // Clear cache
     await this.cache.del(`stage:${dto.stageId}:seats`);
-
     return {
       message: `Đã tạo ${createdSeats.count} ghế thành công`,
       count: createdSeats.count,
       stageId: dto.stageId,
     };
   }
-
-  /**
-   * Theater Layout - ghế xếp hàng ngang
-   */
   private generateTheaterLayout(
     zones: ZoneConfigDto[],
     seatSpacing: number,
@@ -112,36 +90,28 @@ export class SeatLayoutService {
   ): SeatPosition[] {
     const seats: SeatPosition[] = [];
     let currentY = stageDistance;
-
     for (const zone of zones) {
       const offsetX = zone.offsetX ?? 0;
       const offsetY = zone.offsetY ?? 0;
-
       for (let row = 0; row < zone.rows; row++) {
-        const rowName = String.fromCharCode(65 + row); // A, B, C, ...
+        const rowName = String.fromCharCode(65 + row);
         const rowWidth = (zone.seatsPerRow - 1) * seatSpacing;
         const startX = -rowWidth / 2 + offsetX;
-
         for (let seat = 0; seat < zone.seatsPerRow; seat++) {
           seats.push({
             zoneName: zone.name,
             rowName: rowName,
             seatNumber: String(seat + 1),
             type: zone.type === 'STANDING' ? SeatType.STANDING : SeatType.SEAT,
-            xPosition: Math.round(startX + seat * seatSpacing + 500), // Center at 500
+            xPosition: Math.round(startX + seat * seatSpacing + 500),
             yPosition: Math.round(currentY + row * rowSpacing + offsetY),
           });
         }
       }
-      currentY += zone.rows * rowSpacing + 50; // Gap between zones
+      currentY += zone.rows * rowSpacing + 50;
     }
-
     return seats;
   }
-
-  /**
-   * Stadium Layout - ghế xếp vòng cung
-   */
   private generateStadiumLayout(
     zones: ZoneConfigDto[],
     seatSpacing: number,
@@ -151,23 +121,17 @@ export class SeatLayoutService {
     const seats: SeatPosition[] = [];
     const centerX = 500;
     let baseRadius = stageDistance;
-
     for (const zone of zones) {
-      const curvature = (zone.curvature ?? 30) / 100; // 0-1 range
-      const maxAngle = Math.PI * curvature; // Max arc angle
-
+      const curvature = (zone.curvature ?? 30) / 100;
+      const maxAngle = Math.PI * curvature;
       for (let row = 0; row < zone.rows; row++) {
         const rowName = String.fromCharCode(65 + row);
         const radius = baseRadius + row * rowSpacing;
-
         for (let seat = 0; seat < zone.seatsPerRow; seat++) {
-          // Calculate angle for this seat
           const angleStep = maxAngle / (zone.seatsPerRow - 1 || 1);
           const angle = -maxAngle / 2 + seat * angleStep;
-
           const x = centerX + radius * Math.sin(angle);
           const y = radius * Math.cos(angle);
-
           seats.push({
             zoneName: zone.name,
             rowName: rowName,
@@ -180,13 +144,8 @@ export class SeatLayoutService {
       }
       baseRadius += zone.rows * rowSpacing + 60;
     }
-
     return seats;
   }
-
-  /**
-   * Concert Hall Layout - hình quạt
-   */
   private generateConcertHallLayout(
     zones: ZoneConfigDto[],
     seatSpacing: number,
@@ -196,17 +155,14 @@ export class SeatLayoutService {
     const seats: SeatPosition[] = [];
     const centerX = 500;
     let currentY = stageDistance;
-
     for (const zone of zones) {
       for (let row = 0; row < zone.rows; row++) {
         const rowName = String.fromCharCode(65 + row);
-        // Each row gets progressively wider (fan shape)
         const widthMultiplier = 1 + row * 0.1;
         const actualSeatsPerRow = Math.round(zone.seatsPerRow * widthMultiplier);
         const actualSpacing = seatSpacing * widthMultiplier;
         const rowWidth = (actualSeatsPerRow - 1) * actualSpacing;
         const startX = centerX - rowWidth / 2;
-
         for (let seat = 0; seat < actualSeatsPerRow; seat++) {
           seats.push({
             zoneName: zone.name,
@@ -220,13 +176,8 @@ export class SeatLayoutService {
       }
       currentY += zone.rows * rowSpacing + 50;
     }
-
     return seats;
   }
-
-  /**
-   * Standing Layout - khu vực đứng
-   */
   private generateStandingLayout(
     zones: ZoneConfigDto[],
     seatSpacing: number,
@@ -236,12 +187,10 @@ export class SeatLayoutService {
     const seats: SeatPosition[] = [];
     const centerX = 500;
     let currentY = stageDistance;
-
     for (const zone of zones) {
-      const gridSpacing = seatSpacing * 0.7; // Standing areas can be denser
+      const gridSpacing = seatSpacing * 0.7;
       const totalWidth = (zone.seatsPerRow - 1) * gridSpacing;
       const startX = centerX - totalWidth / 2;
-
       for (let row = 0; row < zone.rows; row++) {
         for (let col = 0; col < zone.seatsPerRow; col++) {
           seats.push({
@@ -256,13 +205,8 @@ export class SeatLayoutService {
       }
       currentY += zone.rows * gridSpacing + 40;
     }
-
     return seats;
   }
-
-  /**
-   * Mixed Layout - kết hợp ngồi và đứng
-   */
   private generateMixedLayout(
     zones: ZoneConfigDto[],
     seatSpacing: number,
@@ -270,7 +214,6 @@ export class SeatLayoutService {
     stageDistance: number,
   ): SeatPosition[] {
     const seats: SeatPosition[] = [];
-
     for (const zone of zones) {
       if (zone.type === 'STANDING') {
         seats.push(
@@ -292,22 +235,15 @@ export class SeatLayoutService {
         );
       }
     }
-
     return seats;
   }
-
-  /**
-   * Create custom seats manually
-   */
   async createCustomSeats(dto: CreateCustomSeatsDto) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: dto.stageId },
     });
-
     if (!stage) {
       throw new NotFoundException('Sân khấu không tồn tại');
     }
-
     const createdSeats = await this.prisma.physicalSeat.createMany({
       data: dto.seats.map((seat) => ({
         stageId: dto.stageId,
@@ -319,18 +255,12 @@ export class SeatLayoutService {
         yPosition: seat.yPosition,
       })),
     });
-
     await this.cache.del(`stage:${dto.stageId}:seats`);
-
     return {
       message: `Đã tạo ${createdSeats.count} ghế thành công`,
       count: createdSeats.count,
     };
   }
-
-  /**
-   * Update seat positions (drag & drop)
-   */
   async updateSeatPositions(dto: BulkUpdateSeatsDto) {
     const updates = dto.seats.map((seat) =>
       this.prisma.physicalSeat.update({
@@ -341,31 +271,21 @@ export class SeatLayoutService {
         },
       }),
     );
-
     await this.prisma.$transaction(updates);
-
     return { message: `Đã cập nhật vị trí ${dto.seats.length} ghế` };
   }
-
-  /**
-   * Get all seats for a stage
-   */
   async getStageSeatLayout(stageId: number) {
     const cacheKey = `stage:${stageId}:seats`;
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
-
     const seats = await this.prisma.physicalSeat.findMany({
       where: { stageId },
       orderBy: [{ zoneName: 'asc' }, { rowName: 'asc' }, { seatNumber: 'asc' }],
     });
-
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
       select: { id: true, name: true, address: true },
     });
-
-    // Group by zone
     const zoneMap = new Map<string, typeof seats>();
     seats.forEach((seat) => {
       const zone = seat.zoneName || 'Chung';
@@ -374,7 +294,6 @@ export class SeatLayoutService {
       }
       zoneMap.get(zone)!.push(seat);
     });
-
     const result = {
       stage,
       totalSeats: seats.length,
@@ -385,31 +304,19 @@ export class SeatLayoutService {
       })),
       allSeats: seats,
     };
-
     await this.cache.set(cacheKey, result, 300);
-
     return result;
   }
-
-  /**
-   * Delete all seats for a stage
-   */
   async clearStageSeats(stageId: number) {
     const result = await this.prisma.physicalSeat.deleteMany({
       where: { stageId },
     });
-
     await this.cache.del(`stage:${stageId}:seats`);
-
     return {
       message: `Đã xóa ${result.count} ghế`,
       count: result.count,
     };
   }
-
-  /**
-   * Get available templates with descriptions
-   */
   getTemplates() {
     return [
       {

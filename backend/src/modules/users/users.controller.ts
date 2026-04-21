@@ -6,57 +6,68 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
-
 @ApiTags('users')
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
-  async getProfile(@CurrentUser() user: JwtPayload) {
+  async getProfile(
+    @CurrentUser()
+    user: JwtPayload,
+  ) {
     return this.usersService.getProfile(user.sub);
   }
-
   @Patch('me')
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiResponse({ status: 200, description: 'User profile updated successfully' })
-  async updateProfile(@CurrentUser() user: JwtPayload, @Body() updateUserDto: UpdateUserDto) {
+  async updateProfile(
+    @CurrentUser()
+    user: JwtPayload,
+    @Body()
+    updateUserDto: UpdateUserDto,
+  ) {
     return this.usersService.updateProfile(user.sub, updateUserDto);
   }
-
   @Get('me/wallet')
   @ApiOperation({ summary: 'Get current user wallet' })
   @ApiResponse({ status: 200, description: 'User wallet retrieved successfully' })
-  async getWallet(@CurrentUser() user: JwtPayload) {
+  async getWallet(
+    @CurrentUser()
+    user: JwtPayload,
+  ) {
     return this.usersService.getWallet(user.sub);
   }
-
   @Get('me/bookings')
   @ApiOperation({ summary: 'Get current user bookings' })
   @ApiResponse({ status: 200, description: 'User bookings retrieved successfully' })
-  async getBookings(@CurrentUser() user: JwtPayload) {
+  async getBookings(
+    @CurrentUser()
+    user: JwtPayload,
+  ) {
     return this.usersService.getBookings(user.sub);
   }
-
   @Get('me/bookings/shows')
   @ApiOperation({ summary: 'Get current user show/tour bookings' })
   @ApiResponse({ status: 200, description: 'User show bookings retrieved successfully' })
-  async getShowBookings(@CurrentUser() user: JwtPayload) {
+  async getShowBookings(
+    @CurrentUser()
+    user: JwtPayload,
+  ) {
     return this.usersService.getShowBookings(user.sub);
   }
-
   @Get('me/bookings/singer-packages')
   @ApiOperation({ summary: 'Get current user singer package bookings' })
   @ApiResponse({ status: 200, description: 'User singer package bookings retrieved successfully' })
-  async getSingerPackageBookings(@CurrentUser() user: JwtPayload) {
+  async getSingerPackageBookings(
+    @CurrentUser()
+    user: JwtPayload,
+  ) {
     return this.usersService.getSingerPackageBookings(user.sub);
   }
-
-  // Admin endpoints
   @Get()
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Get all users (Admin only)' })
@@ -64,12 +75,14 @@ export class UsersController {
   async findAll() {
     return this.usersService.findAll();
   }
-
   @Get(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Get user by ID (Admin only)' })
   @ApiResponse({ status: 200, description: 'User retrieved successfully' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
     return this.usersService.findById(id);
   }
 }

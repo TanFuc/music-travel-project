@@ -2,11 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary, UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
 const streamifier = require('streamifier');
-
 @Injectable()
 export class CloudinaryService {
   private readonly logger = new Logger(CloudinaryService.name);
-
   constructor(private configService: ConfigService) {
     cloudinary.config({
       cloud_name: this.configService.get('cloudinary.cloudName'),
@@ -14,7 +12,6 @@ export class CloudinaryService {
       api_secret: this.configService.get('cloudinary.apiSecret'),
     });
   }
-
   async uploadFile(
     file: Express.Multer.File,
     folder: string = 'music-travel',
@@ -31,11 +28,9 @@ export class CloudinaryService {
           resolve(result);
         },
       );
-
       streamifier.createReadStream(file.buffer).pipe(uploadStream);
     });
   }
-
   async uploadFromBuffer(
     buffer: Buffer,
     folder: string = 'music-travel',
@@ -54,11 +49,9 @@ export class CloudinaryService {
           resolve(result);
         },
       );
-
       streamifier.createReadStream(buffer).pipe(uploadStream);
     });
   }
-
   getOptimizedUrl(publicId: string, options: any = {}): string {
     return cloudinary.url(publicId, {
       fetch_format: 'auto',
@@ -66,7 +59,6 @@ export class CloudinaryService {
       ...options,
     });
   }
-
   async deleteFile(publicId: string): Promise<any> {
     return new Promise((resolve, reject) => {
       cloudinary.uploader.destroy(publicId, (error, result) => {

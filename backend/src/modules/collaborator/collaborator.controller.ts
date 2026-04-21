@@ -17,8 +17,6 @@ import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decora
 import { Public } from '@/common/decorators/public.decorator';
 import { UserRole } from '@prisma/client';
 import { CollaboratorService, CreateCollaboratorVoucherDto } from './collaborator.service';
-
-// DTOs
 class CreateVoucherDto {
   code: string;
   discountType: 'PERCENT' | 'FIXED_AMOUNT';
@@ -29,36 +27,32 @@ class CreateVoucherDto {
   endDate?: string;
   usageLimit?: number;
 }
-
 class UpdateContentDto {
   title: string;
   content: string;
   bannerUrl?: string;
   benefits?: any;
 }
-
 @ApiTags('Collaborator')
 @Controller('collaborator')
 export class CollaboratorController {
   constructor(private readonly collaboratorService: CollaboratorService) {}
-
-  // Public: Get collaborator information page content
   @Get('content')
   @Public()
   @ApiOperation({ summary: 'Get collaborator program content (public)' })
   async getContent() {
     return this.collaboratorService.getContent();
   }
-
-  // Collaborator Dashboard APIs
   @Get('dashboard/summary')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get commission summary for collaborator' })
-  async getCommissionSummary(@CurrentUser() user: JwtPayload) {
+  async getCommissionSummary(
+    @CurrentUser()
+    user: JwtPayload,
+  ) {
     return this.collaboratorService.getCommissionSummary(user.sub);
   }
-
   @Get('dashboard/commissions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -69,12 +63,18 @@ export class CollaboratorController {
   @ApiQuery({ name: 'endDate', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: ['PAID', 'UNPAID'] })
   async getCommissionDetails(
-    @CurrentUser() user: JwtPayload,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('status') status?: 'PAID' | 'UNPAID',
+    @CurrentUser()
+    user: JwtPayload,
+    @Query('page')
+    page?: string,
+    @Query('limit')
+    limit?: string,
+    @Query('startDate')
+    startDate?: string,
+    @Query('endDate')
+    endDate?: string,
+    @Query('status')
+    status?: 'PAID' | 'UNPAID',
   ) {
     return this.collaboratorService.getCommissionDetails(user.sub, {
       page: page ? parseInt(page, 10) : 1,
@@ -84,20 +84,26 @@ export class CollaboratorController {
       status,
     });
   }
-
   @Get('vouchers')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my vouchers as collaborator' })
-  async getMyVouchers(@CurrentUser() user: JwtPayload) {
+  async getMyVouchers(
+    @CurrentUser()
+    user: JwtPayload,
+  ) {
     return this.collaboratorService.getMyVouchers(user.sub);
   }
-
   @Post('vouchers')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a voucher as collaborator' })
-  async createVoucher(@CurrentUser() user: JwtPayload, @Body() dto: CreateVoucherDto) {
+  async createVoucher(
+    @CurrentUser()
+    user: JwtPayload,
+    @Body()
+    dto: CreateVoucherDto,
+  ) {
     const voucherDto: CreateCollaboratorVoucherDto = {
       code: dto.code,
       discountType: dto.discountType,
@@ -110,17 +116,17 @@ export class CollaboratorController {
     };
     return this.collaboratorService.createVoucher(user.sub, voucherDto);
   }
-
   @Post('register')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Register to become a collaborator' })
-  async becomeCollaborator(@CurrentUser() user: JwtPayload) {
+  async becomeCollaborator(
+    @CurrentUser()
+    user: JwtPayload,
+  ) {
     return this.collaboratorService.becomeCollaborator(user.sub);
   }
 }
-
-// Admin Controller
 @ApiTags('Admin - Collaborator')
 @ApiBearerAuth()
 @Controller('admin/collaborators')
@@ -128,16 +134,18 @@ export class CollaboratorController {
 @Roles(UserRole.ADMIN)
 export class AdminCollaboratorController {
   constructor(private readonly collaboratorService: CollaboratorService) {}
-
   @Get()
   @ApiOperation({ summary: 'Get all collaborators' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   async getAllCollaborators(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
+    @Query('page')
+    page?: string,
+    @Query('limit')
+    limit?: string,
+    @Query('search')
+    search?: string,
   ) {
     return this.collaboratorService.getAllCollaborators({
       page: page ? parseInt(page, 10) : 1,
@@ -145,10 +153,14 @@ export class AdminCollaboratorController {
       search,
     });
   }
-
   @Put('content')
   @ApiOperation({ summary: 'Update collaborator program content' })
-  async updateContent(@CurrentUser() user: JwtPayload, @Body() dto: UpdateContentDto) {
+  async updateContent(
+    @CurrentUser()
+    user: JwtPayload,
+    @Body()
+    dto: UpdateContentDto,
+  ) {
     return this.collaboratorService.updateContent({
       title: dto.title,
       content: dto.content,
@@ -157,12 +169,13 @@ export class AdminCollaboratorController {
       updatedBy: user.sub,
     });
   }
-
   @Put(':userId/status')
   @ApiOperation({ summary: 'Toggle collaborator status for a user' })
   async toggleStatus(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Body('isCollaborator') isCollaborator: boolean,
+    @Param('userId', ParseIntPipe)
+    userId: number,
+    @Body('isCollaborator')
+    isCollaborator: boolean,
   ) {
     return this.collaboratorService.toggleCollaboratorStatus(userId, isCollaborator);
   }

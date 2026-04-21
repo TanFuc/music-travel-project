@@ -1,8 +1,7 @@
 'use client';
-
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Calendar, MapPin, Users, Ticket, QrCode, Clock, Eye, Edit } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Users, Ticket, QrCode, Clock, Edit } from 'lucide-react';
 import { Link } from '@/components/common/Link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,6 @@ import { get } from '@/lib/api';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { useState } from 'react';
 import { ShowFormModal } from '@/components/admin/ShowFormModal';
-
 interface Show {
   id: number;
   title: string;
@@ -54,14 +52,12 @@ interface Show {
   metaDescription?: string;
   metaKeywords?: string;
 }
-
 const statusColors: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
   UPCOMING: 'success',
   ONGOING: 'warning',
   ENDED: 'default',
   CANCELLED: 'destructive',
 };
-
 const ticketStatusColors: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
   AVAILABLE: 'success',
   LOCKED: 'warning',
@@ -69,19 +65,16 @@ const ticketStatusColors: Record<string, 'default' | 'success' | 'warning' | 'de
   USED: 'default',
   CANCELLED: 'destructive',
 };
-
 export default function ShowDetailPage() {
   const params = useParams();
   const router = useRouter();
   const showId = Number(params.id);
   const [isEditOpen, setIsEditOpen] = useState(false);
-
   const { data: show, isLoading } = useQuery({
     queryKey: ['admin-show', showId],
     queryFn: () => get<Show>(`/admin/shows/${showId}`),
     enabled: !!showId,
   });
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -91,41 +84,40 @@ export default function ShowDetailPage() {
       </div>
     );
   }
-
   if (!show) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold mb-2">Không tìm thấy show diễn</h2>
+      <div className="py-12 text-center">
+        <h2 className="mb-2 text-xl font-semibold">Không tìm thấy show diễn</h2>
         <Button onClick={() => router.back()} variant="outline">
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Quay lại
         </Button>
       </div>
     );
   }
-
-  const ticketsByClass = show.tickets.reduce((acc, ticket) => {
-    const className = ticket.ticketClass.name;
-    if (!acc[className]) {
-      acc[className] = {
-        ...ticket.ticketClass,
-        total: 0,
-        sold: 0,
-        available: 0,
-      };
-    }
-    acc[className].total++;
-    if (ticket.status === 'SOLD' || ticket.status === 'USED') {
-      acc[className].sold++;
-    } else if (ticket.status === 'AVAILABLE') {
-      acc[className].available++;
-    }
-    return acc;
-  }, {} as Record<string, any>);
-
+  const ticketsByClass = show.tickets.reduce(
+    (acc, ticket) => {
+      const className = ticket.ticketClass.name;
+      if (!acc[className]) {
+        acc[className] = {
+          ...ticket.ticketClass,
+          total: 0,
+          sold: 0,
+          available: 0,
+        };
+      }
+      acc[className].total++;
+      if (ticket.status === 'SOLD' || ticket.status === 'USED') {
+        acc[className].sold++;
+      } else if (ticket.status === 'AVAILABLE') {
+        acc[className].available++;
+      }
+      return acc;
+    },
+    {} as Record<string, any>
+  );
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -164,8 +156,6 @@ export default function ShowDetailPage() {
         onSuccess={() => setIsEditOpen(false)}
       />
 
-
-      {/* Basic Info */}
       <Card>
         <CardHeader>
           <CardTitle>Thông tin cơ bản</CardTitle>
@@ -173,14 +163,14 @@ export default function ShowDetailPage() {
         <CardContent className="space-y-4">
           {show.description && (
             <div>
-              <h3 className="font-medium mb-1">Mô tả</h3>
+              <h3 className="mb-1 font-medium">Mô tả</h3>
               <p className="text-neutral-600">{show.description}</p>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-neutral-500 mt-0.5" />
+              <Calendar className="mt-0.5 h-5 w-5 text-neutral-500" />
               <div>
                 <p className="font-medium">Thời gian biểu diễn</p>
                 <p className="text-neutral-600">{formatDate(show.performTime)}</p>
@@ -189,7 +179,7 @@ export default function ShowDetailPage() {
 
             {show.checkInTime && (
               <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 text-neutral-500 mt-0.5" />
+                <Clock className="mt-0.5 h-5 w-5 text-neutral-500" />
                 <div>
                   <p className="font-medium">Thời gian check-in</p>
                   <p className="text-neutral-600">{formatDate(show.checkInTime)}</p>
@@ -198,7 +188,7 @@ export default function ShowDetailPage() {
             )}
 
             <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-neutral-500 mt-0.5" />
+              <MapPin className="mt-0.5 h-5 w-5 text-neutral-500" />
               <div>
                 <p className="font-medium">Địa điểm</p>
                 <p className="text-neutral-600">{show.stage.name}</p>
@@ -208,7 +198,7 @@ export default function ShowDetailPage() {
             </div>
 
             <div className="flex items-start gap-3">
-              <Ticket className="h-5 w-5 text-neutral-500 mt-0.5" />
+              <Ticket className="mt-0.5 h-5 w-5 text-neutral-500" />
               <div>
                 <p className="font-medium">Chế độ chọn ghế</p>
                 <p className="text-neutral-600">
@@ -220,7 +210,6 @@ export default function ShowDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Artists */}
       {show.artists.length > 0 && (
         <Card>
           <CardHeader>
@@ -232,17 +221,16 @@ export default function ShowDetailPage() {
           <CardContent>
             <div className="space-y-3">
               {show.artists.map(({ artist, isHeadline }) => (
-                <div key={artist.id} className="flex items-start justify-between p-3 border rounded-lg">
+                <div
+                  key={artist.id}
+                  className="flex items-start justify-between rounded-lg border p-3"
+                >
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium">{artist.name}</h4>
-                      {isHeadline && (
-                        <Badge className="bg-yellow-500">Headline</Badge>
-                      )}
+                      {isHeadline && <Badge className="bg-yellow-500">Headline</Badge>}
                     </div>
-                    {artist.bio && (
-                      <p className="text-sm text-neutral-600 mt-1">{artist.bio}</p>
-                    )}
+                    {artist.bio && <p className="mt-1 text-sm text-neutral-600">{artist.bio}</p>}
                   </div>
                 </div>
               ))}
@@ -251,7 +239,6 @@ export default function ShowDetailPage() {
         </Card>
       )}
 
-      {/* Tickets */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -260,17 +247,17 @@ export default function ShowDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {Object.values(ticketsByClass).map((ticketClass: any) => (
-              <div key={ticketClass.name} className="border rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
+              <div key={ticketClass.name} className="rounded-lg border p-4">
+                <div className="mb-3 flex items-center gap-2">
                   <div
-                    className="w-4 h-4 rounded-full"
+                    className="h-4 w-4 rounded-full"
                     style={{ backgroundColor: ticketClass.colorCode }}
                   />
                   <h4 className="font-medium">{ticketClass.name}</h4>
                 </div>
-                <p className="text-2xl font-bold text-brand-600 mb-3">
+                <p className="mb-3 text-2xl font-bold text-brand-600">
                   {formatCurrency(ticketClass.price)}
                 </p>
                 <div className="space-y-1 text-sm">
@@ -293,7 +280,6 @@ export default function ShowDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Properties */}
       {show.properties && Object.keys(show.properties).length > 0 && (
         <Card>
           <CardHeader>
@@ -318,7 +304,6 @@ export default function ShowDetailPage() {
         </Card>
       )}
 
-      {/* SEO */}
       {(show.metaTitle || show.metaDescription || show.metaKeywords) && (
         <Card>
           <CardHeader>
@@ -327,19 +312,19 @@ export default function ShowDetailPage() {
           <CardContent className="space-y-3">
             {show.metaTitle && (
               <div>
-                <h4 className="font-medium mb-1">Meta Title</h4>
+                <h4 className="mb-1 font-medium">Meta Title</h4>
                 <p className="text-neutral-600">{show.metaTitle}</p>
               </div>
             )}
             {show.metaDescription && (
               <div>
-                <h4 className="font-medium mb-1">Meta Description</h4>
+                <h4 className="mb-1 font-medium">Meta Description</h4>
                 <p className="text-neutral-600">{show.metaDescription}</p>
               </div>
             )}
             {show.metaKeywords && (
               <div>
-                <h4 className="font-medium mb-1">Meta Keywords</h4>
+                <h4 className="mb-1 font-medium">Meta Keywords</h4>
                 <p className="text-neutral-600">{show.metaKeywords}</p>
               </div>
             )}

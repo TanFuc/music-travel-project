@@ -1,5 +1,4 @@
 'use client';
-
 import { memo } from 'react';
 import { Link } from '@/components/common/Link';
 import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react';
@@ -8,43 +7,40 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { Show } from '@/types/api.types';
-
 interface ShowCardProps {
   show: Show;
 }
-
-const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'success' | 'warning'> = {
+const statusColors: Record<
+  string,
+  'default' | 'secondary' | 'destructive' | 'success' | 'warning'
+> = {
   UPCOMING: 'success',
   ONGOING: 'warning',
   ENDED: 'secondary',
   CANCELLED: 'destructive',
 };
-
 const statusLabels: Record<string, string> = {
   UPCOMING: 'Sắp diễn ra',
   ONGOING: 'Đang diễn ra',
   ENDED: 'Đã kết thúc',
   CANCELLED: 'Đã hủy',
 };
-
 export const ShowCard = memo(function ShowCard({ show }: ShowCardProps) {
   const isAvailable = show.status === 'UPCOMING' || show.status === 'ONGOING';
-
   return (
-    <Card className="card-hover overflow-hidden group">
-      {/* Image / Placeholder */}
-      <div className="relative h-48 bg-gradient-to-br from-brand-400 to-brand-600 overflow-hidden">
+    <Card className="card-hover group overflow-hidden">
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-brand-400 to-brand-600">
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-white text-xl font-display font-bold text-center px-4 line-clamp-2">
+          <span className="line-clamp-2 px-4 text-center font-display text-xl font-bold text-white">
             {show.title}
           </span>
         </div>
-        {/* Status Badge */}
-        <div className="absolute top-3 right-3">
+
+        <div className="absolute right-3 top-3">
           <Badge variant={statusColors[show.status]}>{statusLabels[show.status]}</Badge>
         </div>
-        {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-brand-800/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+
+        <div className="absolute inset-0 flex items-center justify-center bg-brand-800/50 opacity-0 transition-opacity group-hover:opacity-100">
           <Link href={`/shows/${show.slug}`}>
             <Button variant="secondary" size="sm">
               Xem chi tiết
@@ -54,20 +50,18 @@ export const ShowCard = memo(function ShowCard({ show }: ShowCardProps) {
         </div>
       </div>
 
-      <CardContent className="p-4 space-y-3">
-        {/* Title */}
-        <h3 className="font-semibold line-clamp-1 group-hover:text-brand-500 transition-colors">
+      <CardContent className="space-y-3 p-4">
+        <h3 className="line-clamp-1 font-semibold transition-colors group-hover:text-brand-500">
           {show.title}
         </h3>
 
-        {/* Info */}
         <div className="space-y-2 text-sm text-neutral-600">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-brand-500 flex-shrink-0" />
+            <Calendar className="h-4 w-4 flex-shrink-0 text-brand-500" />
             <span className="line-clamp-1">{formatDateTime(show.performTime)}</span>
           </div>
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-brand-500 flex-shrink-0" />
+            <MapPin className="h-4 w-4 flex-shrink-0 text-brand-500" />
             <span className="line-clamp-1">
               {show.stage.name}
               {show.stage.location && `, ${show.stage.location.name}`}
@@ -75,25 +69,21 @@ export const ShowCard = memo(function ShowCard({ show }: ShowCardProps) {
           </div>
           {show.artists && show.artists.length > 0 && (
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-brand-500 flex-shrink-0" />
+              <Users className="h-4 w-4 flex-shrink-0 text-brand-500" />
               <span className="line-clamp-1">
                 {show.artists
                   .filter((a) => a.isHeadline)
                   .map((a) => a.name)
-                  .join(', ') ||
-                  show.artists.map((a) => a.name).join(', ')}
+                  .join(', ') || show.artists.map((a) => a.name).join(', ')}
               </span>
             </div>
           )}
         </div>
 
-        {/* Price & CTA */}
-        <div className="flex items-center justify-between pt-2 border-t">
+        <div className="flex items-center justify-between border-t pt-2">
           <div>
             {show.minPrice !== null && (
-              <p className="text-lg font-bold text-brand-600">
-                {formatCurrency(show.minPrice)}
-              </p>
+              <p className="text-lg font-bold text-brand-600">{formatCurrency(show.minPrice)}</p>
             )}
             <p className="text-xs text-neutral-500">
               {isAvailable ? `Còn ${show.availableTickets} vé` : 'Hết vé'}
@@ -109,5 +99,4 @@ export const ShowCard = memo(function ShowCard({ show }: ShowCardProps) {
     </Card>
   );
 });
-
 ShowCard.displayName = 'ShowCard';

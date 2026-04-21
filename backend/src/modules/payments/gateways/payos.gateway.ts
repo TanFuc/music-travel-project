@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PayOS } from '@payos/node';
-
 export interface PayOSPaymentRequest {
   orderId: string;
   amount: number;
@@ -9,13 +8,11 @@ export interface PayOSPaymentRequest {
   returnUrl: string;
   cancelUrl: string;
 }
-
 export interface PayOSPaymentResponse {
   checkoutUrl: string;
   orderCode: number;
   transactionId: string;
 }
-
 export interface PayOSWebhookPayload {
   code: string;
   desc: string;
@@ -40,7 +37,6 @@ export interface PayOSWebhookPayload {
   };
   signature: string;
 }
-
 export interface PayOSWebhookResult {
   orderId: string;
   transactionId: string;
@@ -49,26 +45,21 @@ export interface PayOSWebhookResult {
   externalStatus: string;
   message: string;
 }
-
 @Injectable()
 export class PayOSGateway {
   private readonly logger = new Logger(PayOSGateway.name);
   private payos: PayOS | null = null;
-
   constructor(private readonly configService: ConfigService) {
     this.initializePayOS();
   }
-
   private initializePayOS() {
     const clientId = this.configService.get<string>('PAYOS_CLIENT_ID');
     const apiKey = this.configService.get<string>('PAYOS_API_KEY');
     const checksumKey = this.configService.get<string>('PAYOS_CHECKSUM_KEY');
-
     if (!clientId || !apiKey || !checksumKey) {
       this.logger.warn('PayOS credentials not configured. PayOS gateway will be disabled.');
       return;
     }
-
     try {
       this.payos = new PayOS({
         clientId,
@@ -80,20 +71,15 @@ export class PayOSGateway {
       this.logger.error('Failed to initialize PayOS:', error.message);
     }
   }
-
   isConfigured(): boolean {
     return this.payos !== null;
   }
-
   async createPayment(request: PayOSPaymentRequest): Promise<PayOSPaymentResponse> {
     if (!this.payos) {
       throw new Error('PayOS is not configured');
     }
-
     try {
-      // Convert booking code to numeric orderCode (PayOS requires integer)
       const orderCode = parseInt(request.orderId.replace(/[^0-9]/g, ''), 10);
-
       const paymentData = {
         orderCode,
         amount: Math.round(request.amount),
@@ -101,11 +87,8 @@ export class PayOSGateway {
         returnUrl: request.returnUrl,
         cancelUrl: request.cancelUrl,
       };
-
       this.logger.log(`Creating PayOS payment: ${JSON.stringify(paymentData)}`);
-
       const response = await this.payos.paymentRequests.create(paymentData);
-
       return {
         checkoutUrl: response.checkoutUrl,
         orderCode: response.orderCode,
@@ -116,14 +99,11 @@ export class PayOSGateway {
       throw new Error(`PayOS payment creation failed: ${error.message}`);
     }
   }
-
   async verifyWebhook(payload: PayOSWebhookPayload): Promise<boolean> {
     if (!this.payos) {
       throw new Error('PayOS is not configured');
     }
-
     try {
-      // Use PayOS SDK's built-in verification
       await this.payos.webhooks.verify(payload);
       return true;
     } catch (error) {
@@ -131,13 +111,9 @@ export class PayOSGateway {
       return false;
     }
   }
-
   parseWebhookResult(payload: PayOSWebhookPayload): PayOSWebhookResult {
     const data = payload.data;
-
-    // PayOS success: code === '00' and success === true
     const isSuccess = payload.code === '00' && payload.success === true;
-
     return {
       orderId: data.orderCode.toString(),
       transactionId: data.paymentLinkId || data.reference,
@@ -147,15 +123,12 @@ export class PayOSGateway {
       message: payload.desc || 'Payment processed',
     };
   }
-
   async getPaymentInfo(orderCode: number): Promise<any> {
     if (!this.payos) {
       throw new Error('PayOS is not configured');
     }
-
     try {
       const paymentInfo = await this.payos.paymentRequests.get(orderCode);
-
       return {
         orderCode: paymentInfo.orderCode,
         amount: paymentInfo.amount,
@@ -167,17 +140,13 @@ export class PayOSGateway {
       throw error;
     }
   }
-
   async cancelPayment(orderCode: number, reason: string): Promise<any> {
     if (!this.payos) {
       throw new Error('PayOS is not configured');
     }
-
     try {
       this.logger.log(`Cancelling PayOS payment ${orderCode}: ${reason}`);
-
       const result = await this.payos.paymentRequests.cancel(orderCode, reason);
-
       return {
         success: true,
         orderCode: result.orderCode,

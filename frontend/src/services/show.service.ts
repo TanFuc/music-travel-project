@@ -1,6 +1,5 @@
 import { get } from '@/lib/api';
 import { Show, Ticket } from '@/types/api.types';
-
 export interface ShowsFilter {
   page?: number;
   limit?: number;
@@ -9,7 +8,6 @@ export interface ShowsFilter {
   branchId?: number;
   search?: string;
 }
-
 export interface ShowsResponse {
   items: Show[];
   meta: {
@@ -19,7 +17,6 @@ export interface ShowsResponse {
     totalPages: number;
   };
 }
-
 export interface ShowDetailResponse extends Show {
   seatMap?: {
     width: number;
@@ -36,7 +33,6 @@ export interface ShowDetailResponse extends Show {
     }>;
   };
 }
-
 export interface SeatsResponse {
   tickets: Ticket[];
   seatMap?: {
@@ -49,7 +45,6 @@ export interface SeatsResponse {
     }>;
   };
 }
-
 export const showService = {
   getShows: (filters?: ShowsFilter) => {
     const params = new URLSearchParams();
@@ -59,12 +54,9 @@ export const showService = {
     if (filters?.locationId) params.append('locationId', String(filters.locationId));
     if (filters?.branchId) params.append('branchId', String(filters.branchId));
     if (filters?.search) params.append('search', filters.search);
-
     const queryString = params.toString();
     return get<ShowsResponse>(`/shows${queryString ? `?${queryString}` : ''}`);
   },
-
   getShowBySlug: (slug: string) => get<ShowDetailResponse>(`/shows/${slug}`),
-
   getShowSeats: (showId: number) => get<SeatsResponse>(`/shows/${showId}/seats`),
 };

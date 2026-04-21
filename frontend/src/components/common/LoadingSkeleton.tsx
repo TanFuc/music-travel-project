@@ -1,13 +1,10 @@
 import { cn } from '@/lib/utils';
-
 interface SkeletonProps {
   className?: string;
 }
-
 export function Skeleton({ className }: SkeletonProps) {
   return <div className={cn('skeleton animate-pulse rounded-md', className)} />;
 }
-
 export function CardSkeleton() {
   return (
     <div className="rounded-lg border bg-card p-4">
@@ -23,12 +20,11 @@ export function CardSkeleton() {
     </div>
   );
 }
-
 export function ShowCardSkeleton() {
   return (
-    <div className="card-hover rounded-lg border bg-card overflow-hidden">
+    <div className="card-hover overflow-hidden rounded-lg border bg-card">
       <Skeleton className="h-56 w-full" />
-      <div className="p-4 space-y-3">
+      <div className="space-y-3 p-4">
         <Skeleton className="h-5 w-3/4" />
         <Skeleton className="h-4 w-1/2" />
         <div className="flex items-center gap-2">
@@ -43,7 +39,6 @@ export function ShowCardSkeleton() {
     </div>
   );
 }
-
 export function TableRowSkeleton() {
   return (
     <tr>

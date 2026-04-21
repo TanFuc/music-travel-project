@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -14,10 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +25,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -61,7 +57,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-
 import {
   getAllFAQs,
   getFAQCategories,
@@ -71,13 +66,11 @@ import {
   getAllComplaints,
   getComplaintStats,
   replyToComplaint,
-  updateComplaintStatus,
   type SupportQuestion,
   type Complaint,
   type CreateQuestionDto,
   type UpdateQuestionDto,
 } from '@/services/support.service';
-
 const getComplaintStatusBadge = (status: string) => {
   switch (status) {
     case 'NEW':
@@ -90,35 +83,27 @@ const getComplaintStatusBadge = (status: string) => {
       return <Badge variant="outline">{status}</Badge>;
   }
 };
-
 export default function AdminSupportPage() {
   const [activeTab, setActiveTab] = useState('faq');
   const [faqPage, setFaqPage] = useState(1);
   const [complaintPage, setComplaintPage] = useState(1);
-  const [complaintFilter, setComplaintFilter] = useState<'NEW' | 'PROCESSING' | 'RESOLVED' | ''>('');
+  const [complaintFilter, setComplaintFilter] = useState<'NEW' | 'PROCESSING' | 'RESOLVED' | ''>(
+    ''
+  );
   const [searchQuery, setSearchQuery] = useState('');
-
-  // FAQ Modal States
   const [faqModalOpen, setFaqModalOpen] = useState(false);
   const [editingFaq, setEditingFaq] = useState<SupportQuestion | null>(null);
-
-  // Complaint Modal States
   const [replyModalOpen, setReplyModalOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
-
   const queryClient = useQueryClient();
-
-  // Queries
   const { data: faqsData, isLoading: faqsLoading } = useQuery({
     queryKey: ['admin', 'faqs', faqPage],
     queryFn: () => getAllFAQs({ page: faqPage, limit: 20 }),
   });
-
   const { data: categories } = useQuery({
     queryKey: ['admin', 'faq-categories'],
     queryFn: getFAQCategories,
   });
-
   const { data: complaintsData, isLoading: complaintsLoading } = useQuery({
     queryKey: ['admin', 'complaints', complaintPage, complaintFilter, searchQuery],
     queryFn: () =>
@@ -129,13 +114,10 @@ export default function AdminSupportPage() {
         search: searchQuery || undefined,
       }),
   });
-
   const { data: stats } = useQuery({
     queryKey: ['admin', 'complaint-stats'],
     queryFn: getComplaintStats,
   });
-
-  // Mutations
   const createFaqMutation = useMutation({
     mutationFn: createFAQ,
     onSuccess: () => {
@@ -147,7 +129,6 @@ export default function AdminSupportPage() {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
     },
   });
-
   const updateFaqMutation = useMutation({
     mutationFn: ({ id, dto }: { id: number; dto: UpdateQuestionDto }) => updateFAQ(id, dto),
     onSuccess: () => {
@@ -160,7 +141,6 @@ export default function AdminSupportPage() {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
     },
   });
-
   const deleteFaqMutation = useMutation({
     mutationFn: deleteFAQ,
     onSuccess: () => {
@@ -171,10 +151,17 @@ export default function AdminSupportPage() {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
     },
   });
-
   const replyMutation = useMutation({
-    mutationFn: ({ id, dto }: { id: number; dto: { adminReply: string; status?: any } }) =>
-      replyToComplaint(id, dto),
+    mutationFn: ({
+      id,
+      dto,
+    }: {
+      id: number;
+      dto: {
+        adminReply: string;
+        status?: any;
+      };
+    }) => replyToComplaint(id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'complaints'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'complaint-stats'] });
@@ -186,7 +173,6 @@ export default function AdminSupportPage() {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
     },
   });
-
   const handleFaqSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -197,18 +183,15 @@ export default function AdminSupportPage() {
       displayOrder: Number(formData.get('displayOrder')) || 0,
       isActive: formData.get('isActive') === 'true',
     };
-
     if (editingFaq) {
       updateFaqMutation.mutate({ id: editingFaq.id, dto });
     } else {
       createFaqMutation.mutate(dto);
     }
   };
-
   const handleReply = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedComplaint) return;
-
     const formData = new FormData(e.currentTarget);
     replyMutation.mutate({
       id: selectedComplaint.id,
@@ -218,17 +201,14 @@ export default function AdminSupportPage() {
       },
     });
   };
-
   const openEditFaq = (faq: SupportQuestion) => {
     setEditingFaq(faq);
     setFaqModalOpen(true);
   };
-
   const openReply = (complaint: Complaint) => {
     setSelectedComplaint(complaint);
     setReplyModalOpen(true);
   };
-
   return (
     <div className="space-y-6">
       <div>
@@ -236,8 +216,7 @@ export default function AdminSupportPage() {
         <p className="text-muted-foreground">Quản lý FAQ và xử lý khiếu nại khách hàng</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Tổng khiếu nại</CardTitle>
@@ -281,13 +260,10 @@ export default function AdminSupportPage() {
           <TabsTrigger value="complaints" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Khiếu nại
-            {stats?.new && stats.new > 0 && (
-              <Badge className="ml-2 bg-red-500">{stats.new}</Badge>
-            )}
+            {stats?.new && stats.new > 0 && <Badge className="ml-2 bg-red-500">{stats.new}</Badge>}
           </TabsTrigger>
         </TabsList>
 
-        {/* FAQ Tab */}
         <TabsContent value="faq" className="mt-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -301,7 +277,7 @@ export default function AdminSupportPage() {
                   setFaqModalOpen(true);
                 }}
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Thêm câu hỏi
               </Button>
             </CardHeader>
@@ -329,7 +305,7 @@ export default function AdminSupportPage() {
                     ))
                   ) : faqsData?.data?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                         Chưa có câu hỏi nào
                       </TableCell>
                     </TableRow>
@@ -388,21 +364,20 @@ export default function AdminSupportPage() {
           </Card>
         </TabsContent>
 
-        {/* Complaints Tab */}
         <TabsContent value="complaints" className="mt-4">
           <Card>
             <CardHeader>
-              <div className="flex flex-col md:flex-row justify-between gap-4">
+              <div className="flex flex-col justify-between gap-4 md:flex-row">
                 <div>
                   <CardTitle>Danh sách khiếu nại</CardTitle>
                   <CardDescription>Xử lý các phản hồi từ khách hàng</CardDescription>
                 </div>
                 <div className="flex gap-2">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       placeholder="Tìm kiếm..."
-                      className="pl-9 w-[200px]"
+                      className="w-[200px] pl-9"
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
@@ -455,7 +430,7 @@ export default function AdminSupportPage() {
                     ))
                   ) : complaintsData?.data?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                         Không có khiếu nại
                       </TableCell>
                     </TableRow>
@@ -463,7 +438,9 @@ export default function AdminSupportPage() {
                     complaintsData?.data?.map((complaint: Complaint) => (
                       <TableRow key={complaint.id}>
                         <TableCell className="whitespace-nowrap">
-                          {format(new Date(complaint.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
+                          {format(new Date(complaint.createdAt), 'dd/MM/yyyy HH:mm', {
+                            locale: vi,
+                          })}
                         </TableCell>
                         <TableCell>
                           {complaint.user?.fullName ||
@@ -471,7 +448,9 @@ export default function AdminSupportPage() {
                             complaint.guestEmail ||
                             'Khách'}
                         </TableCell>
-                        <TableCell className="max-w-[300px] truncate">{complaint.content}</TableCell>
+                        <TableCell className="max-w-[300px] truncate">
+                          {complaint.content}
+                        </TableCell>
                         <TableCell>{complaint.orderId ? `#${complaint.orderId}` : '-'}</TableCell>
                         <TableCell>{getComplaintStatusBadge(complaint.status)}</TableCell>
                         <TableCell>
@@ -485,9 +464,8 @@ export default function AdminSupportPage() {
                 </TableBody>
               </Table>
 
-              {/* Pagination */}
               {complaintsData?.meta && complaintsData.meta.totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
+                <div className="mt-4 flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     Trang {complaintPage} / {complaintsData.meta.totalPages}
                   </p>
@@ -518,7 +496,6 @@ export default function AdminSupportPage() {
         </TabsContent>
       </Tabs>
 
-      {/* FAQ Modal */}
       <Dialog open={faqModalOpen} onOpenChange={setFaqModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -528,12 +505,7 @@ export default function AdminSupportPage() {
             <div className="grid gap-4 py-4">
               <div>
                 <Label htmlFor="question">Câu hỏi</Label>
-                <Input
-                  id="question"
-                  name="question"
-                  defaultValue={editingFaq?.question}
-                  required
-                />
+                <Input id="question" name="question" defaultValue={editingFaq?.question} required />
               </div>
               <div>
                 <Label htmlFor="answer">Trả lời</Label>
@@ -583,7 +555,7 @@ export default function AdminSupportPage() {
                     defaultChecked={editingFaq?.isActive !== false}
                     onCheckedChange={(checked) => {
                       const input = document.querySelector(
-                        'input[name="isActive"]',
+                        'input[name="isActive"]'
                       ) as HTMLInputElement;
                       if (input) input.value = checked ? 'true' : 'false';
                     }}
@@ -596,16 +568,13 @@ export default function AdminSupportPage() {
                 type="submit"
                 disabled={createFaqMutation.isPending || updateFaqMutation.isPending}
               >
-                {createFaqMutation.isPending || updateFaqMutation.isPending
-                  ? 'Đang lưu...'
-                  : 'Lưu'}
+                {createFaqMutation.isPending || updateFaqMutation.isPending ? 'Đang lưu...' : 'Lưu'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Reply Modal */}
       <Dialog open={replyModalOpen} onOpenChange={setReplyModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -614,14 +583,11 @@ export default function AdminSupportPage() {
 
           {selectedComplaint && (
             <div className="space-y-4">
-              {/* Original Complaint */}
-              <div className="bg-muted p-4 rounded-lg">
-                <div className="flex justify-between items-start mb-2">
+              <div className="rounded-lg bg-muted p-4">
+                <div className="mb-2 flex items-start justify-between">
                   <div>
                     <p className="font-medium">
-                      {selectedComplaint.user?.fullName ||
-                        selectedComplaint.guestName ||
-                        'Khách'}
+                      {selectedComplaint.user?.fullName || selectedComplaint.guestName || 'Khách'}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {selectedComplaint.user?.phoneNumber ||
@@ -637,21 +603,19 @@ export default function AdminSupportPage() {
                 </div>
                 <p className="whitespace-pre-wrap">{selectedComplaint.content}</p>
                 {selectedComplaint.orderId && (
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     Mã đơn: #{selectedComplaint.orderId}
                   </p>
                 )}
               </div>
 
-              {/* Previous Reply */}
               {selectedComplaint.adminReply && (
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Phản hồi trước:</p>
+                <div className="rounded-lg bg-green-50 p-4">
+                  <p className="mb-1 text-sm text-muted-foreground">Phản hồi trước:</p>
                   <p className="whitespace-pre-wrap">{selectedComplaint.adminReply}</p>
                 </div>
               )}
 
-              {/* Reply Form */}
               <form onSubmit={handleReply}>
                 <div className="space-y-4">
                   <div>

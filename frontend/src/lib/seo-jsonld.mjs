@@ -1,5 +1,5 @@
 const env = globalThis?.process?.env || {};
-const DEFAULT_SITE_URL = (env.NEXT_PUBLIC_SITE_URL || 'https://musictravel.vn').replace(/\/$/, '');
+const DEFAULT_SITE_URL = (env.NEXT_PUBLIC_SITE_URL || 'https://maichohanhtinhxanh.com').replace(/\/$/, '');
 
 function toAbsoluteUrl(path, siteUrl = DEFAULT_SITE_URL) {
   if (!path) {

@@ -1,7 +1,6 @@
 import { IsNotEmpty, IsDateString, IsNumber, IsInt, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-
 export class CreateScheduleDto {
   @ApiProperty({
     example: '2024-03-15',
@@ -10,7 +9,6 @@ export class CreateScheduleDto {
   @IsNotEmpty({ message: 'Ngày khởi hành không được để trống.' })
   @IsDateString({}, { message: 'Ngày khởi hành không hợp lệ.' })
   startDate: string;
-
   @ApiProperty({
     example: 2500000,
     description: 'Price per person',
@@ -20,7 +18,6 @@ export class CreateScheduleDto {
   @IsNumber({}, { message: 'Giá phải là số.' })
   @Min(0, { message: 'Giá không được âm.' })
   price: number;
-
   @ApiProperty({
     example: 30,
     description: 'Maximum capacity',

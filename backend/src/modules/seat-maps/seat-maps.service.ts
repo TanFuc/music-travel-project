@@ -7,43 +7,24 @@ import {
   SeatMapConfig,
 } from './dto/seat-map.dto';
 import { SeatType } from '@prisma/client';
-
 @Injectable()
 export class SeatMapsService {
   constructor(private prisma: PrismaService) {}
-
-  // ============================================================================
-  // SEAT MAP TEMPLATES
-  // ============================================================================
-
-  /**
-   * Get all seat map templates
-   */
   async getAllTemplates(isPublic?: boolean) {
     return this.prisma.seatMapTemplate.findMany({
       where: isPublic !== undefined ? { isPublic } : {},
       orderBy: { createdAt: 'desc' },
     });
   }
-
-  /**
-   * Get a specific template by ID
-   */
   async getTemplateById(id: number) {
     const template = await this.prisma.seatMapTemplate.findUnique({
       where: { id },
     });
-
     if (!template) {
       throw new NotFoundException(`Template với ID ${id} không tồn tại`);
     }
-
     return template;
   }
-
-  /**
-   * Create a new seat map template
-   */
   async createTemplate(dto: CreateSeatMapTemplateDto, userId: number) {
     return this.prisma.seatMapTemplate.create({
       data: {
@@ -56,13 +37,8 @@ export class SeatMapsService {
       },
     });
   }
-
-  /**
-   * Update an existing template
-   */
   async updateTemplate(id: number, dto: UpdateSeatMapTemplateDto) {
-    await this.getTemplateById(id); // Check exists
-
+    await this.getTemplateById(id);
     return this.prisma.seatMapTemplate.update({
       where: { id },
       data: {
@@ -74,36 +50,20 @@ export class SeatMapsService {
       },
     });
   }
-
-  /**
-   * Delete a template
-   */
   async deleteTemplate(id: number) {
-    await this.getTemplateById(id); // Check exists
-
-    // Check if any stage is using this template
+    await this.getTemplateById(id);
     const stagesUsingTemplate = await this.prisma.stage.count({
       where: { seatMapTemplate: id },
     });
-
     if (stagesUsingTemplate > 0) {
       throw new BadRequestException(
         `Không thể xóa template này vì đang có ${stagesUsingTemplate} sân khấu đang sử dụng`,
       );
     }
-
     return this.prisma.seatMapTemplate.delete({
       where: { id },
     });
   }
-
-  // ============================================================================
-  // STAGE SEAT MAP CONFIGURATION
-  // ============================================================================
-
-  /**
-   * Get seat map configuration for a stage
-   */
   async getStageSeatMap(stageId: number) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
@@ -114,11 +74,9 @@ export class SeatMapsService {
         },
       },
     });
-
     if (!stage) {
       throw new NotFoundException(`Sân khấu với ID ${stageId} không tồn tại`);
     }
-
     return {
       stage: {
         id: stage.id,
@@ -129,21 +87,14 @@ export class SeatMapsService {
       physicalSeats: stage.physicalSeats,
     };
   }
-
-  /**
-   * Apply a template to a stage
-   */
   async applyTemplateToStage(stageId: number, templateId: number, userId: number) {
     const template = await this.getTemplateById(templateId);
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
     });
-
     if (!stage) {
       throw new NotFoundException(`Sân khấu với ID ${stageId} không tồn tại`);
     }
-
-    // Update stage with template
     await this.prisma.stage.update({
       where: { id: stageId },
       data: {
@@ -152,26 +103,16 @@ export class SeatMapsService {
         updatedBy: userId,
       },
     });
-
-    // Generate physical seats from template
     await this.generatePhysicalSeatsFromConfig(stageId, template.config as any);
-
     return { message: 'Áp dụng template thành công' };
   }
-
-  /**
-   * Update custom seat map configuration for a stage
-   */
   async updateStageSeatMap(stageId: number, dto: UpdateStageSeatMapDto, userId: number) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
     });
-
     if (!stage) {
       throw new NotFoundException(`Sân khấu với ID ${stageId} không tồn tại`);
     }
-
-    // Update stage configuration
     await this.prisma.stage.update({
       where: { id: stageId },
       data: {
@@ -180,27 +121,16 @@ export class SeatMapsService {
         updatedBy: userId,
       },
     });
-
-    // Regenerate physical seats if config is provided
     if (dto.seatMapConfig) {
       await this.generatePhysicalSeatsFromConfig(stageId, dto.seatMapConfig);
     }
-
     return { message: 'Cập nhật sơ đồ chỗ ngồi thành công' };
   }
-
-  /**
-   * Generate physical seats from seat map configuration
-   */
   private async generatePhysicalSeatsFromConfig(stageId: number, config: SeatMapConfig) {
-    // Delete existing physical seats
     await this.prisma.physicalSeat.deleteMany({
       where: { stageId },
     });
-
     const seatsToCreate = [];
-
-    // Generate seats from configuration
     for (const zone of config.zones) {
       for (const row of zone.rows) {
         for (const seat of row.seats) {
@@ -218,20 +148,13 @@ export class SeatMapsService {
         }
       }
     }
-
-    // Bulk create physical seats
     if (seatsToCreate.length > 0) {
       await this.prisma.physicalSeat.createMany({
         data: seatsToCreate,
       });
     }
-
     return seatsToCreate.length;
   }
-
-  /**
-   * Get default/preset templates
-   */
   async getPresetTemplates() {
     return [
       {
@@ -256,11 +179,6 @@ export class SeatMapsService {
       },
     ];
   }
-
-  // ============================================================================
-  // TEMPLATE GENERATORS
-  // ============================================================================
-
   private generateSmallVenueTemplate(): SeatMapConfig {
     return {
       width: 800,
@@ -283,7 +201,6 @@ export class SeatMapsService {
       ],
     };
   }
-
   private generateMediumVenueTemplate(): SeatMapConfig {
     return {
       width: 1000,
@@ -313,7 +230,6 @@ export class SeatMapsService {
       ],
     };
   }
-
   private generateLargeVenueTemplate(): SeatMapConfig {
     return {
       width: 1200,
@@ -343,7 +259,6 @@ export class SeatMapsService {
       ],
     };
   }
-
   private generateStandingOnlyTemplate(): SeatMapConfig {
     return {
       width: 1000,
@@ -359,10 +274,6 @@ export class SeatMapsService {
       ],
     };
   }
-
-  /**
-   * Helper: Generate rows of seats
-   */
   private generateRows(
     zoneName: string,
     numRows: number,
@@ -373,9 +284,8 @@ export class SeatMapsService {
   ) {
     const rows = [];
     for (let r = 0; r < numRows; r++) {
-      const rowName = String.fromCharCode(65 + r); // A, B, C...
+      const rowName = String.fromCharCode(65 + r);
       const seats = [];
-
       for (let s = 0; s < seatsPerRow; s++) {
         seats.push({
           id: `${zoneName}-${rowName}-${s + 1}`,
@@ -387,14 +297,12 @@ export class SeatMapsService {
           status: 'available' as const,
         });
       }
-
       rows.push({
         id: `${zoneName}-${rowName}`,
         rowName,
         seats,
       });
     }
-
     return rows;
   }
 }

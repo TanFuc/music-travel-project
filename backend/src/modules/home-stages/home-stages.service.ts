@@ -2,30 +2,24 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateHomeStageDto } from './dto/create-home-stage.dto';
 import { UpdateHomeStageDto } from './dto/update-home-stage.dto';
-
 @Injectable()
 export class HomeStagesService {
   constructor(private readonly prisma: PrismaService) {}
-
   async findAll(activeOnly = false) {
     return this.prisma.homeStage.findMany({
       where: activeOnly ? { isActive: true } : {},
       orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
     });
   }
-
   async findOne(id: number) {
     const stage = await this.prisma.homeStage.findUnique({
       where: { id },
     });
-
     if (!stage) {
       throw new NotFoundException('Không tìm thấy sân khấu.');
     }
-
     return stage;
   }
-
   async create(createDto: CreateHomeStageDto, userId?: number) {
     return this.prisma.homeStage.create({
       data: {
@@ -34,7 +28,6 @@ export class HomeStagesService {
       },
     });
   }
-
   async update(id: number, updateDto: UpdateHomeStageDto) {
     await this.findOne(id);
     return this.prisma.homeStage.update({
@@ -42,7 +35,6 @@ export class HomeStagesService {
       data: updateDto,
     });
   }
-
   async remove(id: number) {
     await this.findOne(id);
     await this.prisma.homeStage.delete({

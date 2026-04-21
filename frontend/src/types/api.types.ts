@@ -1,4 +1,3 @@
-// User types
 export interface User {
   id: number;
   phoneNumber: string;
@@ -8,8 +7,6 @@ export interface User {
   role: 'USER' | 'ADMIN' | 'STAFF' | 'PARTNER';
   createdAt: string;
 }
-
-// Show types
 export interface Show {
   id: number;
   title: string;
@@ -25,33 +22,28 @@ export interface Show {
   availableTickets: number;
   minPrice: number | null;
 }
-
 export interface Branch {
   id: number;
   name: string;
   description: string | null;
 }
-
 export interface Stage {
   id: number;
   name: string;
   address: string | null;
   location: Location;
 }
-
 export interface Location {
   id: number;
   name: string;
   slug: string;
 }
-
 export interface ShowArtist {
   id: number;
   name: string;
   bio: string | null;
   isHeadline: boolean;
 }
-
 export interface TicketClass {
   id: number;
   name: string;
@@ -59,7 +51,6 @@ export interface TicketClass {
   colorCode: string | null;
   availableCount: number;
 }
-
 export interface TicketTier {
   id: number;
   name: string;
@@ -69,7 +60,6 @@ export interface TicketTier {
   colorCode: string | null;
   priority: number;
 }
-
 export interface Ticket {
   id: number;
   ticketCode: string | null;
@@ -77,7 +67,6 @@ export interface Ticket {
   ticketClass: TicketClass;
   seat: SeatInfo | null;
 }
-
 export interface SeatInfo {
   id: number;
   zone: string | null;
@@ -87,8 +76,6 @@ export interface SeatInfo {
   x: number | null;
   y: number | null;
 }
-
-// Tour types
 export interface Tour {
   id: number;
   title: string;
@@ -101,7 +88,6 @@ export interface Tour {
   schedules: TourSchedule[];
   minPrice: number | null;
 }
-
 export interface TourSchedule {
   id: number;
   startDate: string;
@@ -110,8 +96,6 @@ export interface TourSchedule {
   bookedCount: number;
   status: 'OPEN' | 'CLOSED' | 'CANCELLED';
 }
-
-// Booking types
 export interface Booking {
   id: number;
   bookingCode: string;
@@ -123,23 +107,23 @@ export interface Booking {
   createdAt: string;
   items: BookingItem[];
 }
-
 export interface BookingItem {
   id: number;
   itemType: 'SHOW_TICKET' | 'TOUR_SLOT';
   quantity: number;
   originalPrice: number;
-  ticket?: Ticket & { show: Show };
-  tourSchedule?: TourSchedule & { tour: Tour };
+  ticket?: Ticket & {
+    show: Show;
+  };
+  tourSchedule?: TourSchedule & {
+    tour: Tour;
+  };
 }
-
-// Wallet types
 export interface Wallet {
   balance: number;
   currency: string;
   status: 'ACTIVE' | 'LOCKED';
 }
-
 export interface WalletTransaction {
   id: string;
   amount: number;
@@ -149,8 +133,6 @@ export interface WalletTransaction {
   description: string | null;
   createdAt: string;
 }
-
-// Notification types
 export interface Notification {
   id: string;
   title: string;
@@ -159,8 +141,6 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
 }
-
-// API response types
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;
@@ -169,7 +149,6 @@ export interface ApiResponse<T> {
   timestamp: string;
   path: string;
 }
-
 export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   meta: {
     page: number;

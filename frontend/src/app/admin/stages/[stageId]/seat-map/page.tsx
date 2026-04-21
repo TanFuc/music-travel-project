@@ -1,6 +1,5 @@
 'use client';
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,11 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
 import { get, put, post } from '@/lib/api';
-import { ArrowLeft, Save, Layout } from 'lucide-react';
-
-// Lazy load the heavy SeatMapEditor component (uses Konva canvas)
+import { ArrowLeft, Layout } from 'lucide-react';
 const SeatMapEditor = dynamic(
-  () => import('@/components/admin/SeatMapEditor').then(mod => ({ default: mod.SeatMapEditor })),
+  () => import('@/components/admin/SeatMapEditor').then((mod) => ({ default: mod.SeatMapEditor })),
   {
     loading: () => (
       <Card>
@@ -25,10 +22,9 @@ const SeatMapEditor = dynamic(
         </CardContent>
       </Card>
     ),
-    ssr: false, // Konva requires client-side rendering
+    ssr: false,
   }
 );
-
 interface Stage {
   id: number;
   name: string;
@@ -41,7 +37,6 @@ interface Stage {
     description: string;
   };
 }
-
 interface Template {
   id: number;
   name: string;
@@ -49,23 +44,18 @@ interface Template {
   config: any;
   isPublic: boolean;
 }
-
 export default function StageSeatMapPage() {
   const params = useParams();
   const router = useRouter();
   const stageId = Number(params.stageId);
-
   const [stage, setStage] = useState<Stage | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [presets, setPresets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stageId]);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -74,17 +64,14 @@ export default function StageSeatMapPage() {
         get<Template[]>('/seat-maps/templates'),
         get<any[]>('/seat-maps/templates/presets'),
       ]);
-
       setStage(stageData.stage);
       setTemplates(templatesData);
       setPresets(presetsData);
     } catch (error) {
-      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
   };
-
   const handleSaveConfig = async (config: any) => {
     try {
       setSaving(true);
@@ -94,13 +81,11 @@ export default function StageSeatMapPage() {
       alert('Đã lưu cấu hình sơ đồ chỗ ngồi!');
       await loadData();
     } catch (error) {
-      console.error('Failed to save:', error);
       alert('Lỗi khi lưu cấu hình!');
     } finally {
       setSaving(false);
     }
   };
-
   const handleApplyTemplate = async (templateId: number) => {
     try {
       setSaving(true);
@@ -110,16 +95,13 @@ export default function StageSeatMapPage() {
       alert('Đã áp dụng template!');
       await loadData();
     } catch (error) {
-      console.error('Failed to apply template:', error);
       alert('Lỗi khi áp dụng template!');
     } finally {
       setSaving(false);
     }
   };
-
   const handleApplyPreset = async (preset: any) => {
     if (!confirm(`Áp dụng preset "${preset.name}"?`)) return;
-
     try {
       setSaving(true);
       await put(`/seat-maps/stages/${stageId}`, {
@@ -128,13 +110,11 @@ export default function StageSeatMapPage() {
       alert('Đã áp dụng preset!');
       await loadData();
     } catch (error) {
-      console.error('Failed to apply preset:', error);
       alert('Lỗi khi áp dụng preset!');
     } finally {
       setSaving(false);
     }
   };
-
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -142,7 +122,6 @@ export default function StageSeatMapPage() {
       </div>
     );
   }
-
   if (!stage) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -150,28 +129,22 @@ export default function StageSeatMapPage() {
       </div>
     );
   }
-
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
       <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Quay lại
         </Button>
 
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Sơ Đồ Chỗ Ngồi</h1>
+            <h1 className="mb-2 text-3xl font-bold">Sơ Đồ Chỗ Ngồi</h1>
             <p className="text-gray-600">
               {stage.name}
               {stage.template && (
                 <Badge className="ml-2" variant="secondary">
-                  <Layout className="w-3 h-3 mr-1" />
+                  <Layout className="mr-1 h-3 w-3" />
                   {stage.template.name}
                 </Badge>
               )}
@@ -187,28 +160,31 @@ export default function StageSeatMapPage() {
           <TabsTrigger value="presets">Presets</TabsTrigger>
         </TabsList>
 
-        {/* Editor Tab */}
         <TabsContent value="editor" className="space-y-6">
           {stage.seatMapConfig ? (
-            <SeatMapEditor
-              initialConfig={stage.seatMapConfig}
-              onSave={handleSaveConfig}
-            />
+            <SeatMapEditor initialConfig={stage.seatMapConfig} onSave={handleSaveConfig} />
           ) : (
             <Card>
               <CardContent className="p-12 text-center">
-                <Layout className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-xl font-semibold mb-2">
-                  Chưa có sơ đồ chỗ ngồi
-                </h3>
-                <p className="text-gray-600 mb-6">
+                <Layout className="mx-auto mb-4 h-16 w-16 text-gray-400" />
+                <h3 className="mb-2 text-xl font-semibold">Chưa có sơ đồ chỗ ngồi</h3>
+                <p className="mb-6 text-gray-600">
                   Vui lòng chọn một template hoặc preset để bắt đầu
                 </p>
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={() => (document.querySelector('[value="templates"]') as HTMLElement)?.click()}>
+                <div className="flex justify-center gap-4">
+                  <Button
+                    onClick={() =>
+                      (document.querySelector('[value="templates"]') as HTMLElement)?.click()
+                    }
+                  >
                     Chọn Template
                   </Button>
-                  <Button variant="outline" onClick={() => (document.querySelector('[value="presets"]') as HTMLElement)?.click()}>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      (document.querySelector('[value="presets"]') as HTMLElement)?.click()
+                    }
+                  >
                     Chọn Preset
                   </Button>
                 </div>
@@ -217,23 +193,21 @@ export default function StageSeatMapPage() {
           )}
         </TabsContent>
 
-        {/* Templates Tab */}
         <TabsContent value="templates" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Templates Có Sẵn</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {templates.map((template) => (
-                  <Card key={template.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+                  <Card
+                    key={template.id}
+                    className="cursor-pointer transition-shadow hover:shadow-lg"
+                  >
                     <CardContent className="p-6">
-                      <h3 className="font-semibold text-lg mb-2">
-                        {template.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {template.description}
-                      </p>
+                      <h3 className="mb-2 text-lg font-semibold">{template.name}</h3>
+                      <p className="mb-4 text-sm text-gray-600">{template.description}</p>
                       <div className="flex items-center justify-between">
                         <Badge variant={template.isPublic ? 'default' : 'secondary'}>
                           {template.isPublic ? 'Công khai' : 'Riêng tư'}
@@ -251,7 +225,7 @@ export default function StageSeatMapPage() {
                 ))}
 
                 {templates.length === 0 && (
-                  <div className="col-span-3 text-center py-12 text-gray-500">
+                  <div className="col-span-3 py-12 text-center text-gray-500">
                     Chưa có template nào
                   </div>
                 )}
@@ -260,27 +234,19 @@ export default function StageSeatMapPage() {
           </Card>
         </TabsContent>
 
-        {/* Presets Tab */}
         <TabsContent value="presets" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Preset Mẫu</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {presets.map((preset, index) => (
-                  <Card
-                    key={index}
-                    className="cursor-pointer hover:shadow-lg transition-shadow"
-                  >
+                  <Card key={index} className="cursor-pointer transition-shadow hover:shadow-lg">
                     <CardContent className="p-6">
-                      <h3 className="font-semibold text-lg mb-2">
-                        {preset.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {preset.description}
-                      </p>
-                      <div className="flex justify-between items-center">
+                      <h3 className="mb-2 text-lg font-semibold">{preset.name}</h3>
+                      <p className="mb-4 text-sm text-gray-600">{preset.description}</p>
+                      <div className="flex items-center justify-between">
                         <div className="text-sm text-gray-500">
                           {preset.config.zones.length} khu vực
                         </div>

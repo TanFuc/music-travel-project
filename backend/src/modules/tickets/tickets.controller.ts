@@ -18,14 +18,12 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { Public } from '@/common/decorators/public.decorator';
-
 @ApiTags('tickets')
 @Controller('tickets')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) { }
-
+  constructor(private readonly ticketsService: TicketsService) {}
   @Public()
   @Get('tiers')
   @ApiOperation({ summary: 'Get all ticket tiers (Public)' })
@@ -33,89 +31,97 @@ export class TicketsController {
   async getTierList() {
     return this.ticketsService.getTicketTiers();
   }
-
   @Post('lock')
   @ApiOperation({ summary: 'Lock tickets for purchase (TTL based)' })
   @ApiResponse({ status: 201, description: 'Tickets locked successfully' })
   @ApiResponse({ status: 400, description: 'Tickets not available' })
-  async lockTickets(@CurrentUser() user: JwtPayload, @Body() lockTicketsDto: LockTicketsDto) {
+  async lockTickets(
+    @CurrentUser()
+    user: JwtPayload,
+    @Body()
+    lockTicketsDto: LockTicketsDto,
+  ) {
     return this.ticketsService.lockTickets(user.sub, lockTicketsDto);
   }
-
   @Delete('lock/:ticketId')
   @ApiOperation({ summary: 'Release locked ticket' })
   @ApiResponse({ status: 200, description: 'Ticket released successfully' })
   async releaseTicket(
-    @CurrentUser() user: JwtPayload,
-    @Param('ticketId', ParseIntPipe) ticketId: number,
+    @CurrentUser()
+    user: JwtPayload,
+    @Param('ticketId', ParseIntPipe)
+    ticketId: number,
   ) {
     return this.ticketsService.releaseTicket(user.sub, ticketId);
   }
-
   @Post(':ticketId/suspend')
   @ApiOperation({ summary: 'Suspend a ticket (> 48h before show)' })
   @ApiResponse({ status: 200, description: 'Ticket suspended successfully' })
   async suspendTicket(
-    @CurrentUser() user: JwtPayload,
-    @Param('ticketId', ParseIntPipe) ticketId: number,
+    @CurrentUser()
+    user: JwtPayload,
+    @Param('ticketId', ParseIntPipe)
+    ticketId: number,
   ) {
     return this.ticketsService.suspendTicket(user.sub, ticketId);
   }
-
   @Delete('lock')
   @ApiOperation({ summary: 'Release all locked tickets for current user' })
   @ApiResponse({ status: 200, description: 'All tickets released successfully' })
-  async releaseAllTickets(@CurrentUser() user: JwtPayload) {
+  async releaseAllTickets(
+    @CurrentUser()
+    user: JwtPayload,
+  ) {
     return this.ticketsService.releaseAllUserTickets(user.sub);
   }
-
-  // ==================== TICKET QUERIES ====================
-
   @Get('booking/:bookingId')
   @ApiOperation({ summary: 'Get all tickets for a booking' })
   @ApiResponse({ status: 200, description: 'Tickets retrieved successfully' })
-  async getTicketsByBooking(@Param('bookingId', ParseIntPipe) bookingId: number) {
+  async getTicketsByBooking(
+    @Param('bookingId', ParseIntPipe)
+    bookingId: number,
+  ) {
     return this.ticketsService.getTicketsByBooking(bookingId);
   }
-
   @Get('booking/:bookingId/qrcodes')
   @ApiOperation({ summary: 'Get QR codes for all tickets in a booking' })
   @ApiResponse({ status: 200, description: 'QR codes generated successfully' })
   @ApiResponse({ status: 400, description: 'No tickets or not owned by user' })
   @ApiResponse({ status: 404, description: 'Booking not found' })
   async getTicketQRBatch(
-    @CurrentUser() user: JwtPayload,
-    @Param('bookingId', ParseIntPipe) bookingId: number,
+    @CurrentUser()
+    user: JwtPayload,
+    @Param('bookingId', ParseIntPipe)
+    bookingId: number,
   ) {
     return this.ticketsService.getTicketQRBatch(bookingId, user.sub);
   }
-
   @Get(':id/validate')
   @ApiOperation({ summary: 'Validate ticket ownership' })
   @ApiResponse({ status: 200, description: 'Ownership validation result' })
   @ApiResponse({ status: 404, description: 'Ticket not found' })
   async validateOwnership(
-    @CurrentUser() user: JwtPayload,
-    @Param('id', ParseIntPipe) ticketId: number,
+    @CurrentUser()
+    user: JwtPayload,
+    @Param('id', ParseIntPipe)
+    ticketId: number,
   ) {
     const isOwner = await this.ticketsService.validateTicketOwnership(ticketId, user.sub);
     return { isOwner };
   }
-
-  // ==================== QR CODE & CHECK-IN ====================
-
   @Get(':id/qrcode')
   @ApiOperation({ summary: 'Generate QR code for a paid ticket' })
   @ApiResponse({ status: 200, description: 'QR code generated successfully' })
   @ApiResponse({ status: 400, description: 'Ticket not paid or not owned by user' })
   @ApiResponse({ status: 404, description: 'Ticket not found' })
   async generateQRCode(
-    @CurrentUser() user: JwtPayload,
-    @Param('id', ParseIntPipe) ticketId: number,
+    @CurrentUser()
+    user: JwtPayload,
+    @Param('id', ParseIntPipe)
+    ticketId: number,
   ) {
     return this.ticketsService.generateQRCode(ticketId, user.sub);
   }
-
   @Post('checkin')
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'STAFF')
@@ -127,32 +133,36 @@ export class TicketsController {
   })
   @ApiResponse({ status: 404, description: 'Ticket not found' })
   async checkIn(
-    @CurrentUser() user: JwtPayload,
-    @Body() checkInDto: CheckInDto,
-    @Ip() ipAddress: string,
+    @CurrentUser()
+    user: JwtPayload,
+    @Body()
+    checkInDto: CheckInDto,
+    @Ip()
+    ipAddress: string,
   ): Promise<CheckInResult> {
     return this.ticketsService.checkIn(checkInDto, user.sub, ipAddress);
   }
-
   @Get('shows/:showId/checkin-stats')
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'STAFF')
   @ApiOperation({ summary: 'Get check-in statistics for a show (Admin/Staff only)' })
   @ApiResponse({ status: 200, description: 'Check-in statistics retrieved' })
-  async getCheckInStats(@Param('showId', ParseIntPipe) showId: number) {
+  async getCheckInStats(
+    @Param('showId', ParseIntPipe)
+    showId: number,
+  ) {
     return this.ticketsService.getCheckInStats(showId);
   }
-
-
-
   @Post(':id/reactivate')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Reactivate a suspended ticket (Admin only)' })
   @ApiResponse({ status: 200, description: 'Ticket reactivated successfully' })
   async reactivateTicket(
-    @CurrentUser() user: JwtPayload,
-    @Param('id', ParseIntPipe) ticketId: number,
+    @CurrentUser()
+    user: JwtPayload,
+    @Param('id', ParseIntPipe)
+    ticketId: number,
   ) {
     return this.ticketsService.reactivateTicket(ticketId, user.sub);
   }

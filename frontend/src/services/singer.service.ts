@@ -1,6 +1,5 @@
 import { get, post, patch, del } from '@/lib/api';
 import type { SingerRegistrationFormData } from '@/lib/validations/singer-registration.schema';
-
 export interface SingerRegistration {
   id: string;
   fullName: string;
@@ -19,7 +18,6 @@ export interface SingerRegistration {
   createdAt: string;
   updatedAt: string;
 }
-
 export interface SingerRegistrationFilter {
   page?: number;
   limit?: number;
@@ -29,7 +27,6 @@ export interface SingerRegistrationFilter {
   singingExperience?: string;
   search?: string;
 }
-
 export interface SingerRegistrationResponse {
   data: SingerRegistration[];
   pagination: {
@@ -39,7 +36,6 @@ export interface SingerRegistrationResponse {
     totalPages: number;
   };
 }
-
 export interface SingerStatistics {
   total: number;
   byStatus: {
@@ -50,35 +46,30 @@ export interface SingerStatistics {
   byPackage: Record<string, number>;
   byExperience: Record<string, number>;
 }
-
 export const singerService = {
-  // Public registration
   register: (data: Omit<SingerRegistrationFormData, 'agreeToTerms'>) =>
-    post<{ message: string; data: SingerRegistration }>('/singers/register', data),
-
-  // User endpoints
-  getMyRegistrations: () =>
-    get<SingerRegistration[]>('/singers/my-registrations'),
-
-  // Upload voice sample
-  uploadVoiceSample: async (file: File): Promise<{ url: string }> => {
+    post<{
+      message: string;
+      data: SingerRegistration;
+    }>('/singers/register', data),
+  getMyRegistrations: () => get<SingerRegistration[]>('/singers/my-registrations'),
+  uploadVoiceSample: async (
+    file: File
+  ): Promise<{
+    url: string;
+  }> => {
     const formData = new FormData();
     formData.append('file', file);
-    
     const response = await fetch('/api/v1/singers/upload-voice-sample', {
       method: 'POST',
-      body: formData
+      body: formData,
     });
-    
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Upload failed' }));
       throw new Error(error.message || 'Upload failed');
     }
-    
     return response.json();
   },
-
-  // Admin endpoints
   getAll: (filter?: SingerRegistrationFilter) => {
     const params = new URLSearchParams();
     if (filter) {
@@ -91,19 +82,11 @@ export const singerService = {
     const queryString = params.toString();
     return get<SingerRegistrationResponse>(`/singers${queryString ? `?${queryString}` : ''}`);
   },
-
-  getById: (id: string) =>
-    get<SingerRegistration>(`/singers/${id}`),
-
+  getById: (id: string) => get<SingerRegistration>(`/singers/${id}`),
   update: (id: string, data: Partial<SingerRegistration>) =>
     patch<SingerRegistration>(`/singers/${id}`, data),
-
   updateStatus: (id: string, status: string, adminNotes?: string) =>
     patch<SingerRegistration>(`/singers/${id}/status`, { status, adminNotes }),
-
-  delete: (id: string) =>
-    del(`/singers/${id}`),
-
-  getStatistics: () =>
-    get<SingerStatistics>('/singers/statistics'),
+  delete: (id: string) => del(`/singers/${id}`),
+  getStatistics: () => get<SingerStatistics>('/singers/statistics'),
 };

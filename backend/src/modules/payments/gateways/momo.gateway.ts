@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import axios from 'axios';
-
 export interface MoMoPaymentRequest {
   orderId: string;
   amount: number;
@@ -11,7 +10,6 @@ export interface MoMoPaymentRequest {
   notifyUrl: string;
   extraData?: string;
 }
-
 export interface MoMoPaymentResponse {
   partnerCode: string;
   orderId: string;
@@ -23,7 +21,6 @@ export interface MoMoPaymentResponse {
   payUrl: string;
   shortLink?: string;
 }
-
 export interface MoMoWebhookPayload {
   partnerCode: string;
   orderId: string;
@@ -39,7 +36,6 @@ export interface MoMoWebhookPayload {
   extraData: string;
   signature: string;
 }
-
 @Injectable()
 export class MoMoGateway {
   private readonly logger = new Logger(MoMoGateway.name);
@@ -47,7 +43,6 @@ export class MoMoGateway {
   private readonly accessKey: string;
   private readonly secretKey: string;
   private readonly endpoint: string;
-
   constructor(private readonly configService: ConfigService) {
     this.partnerCode = this.configService.get<string>('MOMO_PARTNER_CODE') || '';
     this.accessKey = this.configService.get<string>('MOMO_ACCESS_KEY') || '';
@@ -56,16 +51,10 @@ export class MoMoGateway {
       this.configService.get<string>('MOMO_ENDPOINT') ||
       'https://test-payment.momo.vn/v2/gateway/api/create';
   }
-
-  /**
-   * Create MoMo payment request
-   */
   async createPayment(request: MoMoPaymentRequest): Promise<MoMoPaymentResponse> {
     const requestId = `${request.orderId}_${Date.now()}`;
     const requestType = 'payWithMethod';
     const extraData = request.extraData || '';
-
-    // Build raw signature string
     const rawSignature = [
       `accessKey=${this.accessKey}`,
       `amount=${request.amount}`,
@@ -78,13 +67,10 @@ export class MoMoGateway {
       `requestId=${requestId}`,
       `requestType=${requestType}`,
     ].join('&');
-
-    // Create HMAC-SHA256 signature
     const signature = crypto
       .createHmac('sha256', this.secretKey)
       .update(rawSignature)
       .digest('hex');
-
     const requestBody = {
       partnerCode: this.partnerCode,
       partnerName: 'Music Travel',
@@ -101,34 +87,24 @@ export class MoMoGateway {
       extraData,
       signature,
     };
-
     this.logger.log(`Creating MoMo payment for order ${request.orderId}`);
-
     try {
       const response = await axios.post<MoMoPaymentResponse>(this.endpoint, requestBody, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 30000,
       });
-
       if (response.data.resultCode !== 0) {
         this.logger.error(`MoMo payment creation failed: ${response.data.message}`);
         throw new Error(`MoMo error: ${response.data.message}`);
       }
-
       return response.data;
     } catch (error) {
       this.logger.error(`MoMo API error: ${error.message}`);
       throw error;
     }
   }
-
-  /**
-   * Verify MoMo webhook signature
-   */
   verifyWebhook(payload: MoMoWebhookPayload): boolean {
     const { signature, ...data } = payload;
-
-    // Build raw signature string for verification
     const rawSignature = [
       `accessKey=${this.accessKey}`,
       `amount=${data.amount}`,
@@ -144,24 +120,16 @@ export class MoMoGateway {
       `resultCode=${data.resultCode}`,
       `transId=${data.transId}`,
     ].join('&');
-
     const expectedSignature = crypto
       .createHmac('sha256', this.secretKey)
       .update(rawSignature)
       .digest('hex');
-
     const isValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
-
     if (!isValid) {
       this.logger.warn(`Invalid MoMo webhook signature for order ${data.orderId}`);
     }
-
     return isValid;
   }
-
-  /**
-   * Parse webhook result
-   */
   parseWebhookResult(payload: MoMoWebhookPayload) {
     return {
       orderId: payload.orderId,
@@ -173,10 +141,6 @@ export class MoMoGateway {
       payType: payload.payType,
     };
   }
-
-  /**
-   * Check if gateway is configured
-   */
   isConfigured(): boolean {
     return !!(this.partnerCode && this.accessKey && this.secretKey);
   }

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useEffect, useState } from 'react';
-
 interface User {
   id: number;
   phoneNumber: string;
@@ -11,7 +10,6 @@ interface User {
   isCollaborator?: boolean;
   referralCode?: string | null;
 }
-
 interface AuthState {
   user: User | null;
   accessToken: string | null;
@@ -24,7 +22,6 @@ interface AuthState {
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
 }
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -33,49 +30,35 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       hasHydrated: false,
-
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
-
       setUser: (user) => set({ user }),
-
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken, isAuthenticated: true }),
-
       login: (user, accessToken, refreshToken) => {
         const currentUser = useAuthStore.getState().user;
-
-        // If logging in as a different user, clear the cart
         if (typeof window !== 'undefined' && currentUser && currentUser.id !== user.id) {
           localStorage.removeItem('cart-storage');
           window.dispatchEvent(new Event('cart-clear'));
         }
-
         set({
           user,
           accessToken,
           refreshToken,
           isAuthenticated: true,
         });
-
-        // Set userId in cart to track cart ownership
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('cart-set-user', { detail: { userId: user.id } }));
         }
       },
-
       logout: () => {
-        // Clear auth state
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
         });
-
-        // Clear cart when logging out to prevent data leakage between users
         if (typeof window !== 'undefined') {
           localStorage.removeItem('cart-storage');
-          // Dispatch custom event to notify cart store to clear its state
           window.dispatchEvent(new Event('cart-clear'));
         }
       },
@@ -89,22 +72,23 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        // Use requestIdleCallback or setTimeout to avoid blocking
         if (typeof window !== 'undefined') {
           if ('requestIdleCallback' in window) {
             (window as Window).requestIdleCallback(() => {
               state?.setHasHydrated(true);
-              // Set userId in cart if user is logged in
               if (state?.user) {
-                window.dispatchEvent(new CustomEvent('cart-set-user', { detail: { userId: state.user.id } }));
+                window.dispatchEvent(
+                  new CustomEvent('cart-set-user', { detail: { userId: state.user.id } })
+                );
               }
             });
           } else {
             setTimeout(() => {
               state?.setHasHydrated(true);
-              // Set userId in cart if user is logged in
               if (state?.user) {
-                window.dispatchEvent(new CustomEvent('cart-set-user', { detail: { userId: state.user.id } }));
+                window.dispatchEvent(
+                  new CustomEvent('cart-set-user', { detail: { userId: state.user.id } })
+                );
               }
             }, 0);
           }
@@ -115,16 +99,11 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
-
-// Hook for checking auth without blocking - returns optimistic value immediately
 export function useAuthHydrated() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Return true immediately on server or if mounted and hydrated
   return mounted && hasHydrated;
 }

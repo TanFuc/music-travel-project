@@ -12,29 +12,22 @@ import { ErrorResponse } from '../interfaces/api-response.interface';
 import { getCorrelationId } from '../constants/async-context';
 import { Sanitizer } from '../utils/sanitizer.util';
 import { LoggingConfigService } from '../config/logging.config';
-
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
-
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<FastifyReply>();
     const request = ctx.getRequest<FastifyRequest>();
-
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = getErrorMessage(ERROR_CODES.SYS_001);
     let code: ErrorCode = ERROR_CODES.SYS_001;
     let errors: Record<string, string[]> | undefined;
-
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         const responseObj = exceptionResponse as Record<string, unknown>;
-
-        // Handle validation errors
         if (Array.isArray(responseObj.message)) {
           code = ERROR_CODES.VAL_001;
           message = getErrorMessage(code);
@@ -42,8 +35,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
         } else if (typeof responseObj.message === 'string') {
           message = responseObj.message;
         }
-
-        // Check for custom error code
         if (responseObj.code && typeof responseObj.code === 'string') {
           code = responseObj.code as ErrorCode;
           message = getErrorMessage(code);
@@ -52,18 +43,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = exceptionResponse;
       }
     }
-
-    // Log error for debugging with correlation ID and context
     const correlationId = getCorrelationId();
     const config = LoggingConfigService.getConfig();
-
-    // Log all errors (including 4xx) with full context
     const logParts: string[] = [];
     logParts.push(`[${correlationId}] ${request.method} ${request.url} - ${status}`);
     logParts.push(`  error: ${message}`);
     logParts.push(`  code: ${code}`);
-
-    // Add request body for debugging (sanitized)
     if (config.enableRequestBodyLogging && request.body) {
       const sanitizedBody = config.sanitizeSensitive
         ? Sanitizer.sanitize(request.body)
@@ -71,14 +56,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const truncatedBody = Sanitizer.truncate(sanitizedBody, config.maxBodySize);
       logParts.push(`  requestBody: ${JSON.stringify(truncatedBody, null, 2)}`);
     }
-
-    // Add user context if available
     const user = (request as any).user;
     if (user) {
       logParts.push(`  userId: ${user.id}, role: ${user.role}`);
     }
-
-    // Log based on severity
     if (status >= 500) {
       this.logger.error(
         logParts.join('\n'),
@@ -87,7 +68,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     } else if (status >= 400) {
       this.logger.warn(logParts.join('\n'));
     }
-
     const errorResponse: ErrorResponse = {
       success: false,
       data: null,
@@ -97,29 +77,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
       ...(errors && { errors }),
     };
-
-    // Add correlation ID to response header if available
     if (correlationId) {
       response.header('X-Correlation-ID', correlationId);
     }
-
     response.status(status).send(errorResponse);
   }
-
   private formatValidationErrors(messages: string[]): Record<string, string[]> {
     const errors: Record<string, string[]> = {};
-
     for (const msg of messages) {
-      // Extract field name from validation message
       const match = msg.match(/^(\w+)\s/);
       const field = match ? match[1] : 'general';
-
       if (!errors[field]) {
         errors[field] = [];
       }
       errors[field].push(msg);
     }
-
     return errors;
   }
 }

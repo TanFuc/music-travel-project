@@ -1,11 +1,9 @@
 'use client';
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Loader2, RefreshCw, Download, Timer } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { paymentService, QRPaymentResponse } from '@/services/payment.service';
-
 interface PaymentQRModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,23 +12,19 @@ interface PaymentQRModalProps {
   onSuccess?: () => void;
   expirationSeconds?: number;
 }
-
 export default function PaymentQRModal({
   isOpen,
   onClose,
   defaultAmount,
   defaultDescription,
   onSuccess,
-  expirationSeconds = 600 // Default 10 minutes
+  expirationSeconds = 600,
 }: PaymentQRModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrData, setQrData] = useState<QRPaymentResponse | null>(null);
   const [timeLeft, setTimeLeft] = useState(expirationSeconds);
   const [isExpired, setIsExpired] = useState(false);
-
-
-
   const handleClose = () => {
     setLoading(false);
     setError(null);
@@ -39,14 +33,12 @@ export default function PaymentQRModal({
     setIsExpired(false);
     onClose();
   };
-
   const generateQR = async () => {
     setLoading(true);
     setError(null);
     setQrData(null);
     setIsExpired(false);
     setTimeLeft(expirationSeconds);
-
     try {
       const response = await paymentService.generateQRPayment({
         amount: defaultAmount,
@@ -54,27 +46,22 @@ export default function PaymentQRModal({
       });
       setQrData(response);
     } catch (err: any) {
-      console.error('Failed to generate QR:', err);
       setError(err?.response?.data?.message || 'Không thể tạo mã QR. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
   };
-
   const handleRetry = () => {
     generateQR();
   };
-
   const handleOpenBankApp = () => {
     if (qrData?.deeplink) {
       paymentService.openBankApp(qrData.deeplink);
     }
   };
-
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
   };
-
   const handleDownloadQR = useCallback(async () => {
     if (!qrData) return;
     const filename = `qr-thanh-toan-${Date.now()}.png`;
@@ -97,12 +84,9 @@ export default function PaymentQRModal({
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Download QR failed:', err);
       setError('Không thể tải ảnh QR. Vui lòng thử lại.');
     }
   }, [qrData]);
-
-  // Auto-generate QR when modal opens
   useEffect(() => {
     if (isOpen) {
       if (!qrData && !loading && !error) {
@@ -112,11 +96,8 @@ export default function PaymentQRModal({
       setIsExpired(false);
     }
   }, [isOpen]);
-
-  // Countdown timer
   useEffect(() => {
     if (!isOpen || isExpired || loading || error) return;
-
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -126,47 +107,36 @@ export default function PaymentQRModal({
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [isOpen, isExpired, loading, error]);
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Mã QR thanh toán</DialogTitle>
-            {/* <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="p-1 h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button> */}
           </div>
         </DialogHeader>
 
         <div className="space-y-6">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <div className="flex flex-col items-center justify-center space-y-4 py-8">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               <p className="text-sm text-gray-600">Đang tạo mã QR...</p>
             </div>
           )}
 
           {error && (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <div className="flex flex-col items-center justify-center space-y-4 py-8">
               <div className="text-center">
-                <p className="text-sm text-red-600 mb-4">{error}</p>
+                <p className="mb-4 text-sm text-red-600">{error}</p>
                 <Button onClick={handleRetry} variant="outline" size="sm">
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="mr-2 h-4 w-4" />
                   Thử lại
                 </Button>
               </div>
@@ -174,47 +144,44 @@ export default function PaymentQRModal({
           )}
 
           {isExpired ? (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <div className="bg-red-50 p-4 rounded-full">
+            <div className="flex flex-col items-center justify-center space-y-4 py-8">
+              <div className="rounded-full bg-red-50 p-4">
                 <Timer className="h-8 w-8 text-red-500" />
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900">Mã QR đã hết hạn</h3>
-                <p className="text-sm text-gray-500 mt-1 mb-6 max-w-xs mx-auto">
+                <p className="mx-auto mb-6 mt-1 max-w-xs text-sm text-gray-500">
                   Vui lòng tạo mã mới để tiếp tục thanh toán. Mã cũ không còn hiệu lực.
                 </p>
                 <Button onClick={handleRetry} className="bg-brand-600 hover:bg-brand-700">
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="mr-2 h-4 w-4" />
                   Tạo mã mới
                 </Button>
               </div>
             </div>
           ) : qrData ? (
             <div className="space-y-6">
-              {/* Timer Warning */}
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-3">
                 <div className="flex items-center gap-2 text-amber-700">
                   <Timer className="h-4 w-4" />
                   <span className="text-sm font-medium">Hết hạn sau:</span>
                 </div>
-                <span className="text-lg font-bold text-amber-600 font-mono">
+                <span className="font-mono text-lg font-bold text-amber-600">
                   {formatTime(timeLeft)}
                 </span>
               </div>
 
-              {/* QR Code Image - prefer VietQR.io URL (accepted by all bank apps) */}
               <div className="flex justify-center">
-                <div className=" bg-white rounded-lg">
+                <div className=" rounded-lg bg-white">
                   <img
                     src={qrData.qrImageUrl ?? qrData.qrImageBase64}
                     alt="QR Code"
-                    className="w-48 h-48"
+                    className="h-48 w-48"
                   />
                 </div>
               </div>
 
-              {/* Bank Information */}
-              <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+              <div className="space-y-3 rounded-lg bg-gray-50 p-4">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Ngân hàng:</span>
                   <span className="text-sm font-medium">{qrData.bank.bankName}</span>
@@ -243,39 +210,19 @@ export default function PaymentQRModal({
                 )}
               </div>
 
-              {/* Action Buttons */}
               <div className="space-y-2">
-                {/* {qrData.deeplink && (
-                  <Button
-                    onClick={handleOpenBankApp}
-                    className="w-full"
-                    size="lg"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Mở app ngân hàng
-                  </Button>
-                )} */}
-                <Button
-                  onClick={handleDownloadQR}
-                  className="w-full"
-                  size="lg"
-                  variant="secondary"
-                >
-                  <Download className="h-4 w-4 mr-2" />
+                <Button onClick={handleDownloadQR} className="w-full" size="lg" variant="secondary">
+                  <Download className="mr-2 h-4 w-4" />
                   Tải ảnh QR
                 </Button>
                 <Button
                   onClick={() => onSuccess && onSuccess()}
-                  className="w-full bg-brand-600 hover:bg-brand-700 text-white"
+                  className="w-full bg-brand-600 text-white hover:bg-brand-700"
                   size="lg"
                 >
                   Xác nhận đã chuyển khoản
-                </Button>                <Button
-                  onClick={handleClose}
-                  variant="outline"
-                  className="w-full"
-                  size="lg"
-                >
+                </Button>{' '}
+                <Button onClick={handleClose} variant="outline" className="w-full" size="lg">
                   Đóng
                 </Button>
               </div>

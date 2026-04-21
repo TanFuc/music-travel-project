@@ -13,16 +13,13 @@ import {
   CACHE_TTL,
   generateFilterHash,
 } from '@/cache/cache-keys.constant';
-
 @Injectable()
 export class ShowsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
   ) {}
-
   async findAll(filterDto: ShowFilterDto) {
-    // Generate cache key from filters
     const filterHash = generateFilterHash({
       page: filterDto.page,
       limit: filterDto.limit,
@@ -35,15 +32,11 @@ export class ShowsService {
       location: filterDto.location,
     });
     const cacheKey = CacheKeys.showList(filterHash);
-
-    // Try to get from cache
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
     }
-
     const { skip, take } = getPaginationParams(filterDto);
-
     const where = {
       deletedAt: null,
       ...(filterDto.status && { status: filterDto.status }),
@@ -69,7 +62,6 @@ export class ShowsService {
         },
       }),
     };
-
     const [shows, total] = await Promise.all([
       this.prisma.show.findMany({
         where,
@@ -108,7 +100,6 @@ export class ShowsService {
       }),
       this.prisma.show.count({ where }),
     ]);
-
     const formattedShows = shows.map((show) => ({
       id: show.id,
       title: show.title,
@@ -140,24 +131,16 @@ export class ShowsService {
         ? Math.min(...show.ticketClasses.map((tc) => Number(tc.price)))
         : null,
     }));
-
     const result = paginate(formattedShows, total, filterDto.page || 1, filterDto.limit || 10);
-
-    // Cache for 5 minutes (shows list changes frequently due to ticket availability)
     await this.cache.set(cacheKey, result, CACHE_TTL.SHORT);
-
     return result;
   }
-
   async findBySlug(slug: string) {
     const cacheKey = CacheKeys.showBySlug(slug);
-
-    // Try to get from cache
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
     }
-
     const show = await this.prisma.show.findFirst({
       where: {
         slug,
@@ -189,14 +172,12 @@ export class ShowsService {
         },
       },
     });
-
     if (!show) {
       throw new NotFoundException({
         code: ERROR_CODES.SHOW_001,
         message: getErrorMessage(ERROR_CODES.SHOW_001),
       });
     }
-
     const result = {
       id: show.id,
       title: show.title,
@@ -205,7 +186,7 @@ export class ShowsService {
       performTime: show.performTime,
       checkInTime: show.checkInTime,
       status: show.status,
-      seatSelectionEnabled: (show as any).seatSelectionEnabled ?? true, // General Admission when false
+      seatSelectionEnabled: (show as any).seatSelectionEnabled ?? true,
       properties: show.properties,
       metaTitle: show.metaTitle,
       metaDescription: show.metaDescription,
@@ -237,13 +218,9 @@ export class ShowsService {
         availableCount: tc._count.tickets,
       })),
     };
-
-    // Cache show detail for 10 minutes
     await this.cache.set(cacheKey, result, CACHE_TTL.MEDIUM);
-
     return result;
   }
-
   async findById(id: number) {
     const show = await this.prisma.show.findFirst({
       where: {
@@ -251,28 +228,21 @@ export class ShowsService {
         deletedAt: null,
       },
     });
-
     if (!show) {
       throw new NotFoundException({
         code: ERROR_CODES.SHOW_001,
         message: getErrorMessage(ERROR_CODES.SHOW_001),
       });
     }
-
     return show;
   }
-
   async getSeatMap(showId: number) {
     const cacheKey = CacheKeys.showSeatMap(showId);
-
-    // Seat map changes frequently when tickets are sold/locked - short TTL
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
     }
-
     await this.findById(showId);
-
     const tickets = await this.prisma.ticket.findMany({
       where: { showId },
       include: {
@@ -287,7 +257,6 @@ export class ShowsService {
         },
       },
     });
-
     const ticketsList = tickets.map((ticket) => ({
       id: ticket.id,
       status: ticket.status,
@@ -304,25 +273,17 @@ export class ShowsService {
           }
         : null,
     }));
-
     const result = { tickets: ticketsList };
-
-    // Cache seat map for 1 minute only (high volatility)
     await this.cache.set(cacheKey, result, CACHE_TTL.VERY_SHORT);
-
     return result;
   }
-
   async getTicketClasses(showId: number) {
     const cacheKey = CacheKeys.showTicketClasses(showId);
-
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
     }
-
     await this.findById(showId);
-
     const ticketClasses = await this.prisma.ticketClass.findMany({
       where: {
         showId,
@@ -338,7 +299,6 @@ export class ShowsService {
         },
       },
     });
-
     const result = ticketClasses.map((tc) => ({
       id: tc.id,
       name: tc.name,
@@ -347,34 +307,24 @@ export class ShowsService {
       totalQuantity: tc.totalQuantity,
       availableCount: tc._count.tickets,
     }));
-
-    // Cache ticket classes for 5 minutes
     await this.cache.set(cacheKey, result, CACHE_TTL.SHORT);
-
     return result;
   }
-
   async create(createShowDto: CreateShowDto) {
     const slug = this.generateSlug(createShowDto.title);
-
-    // Verify stage exists
     const stage = await this.prisma.stage.findUnique({
       where: { id: createShowDto.stageId },
     });
-
     if (!stage) {
       throw new NotFoundException({
         code: ERROR_CODES.STAGE_001,
         message: 'Sân khấu không tồn tại.',
       });
     }
-
-    // Verify branch exists if provided
     if (createShowDto.branchId) {
       const branch = await this.prisma.branch.findUnique({
         where: { id: createShowDto.branchId },
       });
-
       if (!branch) {
         throw new NotFoundException({
           code: 'BRANCH_001',
@@ -382,7 +332,6 @@ export class ShowsService {
         });
       }
     }
-
     const show = await this.prisma.show.create({
       data: {
         title: createShowDto.title,
@@ -398,32 +347,22 @@ export class ShowsService {
         metaDescription: createShowDto.metaDescription,
       },
     });
-
-    // Invalidate show list caches
     await this.cache.delPattern(CachePatterns.showLists());
-
     return show;
   }
-
   async update(id: number, updateShowDto: UpdateShowDto, updatedBy: number) {
     const existingShow = await this.findById(id);
-
-    // Prevent updating ended or cancelled shows
     if (existingShow.status === ShowStatus.ENDED || existingShow.status === ShowStatus.CANCELLED) {
       throw new BadRequestException({
         code: ERROR_CODES.SHOW_002,
         message: getErrorMessage(ERROR_CODES.SHOW_002),
       });
     }
-
-    // Build update data
     const updateData: Record<string, unknown> = {
       updatedBy,
     };
-
     if (updateShowDto.title !== undefined) {
       updateData.title = updateShowDto.title;
-      // Regenerate slug if title changes
       updateData.slug = this.generateSlug(updateShowDto.title);
     }
     if (updateShowDto.description !== undefined) {
@@ -456,13 +395,10 @@ export class ShowsService {
     if (updateShowDto.metaKeywords !== undefined) {
       updateData.metaKeywords = updateShowDto.metaKeywords;
     }
-
-    // Verify branch exists if provided
     if (updateShowDto.branchId) {
       const branch = await this.prisma.branch.findUnique({
         where: { id: updateShowDto.branchId },
       });
-
       if (!branch) {
         throw new NotFoundException({
           code: 'BRANCH_001',
@@ -470,7 +406,6 @@ export class ShowsService {
         });
       }
     }
-
     const updatedShow = await this.prisma.show.update({
       where: { id },
       data: updateData,
@@ -483,31 +418,23 @@ export class ShowsService {
         branch: true,
       },
     });
-
-    // Invalidate caches
     await this.invalidateShowCache(id, existingShow.slug || undefined);
-
     return updatedShow;
   }
-
   async softDelete(id: number, deletedBy: number) {
     const existingShow = await this.findById(id);
-
-    // Check if there are sold tickets
     const soldTicketsCount = await this.prisma.ticket.count({
       where: {
         showId: id,
         status: 'SOLD',
       },
     });
-
     if (soldTicketsCount > 0) {
       throw new BadRequestException({
         code: ERROR_CODES.SHOW_002,
         message: 'Không thể xóa show đã có vé bán. Vui lòng hủy show thay vì xóa.',
       });
     }
-
     await this.prisma.show.update({
       where: { id },
       data: {
@@ -515,31 +442,21 @@ export class ShowsService {
         updatedBy: deletedBy,
       },
     });
-
-    // Invalidate caches
     await this.invalidateShowCache(id, existingShow.slug || undefined);
-
     return { message: 'Đã xóa sự kiện thành công.' };
   }
-
-  /**
-   * Invalidate all caches related to a specific show
-   */
   async invalidateShowCache(showId: number, slug?: string) {
     const keysToDelete = [
       CacheKeys.show(showId),
       CacheKeys.showSeatMap(showId),
       CacheKeys.showTicketClasses(showId),
     ];
-
     if (slug) {
       keysToDelete.push(CacheKeys.showBySlug(slug));
     }
-
     await this.cache.delMany(keysToDelete);
     await this.cache.delPattern(CachePatterns.showLists());
   }
-
   private generateSlug(title: string): string {
     return title
       .toLowerCase()

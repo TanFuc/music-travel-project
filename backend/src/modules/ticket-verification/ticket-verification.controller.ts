@@ -11,10 +11,6 @@ import {
   ManualEntryDto,
   VerificationMethod,
 } from './dto/ticket-verification.dto';
-
-// ============================================================================
-// STAFF TICKET VERIFICATION ENDPOINTS
-// ============================================================================
 @ApiTags('ticket-verification')
 @Controller('tickets')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -22,18 +18,26 @@ import {
 @ApiBearerAuth()
 export class TicketVerificationController {
   constructor(private readonly ticketVerificationService: TicketVerificationService) {}
-
   @Post('verify')
   @ApiOperation({ summary: 'Verify ticket by code' })
   @ApiResponse({ status: 200, description: 'Verification result' })
-  async verifyTicket(@Body() dto: VerifyTicketDto, @CurrentUser() user: any) {
+  async verifyTicket(
+    @Body()
+    dto: VerifyTicketDto,
+    @CurrentUser()
+    user: any,
+  ) {
     return this.ticketVerificationService.verifyTicket(dto, user.sub);
   }
-
   @Post('verify-qr')
   @ApiOperation({ summary: 'Verify ticket by QR code scan' })
   @ApiResponse({ status: 200, description: 'Verification result' })
-  async verifyTicketByQR(@Body() dto: VerifyTicketByQRDto, @CurrentUser() user: any) {
+  async verifyTicketByQR(
+    @Body()
+    dto: VerifyTicketByQRDto,
+    @CurrentUser()
+    user: any,
+  ) {
     return this.ticketVerificationService.verifyTicketByQR(
       dto.qrData,
       dto.showId,
@@ -41,24 +45,24 @@ export class TicketVerificationController {
       dto.deviceInfo,
     );
   }
-
   @Get(':ticketCode/verification-history')
   @ApiOperation({ summary: 'Get verification history for a ticket' })
-  async getTicketVerificationHistory(@Param('ticketCode') ticketCode: string) {
+  async getTicketVerificationHistory(
+    @Param('ticketCode')
+    ticketCode: string,
+  ) {
     return this.ticketVerificationService.getTicketVerificationHistory(ticketCode);
   }
-
   @Get(':ticketCode/qr-data')
   @ApiOperation({ summary: 'Generate QR data for a ticket' })
-  async generateTicketQRData(@Param('ticketCode') ticketCode: string) {
+  async generateTicketQRData(
+    @Param('ticketCode')
+    ticketCode: string,
+  ) {
     const qrData = this.ticketVerificationService.generateTicketQRData(ticketCode);
     return { qrData };
   }
 }
-
-// ============================================================================
-// SHOW VERIFICATION MANAGEMENT ENDPOINTS
-// ============================================================================
 @ApiTags('show-verification')
 @Controller('shows/:showId/verifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -66,17 +70,20 @@ export class TicketVerificationController {
 @ApiBearerAuth()
 export class ShowVerificationController {
   constructor(private readonly ticketVerificationService: TicketVerificationService) {}
-
   @Get()
   @ApiOperation({ summary: 'Get verifications for a show' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'successfulOnly', required: false, type: Boolean })
   async getShowVerifications(
-    @Param('showId', ParseIntPipe) showId: number,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('successfulOnly') successfulOnly?: string,
+    @Param('showId', ParseIntPipe)
+    showId: number,
+    @Query('page')
+    page?: string,
+    @Query('limit')
+    limit?: string,
+    @Query('successfulOnly')
+    successfulOnly?: string,
   ) {
     return this.ticketVerificationService.getVerifications({
       showId,
@@ -85,28 +92,28 @@ export class ShowVerificationController {
       successfulOnly: successfulOnly === 'true',
     });
   }
-
   @Get('attendance')
   @ApiOperation({ summary: 'Get attendance stats for a show' })
-  async getShowAttendance(@Param('showId', ParseIntPipe) showId: number) {
+  async getShowAttendance(
+    @Param('showId', ParseIntPipe)
+    showId: number,
+  ) {
     return this.ticketVerificationService.getShowAttendance(showId);
   }
-
   @Post('manual-entry')
   @ApiOperation({ summary: 'Manual entry override (admin only)' })
   @Roles('ADMIN')
   async manualEntry(
-    @Param('showId', ParseIntPipe) showId: number,
-    @Body() dto: Omit<ManualEntryDto, 'showId'>,
-    @CurrentUser() user: any,
+    @Param('showId', ParseIntPipe)
+    showId: number,
+    @Body()
+    dto: Omit<ManualEntryDto, 'showId'>,
+    @CurrentUser()
+    user: any,
   ) {
     return this.ticketVerificationService.manualEntry({ ...dto, showId }, user.sub);
   }
 }
-
-// ============================================================================
-// ADMIN VERIFICATION DASHBOARD ENDPOINTS
-// ============================================================================
 @ApiTags('admin-verification')
 @Controller('admin/verifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -114,7 +121,6 @@ export class ShowVerificationController {
 @ApiBearerAuth()
 export class AdminVerificationController {
   constructor(private readonly ticketVerificationService: TicketVerificationService) {}
-
   @Get()
   @ApiOperation({ summary: 'Get all verifications with filters' })
   @ApiQuery({ name: 'showId', required: false, type: Number })
@@ -125,13 +131,20 @@ export class AdminVerificationController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getAllVerifications(
-    @Query('showId') showId?: string,
-    @Query('ticketId') ticketId?: string,
-    @Query('userId') userId?: string,
-    @Query('verificationMethod') verificationMethod?: string,
-    @Query('successfulOnly') successfulOnly?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query('showId')
+    showId?: string,
+    @Query('ticketId')
+    ticketId?: string,
+    @Query('userId')
+    userId?: string,
+    @Query('verificationMethod')
+    verificationMethod?: string,
+    @Query('successfulOnly')
+    successfulOnly?: string,
+    @Query('page')
+    page?: string,
+    @Query('limit')
+    limit?: string,
   ) {
     return this.ticketVerificationService.getVerifications({
       showId: showId ? parseInt(showId) : undefined,
