@@ -214,6 +214,7 @@ model Show {
   ticketVerifications            TicketVerification[]
   redeemedTickets                Ticket[]                  @relation("RedeemedTickets")
   tickets                        Ticket[]
+  linkedTours                    Tour[]                    @relation("TourLinkedShow")
 
   @@map("shows")
 }
@@ -312,6 +313,9 @@ model Tour {
   duration         String?        @db.VarChar(50)
   description      String?
   properties       Json?
+  minPrice         Decimal?       @map("min_price") @db.Decimal(15, 2)
+  isCombo          Boolean        @default(false) @map("is_combo")
+  linkedShowId     Int?           @map("linked_show_id")
   metaTitle        String?        @map("meta_title") @db.VarChar(255)
   metaDescription  String?        @map("meta_description") @db.VarChar(500)
   metaKeywords     String?        @map("meta_keywords") @db.VarChar(255)
@@ -325,6 +329,7 @@ model Tour {
   branch           Branch?        @relation(fields: [branchId], references: [id])
   departureLoc     Location?      @relation("DepartureLocation", fields: [departureLocId], references: [id])
   destinationLoc   Location?      @relation("DestinationLocation", fields: [destinationLocId], references: [id])
+  linkedShow       Show?          @relation("TourLinkedShow", fields: [linkedShowId], references: [id])
 
   @@map("tours")
 }
@@ -795,6 +800,18 @@ enum WalletTransactionType {
   WITHDRAW
   COMMISSION
   WITHDRAWAL
+}
+
+model SystemConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique @db.VarChar(100)
+  value       Json
+  type        String   @default("TEXT") @db.VarChar(50) // TEXT, JSON, ARRAY, IMAGE, HTML
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_configs")
 }
 
 enum MediaType {

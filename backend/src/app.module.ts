@@ -35,6 +35,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { CollaboratorModule } from './modules/collaborator/collaborator.module';
 import { SmartSupportModule } from './modules/smart-support/smart-support.module';
+import { SystemConfigsModule } from './modules/system-configs/system-configs.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { EnhancedLoggerService } from './common/services/enhanced-logger.service';
 import { CommonModule } from './common/common.module';
@@ -42,35 +43,26 @@ import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
 import cloudinaryConfig from './config/cloudinary.config';
-
+import r2Config from './config/r2.config';
+import { resolve } from 'path';
+const envRoot = resolve(__dirname, '..');
 @Module({
   imports: [
     CommonModule,
-    // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, redisConfig, cloudinaryConfig],
-      envFilePath: ['.env.local', '.env'],
+      load: [appConfig, databaseConfig, redisConfig, cloudinaryConfig, r2Config],
+      envFilePath: [resolve(envRoot, '.env.local'), resolve(envRoot, '.env')],
     }),
-
-    // Rate limiting
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
         limit: 100,
       },
     ]),
-
-    // Scheduling (Cron jobs)
     ScheduleModule.forRoot(),
-
-    // Database
     PrismaModule,
-
-    // Cache (Redis)
     CacheModule,
-
-    // Feature modules
     AuthModule,
     UsersModule,
     WalletModule,
@@ -102,6 +94,7 @@ import cloudinaryConfig from './config/cloudinary.config';
     AuditModule,
     CollaboratorModule,
     SmartSupportModule,
+    SystemConfigsModule,
   ],
   providers: [EnhancedLoggerService],
   exports: [EnhancedLoggerService],

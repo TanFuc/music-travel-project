@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MapPin, Calendar, Users, Trash, Edit } from 'lucide-react';
+import { MapPin, Calendar, Trash, Edit, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
@@ -10,7 +10,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { TourForm } from '@/components/admin/TourForm';
 import { toast } from 'sonner';
 
-export default function AdminToursPage() {
+export default function AdminCombosPage() {
   usePageTitle();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -18,15 +18,15 @@ export default function AdminToursPage() {
   const [editingItem, setEditingItem] = useState<any>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-tours', page],
-    queryFn: () => get<any>(`/tours?isCombo=false&page=${page}&limit=20`),
+    queryKey: ['admin-combos', page],
+    queryFn: () => get<any>(`/tours?isCombo=true&page=${page}&limit=20`),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => del(`/tours/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-tours'] });
-      toast.success('Xóa thành công!');
+      queryClient.invalidateQueries({ queryKey: ['admin-combos'] });
+      toast.success('Xóa combo thành công!');
     }
   });
 
@@ -34,23 +34,23 @@ export default function AdminToursPage() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold sm:text-2xl">Quản lý Tour Sinh Thái (isCombo = false)</h1>
-          <p className="mt-1 text-sm text-neutral-600 sm:text-base">{data?.meta?.total || 0} tour</p>
+          <h1 className="text-xl font-bold sm:text-2xl">Quản lý Combo (Show + Tour)</h1>
+          <p className="mt-1 text-sm text-neutral-600 sm:text-base">{data?.meta?.total || 0} combo</p>
         </div>
         <Button onClick={() => setIsCreating(true)} className="w-full gap-2 sm:w-auto">
-          <MapPin className="h-4 w-4" />
-          Tạo tour mới
+          <Star className="h-4 w-4" />
+          Tạo combo mới
         </Button>
       </div>
 
       {(isCreating || editingItem) && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingItem ? 'Sửa Tour' : 'Thêm Tour Mới'}</CardTitle>
+            <CardTitle>{editingItem ? 'Sửa Combo' : 'Thêm Combo Mới'}</CardTitle>
           </CardHeader>
           <CardContent>
             <TourForm 
-              isCombo={false} 
+              isCombo={true} 
               initialData={editingItem} 
               onSuccess={() => { setIsCreating(false); setEditingItem(null); }}
               onCancel={() => { setIsCreating(false); setEditingItem(null); }}
@@ -61,28 +61,28 @@ export default function AdminToursPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg">Danh sách tour</CardTitle>
+          <CardTitle className="text-base sm:text-lg">Danh sách Combo</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="space-y-4"><Skeleton className="h-24 w-full" /></div>
           ) : !data?.items?.length ? (
-            <div className="py-12 text-center text-neutral-500">Chưa có tour nào.</div>
+            <div className="py-12 text-center text-neutral-500">Chưa có combo nào.</div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {data.items.map((tour: any) => (
-                <div key={tour.id} className="rounded-lg border p-4 hover:shadow-md flex flex-col justify-between">
+                <div key={tour.id} className="rounded-lg border p-4 bg-amber-50 hover:shadow-md flex flex-col justify-between">
                   <div>
-                    <h3 className="mb-2 line-clamp-2 text-lg font-semibold">{tour.title}</h3>
-                    <p className="text-sm text-gray-500">Giá: {tour.minPrice || 0} VNĐ</p>
-                    <p className="text-sm text-gray-500 flex items-center gap-2"><Calendar className="h-4 w-4"/> {tour.duration || 'N/A'}</p>
+                    <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-amber-900">{tour.title}</h3>
+                    <p className="text-sm font-semibold text-amber-700">Linked Show ID: {tour.linkedShowId || 'Chưa Link'}</p>
+                    <p className="text-sm flex items-center gap-2"><Calendar className="h-4 w-4"/> {tour.duration || 'N/A'}</p>
                   </div>
                   <div className="flex gap-2 auto-cols-auto mt-4">
                     <Button variant="outline" size="sm" onClick={() => setEditingItem(tour)}>
                       <Edit className="h-4 w-4 mr-2" /> Sửa
                     </Button>
                     <Button variant="destructive" size="sm" onClick={() => {
-                      if(window.confirm('Xóa tour này?')) deleteMutation.mutate(tour.id);
+                      if(window.confirm('Xóa combo này?')) deleteMutation.mutate(tour.id);
                     }}>
                       <Trash className="h-4 w-4 mr-2" /> Xóa
                     </Button>
