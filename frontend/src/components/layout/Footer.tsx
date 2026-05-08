@@ -57,15 +57,6 @@ export function Footer() {
   });
   const safeConfigs =
     configs && typeof configs === 'object' && !Array.isArray(configs) ? configs : {};
-  const logoUrl =
-    safeConfigs['FOOTER_LOGO_URL'] || getSingleValue(channels, ContactChannelType.FOOTER_LOGO_URL);
-  const logoAlt =
-    safeConfigs['FOOTER_LOGO_ALT'] ||
-    getSingleValue(channels, ContactChannelType.FOOTER_LOGO_ALT) ||
-    getSingleValue(channels, ContactChannelType.FOOTER_BRAND_NAME);
-  const brandName =
-    safeConfigs['FOOTER_BRAND_NAME'] ||
-    getSingleValue(channels, ContactChannelType.FOOTER_BRAND_NAME);
   const brandDescription =
     safeConfigs['FOOTER_BRAND_DESCRIPTION'] ||
     getSingleValue(channels, ContactChannelType.FOOTER_BRAND_DESCRIPTION);
@@ -138,38 +129,30 @@ export function Footer() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   return (
-    <footer className="border-t border-gray-200 bg-brand-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-12">
-          <div className="space-y-4">
-            <Link href="/" className="group flex items-center gap-2">
-              {logoUrl && (
-                <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-brand-500/20 bg-white shadow-lg transition-all duration-300 group-hover:scale-105 group-hover:border-brand-500/40">
-                  <Image
-                    src={logoUrl}
-                    alt={logoAlt || brandName}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                  />
-                </div>
-              )}
-              {brandName ? (
-                <span className="font-display text-base font-bold text-gray-900">{brandName}</span>
-              ) : (
-                !logoUrl && (
-                  <span className="font-display text-2xl font-black tracking-tight text-brand-600">
-                    FSell
-                  </span>
-                )
-              )}
+    <footer className="border-t border-brand-100 bg-[#FDFDFF] py-12 md:py-16">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+          <div className="lg:col-span-4">
+            <Link href="/" className="mb-6 flex items-center gap-3">
+              <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-brand-500/20 bg-white shadow-md transition-all duration-300 group-hover:scale-105 group-hover:border-brand-500/40">
+                <Image
+                  src="/logo.png"
+                  alt="Mãi Cho Hành Tinh Xanh"
+                  fill
+                  className="object-cover"
+                  sizes="48px"
+                />
+              </div>
+              <span className="font-display text-xl font-black tracking-tight text-gray-900">
+                Mãi Cho Hành Tinh Xanh
+              </span>
             </Link>
-            {brandDescription ? (
-              <p className="text-xs leading-relaxed text-gray-600">{brandDescription}</p>
-            ) : null}
-
-            <div className="flex gap-3 pt-2">
-              {socialLinks.map((link) => {
+            <p className="mb-6 max-w-sm text-sm leading-relaxed text-gray-500">
+              {brandDescription ||
+                'Hệ sinh thái kết nối Âm nhạc đỉnh cao, Du lịch trải nghiệm Xanh và hoạt động Cộng đồng bền vững. Cùng Bizmall lan tỏa những giá trị tốt đẹp đến hành tinh.'}
+            </p>
+            <div className="flex gap-4">
+              {socialLinks.map((link: any) => {
                 const SocialIcon = resolveSocialIcon(link);
                 return (
                   <a
@@ -177,7 +160,7 @@ export function Footer() {
                     href={resolveHref(link)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-lg bg-brand-100 p-2 text-gray-600 transition-all hover:bg-brand-200 hover:text-brand-600"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-600 transition-all hover:bg-brand-600 hover:text-white"
                     aria-label={link.label}
                   >
                     <SocialIcon className="h-5 w-5" />
@@ -187,113 +170,98 @@ export function Footer() {
             </div>
           </div>
 
-          <div>
-            <h3 className="mb-3 font-display text-sm font-bold text-gray-900">
-              {displayAboutTitle}
-            </h3>
-            <ul className="space-y-3">
-              {displayAboutLinks.map((link) => (
-                <li key={link.id}>
-                  <Link
-                    href={link.value || resolveHref(link as any)}
-                    className="text-xs text-gray-600 transition-colors hover:text-brand-600"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          <div className="lg:col-span-5">
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <h3 className="mb-6 text-xs font-black uppercase tracking-widest text-brand-500">
+                  {displayAboutTitle}
+                </h3>
+                <ul className="space-y-4">
+                  {displayAboutLinks.map((link: any) => (
+                    <li key={link.id}>
+                      <Link
+                        href={link.value || resolveHref(link as any)}
+                        className="text-sm font-medium text-gray-600 transition-colors hover:text-brand-600"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="mb-6 text-xs font-black uppercase tracking-widest text-brand-500">
+                  {displayPolicyTitle}
+                </h3>
+                <ul className="space-y-4">
+                  {displayPolicyLinks.map((link: any) => (
+                    <li key={link.id}>
+                      <Link
+                        href={link.value || resolveHref(link as any)}
+                        className="text-sm font-medium text-gray-600 transition-colors hover:text-brand-600"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <h3 className="mb-3 font-display text-sm font-bold text-gray-900">
-              {displayPolicyTitle}
-            </h3>
-            <ul className="space-y-3">
-              {displayPolicyLinks.map((link) => (
-                <li key={link.id}>
-                  <Link
-                    href={link.value || resolveHref(link as any)}
-                    className="text-xs text-gray-600 transition-colors hover:text-brand-600"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="mb-3 font-display text-sm font-bold text-gray-900">
+          <div className="lg:col-span-3">
+            <h3 className="mb-6 text-xs font-black uppercase tracking-widest text-brand-500">
               {displayContactTitle}
             </h3>
-            <ul className="space-y-3">
-              {displayPhones.map((channel) => (
+            <ul className="space-y-4">
+              {displayPhones.map((channel: any) => (
                 <li key={channel.id}>
                   <a
-                    href={
-                      (channel as any).value
-                        ? `tel:${(channel as any).value.replace(/\s/g, '')}`
-                        : resolveHref(channel as any)
-                    }
-                    className="group grid grid-cols-[40px_1fr] items-center gap-3 rounded-xl px-2 py-1.5 text-xs text-gray-700 transition-all hover:bg-white/60 hover:text-brand-700"
+                    href={`tel:${(channel as any).value?.replace(/\s/g, '') || ''}`}
+                    className="flex items-center gap-3 text-sm font-medium text-gray-700 hover:text-brand-600"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 ring-1 ring-brand-200/70 transition-colors group-hover:bg-brand-200">
-                      <Phone className="h-4 w-4 text-brand-600" />
-                    </div>
-                    <span className="leading-tight">{channel.label || channel.value}</span>
+                    <Phone className="h-4 w-4 text-brand-400" />
+                    {channel.label || channel.value}
                   </a>
                 </li>
               ))}
-              {displayEmails.map((channel) => (
+              {displayEmails.map((channel: any) => (
                 <li key={channel.id}>
                   <a
-                    href={
-                      (channel as any).value
-                        ? `mailto:${(channel as any).value}`
-                        : resolveHref(channel as any)
-                    }
-                    className="group grid grid-cols-[40px_1fr] items-center gap-3 rounded-xl px-2 py-1.5 text-xs text-gray-700 transition-all hover:bg-white/60 hover:text-brand-700"
+                    href={`mailto:${channel.value || ''}`}
+                    className="flex items-center gap-3 text-sm font-medium text-gray-700 hover:text-brand-600"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 ring-1 ring-brand-200/70 transition-colors group-hover:bg-brand-200">
-                      <Mail className="h-4 w-4 text-brand-600" />
-                    </div>
-                    <span className="break-all leading-tight">
-                      {channel.label || channel.value}
-                    </span>
+                    <Mail className="h-4 w-4 text-brand-400" />
+                    {channel.label || channel.value}
                   </a>
                 </li>
               ))}
-              {displayAddresses.map((channel) => (
+              {displayAddresses.map((channel: any) => (
                 <li
                   key={channel.id}
-                  className="group grid grid-cols-[40px_1fr] items-center gap-3 rounded-xl px-2 py-1.5 text-xs text-gray-700 transition-all hover:bg-white/60"
+                  className="flex items-start gap-3 text-sm font-medium text-gray-700"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 ring-1 ring-brand-200/70 transition-colors group-hover:bg-brand-200">
-                    <MapPin className="h-4 w-4 text-brand-600" />
-                  </div>
-                  <span className="leading-tight">{channel.label || channel.value}</span>
+                  <MapPin className="mt-1 h-4 w-4 flex-shrink-0 text-brand-400" />
+                  <span>{channel.label || channel.value}</span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-8 md:flex-row">
-          {copyrightText ? (
-            <p className="text-center text-xs text-gray-500 md:text-left">{copyrightText}</p>
-          ) : null}
-          <div className="flex items-center gap-4">
-            {certificationText ? (
-              <div className="text-xs text-gray-400">{certificationText}</div>
-            ) : null}
+        <div className="mt-16 flex flex-col items-center justify-between gap-6 border-t border-brand-50 pt-8 md:flex-row">
+          <p className="text-sm font-medium text-gray-500">{copyrightText}</p>
+          <div className="flex items-center gap-6">
+            <span className="text-sm font-medium text-gray-400">
+              {certificationText || 'Bản quyền thuộc về FSell Technology'}
+            </span>
           </div>
         </div>
       </div>
 
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-6 right-6 z-50 rounded-full bg-brand-500 p-3 text-white shadow-neon transition-all duration-300 ${showBackToTop ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
+        className={`fixed bottom-8 right-8 z-50 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-xl shadow-brand-600/20 transition-all duration-300 hover:bg-brand-700 active:scale-95 ${showBackToTop ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
         aria-label="Về đầu trang"
       >
         <ArrowUp className="h-5 w-5" />

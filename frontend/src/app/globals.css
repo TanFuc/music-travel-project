@@ -64,22 +64,26 @@
     line-height: 1.6;
     font-weight: 400;
     -webkit-text-size-adjust: 100%;
-    /* Simplified background for maximum speed */
+    /* Simplified background for maximum speed with Grain Effect */
     background: #ffffff;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+    background-size: 200px 200px;
+    background-blend-mode: overlay;
+    opacity: 1;
+
     /* Fix layout shift when radix ui select opens */
     padding-right: 0px !important;
     pointer-events: auto !important;
   }
 
   /* Only use gradient on Large screens and with simple background-color for better mixing */
-  /* Simplified background - use a static gradient instead of fixed for better scroll performance */
   @media (min-width: 1280px) {
     body {
-      background: #ffffff;
       background-image: 
-        radial-gradient(circle at 0% 0%, rgba(20, 83, 45, 0.02) 0%, transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(76, 175, 80, 0.02) 0%, transparent 40%);
-      background-attachment: scroll;
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+        radial-gradient(circle at 0% 0%, rgba(20, 83, 45, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(76, 175, 80, 0.05) 0%, transparent 40%);
     }
   }
 
@@ -89,16 +93,15 @@
   h4,
   h5,
   h6 {
-    @apply font-display font-bold text-gray-900 tracking-tight;
-    line-height: 1.2;
-    /* Improved fluid typography approach */
+    @apply font-display font-black text-gray-950 tracking-tighter;
+    line-height: 1.1;
     text-wrap: balance;
   }
 
-  h1 { @apply text-3xl md:text-5xl lg:text-6xl; }
-  h2 { @apply text-2xl md:text-4xl lg:text-5xl; }
-  h3 { @apply text-xl md:text-3xl lg:text-4xl; }
-  h4 { @apply text-lg md:text-2xl lg:text-3xl; }
+  h1 { @apply text-4xl md:text-6xl lg:text-7xl xl:text-8xl; }
+  h2 { @apply text-3xl md:text-5xl lg:text-6xl; }
+  h3 { @apply text-2xl md:text-4xl lg:text-5xl; }
+  h4 { @apply text-xl md:text-3xl lg:text-4xl; }
 
   button,
   input,
@@ -374,11 +377,13 @@
   }
 }
 
-/* Smooth fade in animation - Optimized */
+/* SEO-SAFE fade-in: content is visible by default.
+   Animation adds a subtle entrance lift without hiding content from search bots.
+   NEVER start from opacity:0 in server-rendered HTML. */
 @keyframes fadeIn {
   from {
-    opacity: 0;
-    transform: translateY(20px);
+    opacity: 0.85;
+    transform: translateY(8px);
   }
 
   to {
@@ -388,7 +393,10 @@
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.5s ease-out forwards;
+  /* Default: fully visible (for Googlebot/no-JS) */
+  opacity: 1;
+  /* Animation overlaid by browser, starts on first paint */
+  animation: fadeIn 0.4s ease-out both;
 }
 
 /* Stagger animation delay classes */
@@ -410,4 +418,54 @@
 
 .stagger-5 {
   animation-delay: 0.5s;
+}
+
+/* Premium Itinerary Content Styling */
+.itinerary-rich-content {
+  @apply space-y-12 pb-10;
+}
+
+.itinerary-rich-content h3 {
+  @apply relative mt-16 first:mt-0 flex items-center gap-4 text-3xl font-black text-brand-900 uppercase tracking-tight;
+}
+
+.itinerary-rich-content h3::before {
+  content: '';
+  @apply absolute -left-8 top-1/2 h-[120%] w-0.5 -translate-y-1/2 bg-gradient-to-b from-brand-500/50 to-transparent;
+}
+
+/* Match "Ngày 1:", "Ngày 2:" etc. headers */
+.itinerary-rich-content h3:first-child::after {
+  content: '';
+  @apply absolute -left-[35px] top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-4 border-white bg-brand-600 shadow-lg shadow-brand-500/50;
+}
+
+.itinerary-rich-content h4 {
+  @apply mt-8 mb-4 flex items-center gap-3 text-lg font-bold text-brand-700 tracking-wide;
+}
+
+.itinerary-rich-content h4::before {
+  content: "✦";
+  @apply text-brand-500 text-xl font-black;
+}
+
+.itinerary-rich-content p {
+  @apply text-gray-600 leading-relaxed max-w-3xl mb-4 ml-0;
+}
+
+.itinerary-rich-content ul {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4 my-6 ml-0 list-none p-0;
+}
+
+.itinerary-rich-content li {
+  @apply flex items-start gap-3 rounded-2xl bg-white/50 p-4 ring-1 ring-gray-100/50 shadow-sm transition-all hover:shadow-md hover:ring-brand-100;
+}
+
+.itinerary-rich-content li::before {
+  content: "•";
+  @apply text-brand-600 font-black text-xl leading-none;
+}
+
+.itinerary-rich-content strong {
+  @apply text-brand-900 font-bold;
 }

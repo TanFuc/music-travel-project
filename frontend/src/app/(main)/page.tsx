@@ -4,6 +4,7 @@ import { LocationFilterClient } from '@/components/client/LocationFilterClient';
 import { ShowsSectionClient } from '@/components/client/ShowsSectionClient';
 import { StagesSectionServer } from '@/components/server/StagesSectionServer';
 import { ToursSectionServer } from '@/components/server/ToursSectionServer';
+import { CombosSectionServer } from '@/components/server/CombosSectionServer';
 import {
   HeroBannerSkeleton,
   LocationFilterSkeleton,
@@ -21,27 +22,28 @@ import {
 } from '@/lib/api-server';
 export const revalidate = 180;
 export const metadata = {
-  title: 'Music Travel - Khám phá âm nhạc và du lịch',
+  title: 'Mãi Cho Hành Tinh Xanh - Âm Nhạc, Du Lịch & Cộng Đồng',
   description:
-    'Nền tảng kết nối âm nhạc và du lịch hàng đầu Việt Nam. Khám phá show diễn, tour du lịch và sân khấu âm nhạc đẳng cấp.',
+    'Hệ sinh thái kết nối Âm nhạc đỉnh cao, Du lịch trải nghiệm Xanh và hoạt động Cộng đồng bền vững. Cùng Bizmall lan tỏa những giá trị tốt đẹp đến hành tinh.',
   openGraph: {
-    title: 'Music Travel - Khám phá âm nhạc và du lịch',
-    description: 'Nền tảng kết nối âm nhạc và du lịch hàng đầu Việt Nam',
+    title: 'Mãi Cho Hành Tinh Xanh - Âm Nhạc, Du Lịch & Cộng Đồng',
+    description: 'Hệ sinh thái kết nối Âm nhạc, Du lịch Xanh và Cộng đồng bền vững.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Music Travel - Khám phá âm nhạc và du lịch',
-    description: 'Nền tảng kết nối âm nhạc và du lịch hàng đầu Việt Nam',
+    title: 'Mãi Cho Hành Tinh Xanh - Âm Nhạc, Du Lịch & Cộng Đồng',
+    description: 'Hệ sinh thái kết nối Âm nhạc, Du lịch Xanh và Cộng đồng bền vững.',
   },
 };
 async function fetchHomeData() {
   try {
-    const [banners, showsData, stages, toursData, locations] = await Promise.all([
+    const [banners, showsData, stages, toursData, combosData, locations] = await Promise.all([
       serverAPI.banners.getHomeBanners().catch(() => [] as Banner[]),
       serverAPI.shows.getHomeShows().catch(() => ({ items: [] as Show[], meta: { total: 0 } })),
       serverAPI.stages.getHomeStages().catch(() => [] as HomeStage[]),
       serverAPI.tours.getHomeTours().catch(() => ({ items: [] as Tour[], meta: { total: 0 } })),
+      serverAPI.combos.getHomeCombos().catch(() => ({ items: [] as Tour[], meta: { total: 0 } })),
       serverAPI.locations.getAll().catch(() => [] as Location[]),
     ]);
     return {
@@ -49,14 +51,16 @@ async function fetchHomeData() {
       shows: showsData?.items || [],
       stages: Array.isArray(stages) ? stages : [],
       tours: toursData?.items || [],
+      combos: combosData?.items || [],
       locations: Array.isArray(locations) ? locations : [],
     };
-  } catch (error) {
+  } catch {
     return {
       banners: [],
       shows: [],
       stages: [],
       tours: [],
+      combos: [],
       locations: [],
     };
   }
@@ -89,7 +93,23 @@ export default async function HomePage() {
 
       <div className="lazy-section">
         <Suspense fallback={<ToursSectionSkeleton />}>
-          <ToursSectionServer tours={data.tours} />
+          <ToursSectionServer
+            tours={data.tours}
+            title="TOUR DU LỊCH SINH THÁI"
+            subtitle="Khám phá vẻ đẹp thuần khiết của thiên nhiên Việt Nam qua những hành trình xanh được thiết kế dành riêng cho tâm hồn yêu thiên nhiên."
+            icon="🏔️"
+          />
+        </Suspense>
+      </div>
+
+      <div className="lazy-section">
+        <Suspense fallback={<ToursSectionSkeleton />}>
+          <CombosSectionServer
+            combos={data.combos}
+            title="SIÊU COMBO ĐÊM NHẠC & TOUR"
+            subtitle="Trải nghiệm Eco-Music độc bản: Sự giao hưởng giữa giai điệu âm nhạc đỉnh cao và không gian nghỉ dưỡng sinh thái đẳng cấp."
+            icon="🎼"
+          />
         </Suspense>
       </div>
     </div>

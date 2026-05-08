@@ -32,11 +32,11 @@ interface Location {
 const navLinks = [
   { href: '/about', label: 'Giới thiệu' },
   {
-    label: 'Mua Vé',
+    label: 'Hành Trình',
     hasSubmenu: true,
     submenu: [
-      { href: '/shows', label: 'Vé ca nhạc' },
-      { href: '/tours', label: 'Vé tour du lịch' },
+      { href: '/shows', label: 'Đêm nhạc sinh thái' },
+      { href: '/tours', label: 'Tour trải nghiệm' },
       { href: '/combo', label: 'Combo Show & Tour' },
     ],
   },
@@ -60,7 +60,7 @@ export function Header() {
       try {
         const response = await get<Location[]>('/locations');
         return Array.isArray(response) ? response : [];
-      } catch (error) {
+      } catch {
         return [];
       }
     },
