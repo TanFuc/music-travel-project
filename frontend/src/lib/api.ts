@@ -1,6 +1,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const isServer = typeof window === 'undefined';
+const API_URL =
+  !isServer && process.env.NODE_ENV === 'production'
+    ? '/api'
+    : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2222/api/v1';
 const pendingRequests = new Map<string, Promise<any>>();
 function getRequestKey(config: any): string {
   return `${config.method}-${config.url}-${JSON.stringify(config.params || {})}-${JSON.stringify(config.data || {})}`;
@@ -64,7 +68,7 @@ api.interceptors.response.use(
         } else {
           throw new Error('No refresh token');
         }
-      } catch (refreshError) {
+      } catch {
         useAuthStore.getState().logout();
         if (typeof window !== 'undefined') {
           if (window.location.pathname !== '/login') {

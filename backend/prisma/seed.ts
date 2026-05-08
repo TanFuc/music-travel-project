@@ -757,69 +757,66 @@ async function main() {
   const tours = await Promise.all([
     prisma.tour.create({
       data: {
-        title: 'Tour Đà Lạt 3N2Đ - Combo Vé Show Mây Lang Thang',
-        slug: 'tour-da-lat-3n2d-combo-may-lang-thang',
+        title: 'Trekking Langbiang - Đà Lạt 2N1Đ',
+        slug: 'trekking-langbiang-da-lat-2n1d',
         departureLocId: saiGon.id,
         destinationLocId: daLat.id,
-        duration: '3 ngày 2 đêm',
+        duration: '2 ngày 1 đêm',
+        isCombo: false,
         description: `
-          <h3>Hành trình khám phá Đà Lạt</h3>
-          <p>Tour kết hợp tham quan Đà Lạt và xem show âm nhạc tại Thung Lũng Mây.</p>
-          <h4>Ngày 1: Sài Gòn - Đà Lạt</h4>
+          <h3>Chinh phục đỉnh Langbiang</h3>
+          <p>Hành trình trekking đỉnh Langbiang 2167m - nóc nhà Đà Lạt, ngắm bình minh trên biển mây.</p>
+          <h4>Ngày 1: Sài Gòn - Đà Lạt - Langbiang</h4>
           <ul>
-            <li>6h00: Khởi hành từ Sài Gòn</li>
-            <li>12h00: Đến Đà Lạt, nhận phòng khách sạn</li>
-            <li>14h00: Tham quan Thung Lũng Tình Yêu</li>
-            <li>19h00: Check-in show Mây Lang Thang</li>
+            <li>5h00: Khởi hành từ Sài Gòn bằng xe limousine</li>
+            <li>11h00: Đến Đà Lạt, nhận phòng homestay chân núi</li>
+            <li>14h00: Bắt đầu trekking đường mòn rừng thông</li>
+            <li>17h00: Cắm trại tại điểm dừng 1800m</li>
+            <li>19h00: BBQ lửa trại, ngắm sao trời</li>
           </ul>
-          <h4>Ngày 2: Khám phá Đà Lạt</h4>
+          <h4>Ngày 2: Đỉnh Langbiang - Về Sài Gòn</h4>
           <ul>
-            <li>Tham quan Đồi Chè Cầu Đất</li>
-            <li>Thăm làng hoa Vạn Thành</li>
-            <li>Khám phá chợ đêm Đà Lạt</li>
-          </ul>
-          <h4>Ngày 3: Đà Lạt - Sài Gòn</h4>
-          <ul>
-            <li>Tham quan Hồ Tuyền Lâm</li>
-            <li>12h00: Khởi hành về Sài Gòn</li>
+            <li>4h30: Xuất phát chinh phục đỉnh</li>
+            <li>6h00: Ngắm bình minh trên đỉnh 2167m</li>
+            <li>9h00: Hạ sơn, ăn sáng tại homestay</li>
+            <li>12h00: Tham quan chợ Đà Lạt</li>
+            <li>14h00: Khởi hành về Sài Gòn</li>
           </ul>
         `,
         properties: {
-          includes: ['Xe đưa đón', 'Khách sạn 3*', 'Vé show', 'Bữa sáng', 'HDV'],
-          excludes: ['Chi phí cá nhân', 'Bữa trưa, tối'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1587595431973-160d0d94add1?w=800&h=500&fit=crop'
+          includes: ['Xe limousine đưa đón', 'Homestay 1 đêm', 'Bữa sáng + BBQ tối', 'HDV trekking chuyên nghiệp', 'Lều trại + đồ cắm trại'],
+          excludes: ['Chi phí cá nhân', 'Bữa trưa ngày 2'],
+          thumbnailUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
       },
     }),
     prisma.tour.create({
       data: {
-        title: 'Tour Hà Nội - Ninh Bình 2N1Đ + Show Acoustic',
-        slug: 'tour-ha-noi-ninh-binh-2n1d',
+        title: 'Kayak Tràng An - Ninh Bình 1 Ngày',
+        slug: 'kayak-trang-an-ninh-binh-1-ngay',
         departureLocId: haNoi.id,
         destinationLocId: ninhBinh.id,
-        duration: '2 ngày 1 đêm',
+        duration: '1 ngày',
+        isCombo: false,
         description: `
-          <h3>Khám phá Ninh Bình - Tràng An</h3>
-          <p>Tour kết hợp tham quan di sản UNESCO và đêm nhạc acoustic.</p>
-          <h4>Ngày 1</h4>
+          <h3>Chèo kayak xuyên Tràng An</h3>
+          <p>Trải nghiệm chèo kayak qua 12 hang động và thung lũng tại di sản UNESCO Tràng An.</p>
+          <h4>Lịch trình chi tiết</h4>
           <ul>
-            <li>7h00: Khởi hành từ Hà Nội</li>
-            <li>9h00: Đến Ninh Bình</li>
-            <li>Tham quan Tràng An</li>
-            <li>Thăm chùa Bái Đính</li>
-            <li>19h00: Đêm nhạc Acoustic</li>
-          </ul>
-          <h4>Ngày 2</h4>
-          <ul>
-            <li>Khám phá Hang Múa</li>
-            <li>Tham quan Tam Cốc</li>
-            <li>15h00: Về Hà Nội</li>
+            <li>6h30: Xe đón tại Hà Nội</li>
+            <li>9h00: Đến bến thuyền Tràng An</li>
+            <li>9h30: Nhận kayak, hướng dẫn an toàn</li>
+            <li>10h00: Bắt đầu chèo - Hang Sáng → Hang Tối → Hang Ba Giọt</li>
+            <li>12h00: Nghỉ trưa tại đảo giữa hồ, ăn trưa picnic</li>
+            <li>13h30: Tiếp tục chèo - Thung Nham → Đền Trần</li>
+            <li>15h30: Kết thúc, tắm rửa</li>
+            <li>16h00: Khởi hành về Hà Nội</li>
           </ul>
         `,
         properties: {
-          includes: ['Xe đưa đón', 'Khách sạn 3*', 'Vé show', 'Bữa sáng', 'HDV', 'Vé tham quan'],
-          excludes: ['Chi phí cá nhân'],
+          includes: ['Xe đưa đón', 'Kayak + áo phao', 'Bữa trưa picnic', 'HDV', 'Vé tham quan', 'Bảo hiểm'],
+          excludes: ['Chi phí cá nhân', 'Tip cho HDV'],
           thumbnailUrl: 'https://images.unsplash.com/photo-1583417267826-aebc4d1542e1?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
@@ -827,50 +824,73 @@ async function main() {
     }),
     prisma.tour.create({
       data: {
-        title: 'Tour Phú Quốc 4N3Đ - Sunset Concert',
-        slug: 'tour-phu-quoc-4n3d-sunset-concert',
+        title: 'Lặn San Hô Phú Quốc 3N2Đ',
+        slug: 'lan-san-ho-phu-quoc-3n2d',
         departureLocId: saiGon.id,
         destinationLocId: phuQuoc.id,
-        duration: '4 ngày 3 đêm',
+        duration: '3 ngày 2 đêm',
+        isCombo: false,
         description: `
-          <h3>Thiên đường biển đảo Phú Quốc</h3>
-          <p>Trải nghiệm đảo ngọc với concert hoàng hôn đặc biệt.</p>
-          <h4>Ngày 1</h4>
-          <li>Bay Sài Gòn - Phú Quốc</li>
-          <li>Nhận phòng resort</li>
-          <li>Tự do khám phá</li>
-          <h4>Ngày 2</h4>
-          <li>Tour 4 đảo</li>
-          <li>Lặn ngắm san hô</li>
-          <h4>Ngày 3</h4>
-          <li>Tham quan VinWonders</li>
-          <li>17h00: Sunset Concert</li>
-          <h4>Ngày 4</h4>
-          <li>Tự do mua sắm</li>
-          <li>Bay về Sài Gòn</li>
+          <h3>Khám phá đại dương Phú Quốc</h3>
+          <p>Tour lặn biển chuyên nghiệp, khám phá rạn san hô nguyên sinh tại Hòn Thơm.</p>
+          <h4>Ngày 1: Bay đến Phú Quốc</h4>
+          <ul>
+            <li>Bay Sài Gòn → Phú Quốc</li>
+            <li>Nhận phòng resort biển</li>
+            <li>Chiều: Tự do tắm biển Bãi Sao</li>
+          </ul>
+          <h4>Ngày 2: Tour lặn biển</h4>
+          <ul>
+            <li>7h00: Khởi hành ra Hòn Thơm bằng cano</li>
+            <li>9h00: Lặn snorkeling điểm 1 - Rạn san hô cứng</li>
+            <li>11h00: Lặn scuba điểm 2 - Vườn san hô mềm</li>
+            <li>12h30: Ăn trưa trên đảo hoang</li>
+            <li>14h00: Lặn điểm 3 - Hang động ngầm</li>
+          </ul>
+          <h4>Ngày 3: Về Sài Gòn</h4>
+          <ul>
+            <li>Tham quan chợ đêm Phú Quốc</li>
+            <li>Bay về Sài Gòn</li>
+          </ul>
         `,
         properties: {
-          includes: ['Vé máy bay', 'Resort 4*', 'Vé show', 'Tour 4 đảo', 'Vé VinWonders'],
-          excludes: ['Chi phí cá nhân', 'Bữa ăn ngoài tour'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=800&h=500&fit=crop'
+          includes: ['Vé máy bay khứ hồi', 'Resort 3* ven biển', 'Tour lặn + thiết bị', 'Cano ra đảo', 'Bữa trưa trên đảo', 'HDV lặn chuyên nghiệp'],
+          excludes: ['Chi phí cá nhân', 'Bữa tối'],
+          thumbnailUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
       },
     }),
     prisma.tour.create({
       data: {
-        title: 'Tour Đà Nẵng - Hội An 3N2Đ + Folk Night',
-        slug: 'tour-da-nang-hoi-an-3n2d-folk-night',
-        departureLocId: saiGon.id,
+        title: 'Đạp Xe Hội An - Mỹ Sơn 2N1Đ',
+        slug: 'dap-xe-hoi-an-my-son-2n1d',
+        departureLocId: daNang.id,
         destinationLocId: daNang.id,
-        duration: '3 ngày 2 đêm',
+        duration: '2 ngày 1 đêm',
+        isCombo: false,
         description: `
-          <h3>Miền Trung thơ mộng</h3>
-          <p>Khám phá Đà Nẵng - Hội An cùng đêm nhạc Folk đặc sắc.</p>
+          <h3>Đạp xe khám phá miền Trung</h3>
+          <p>Tour đạp xe xanh từ phố cổ Hội An đến thánh địa Mỹ Sơn, xuyên qua làng quê yên bình.</p>
+          <h4>Ngày 1: Hội An cycling</h4>
+          <ul>
+            <li>6h00: Nhận xe đạp tại Hội An</li>
+            <li>6h30: Đạp xe qua cánh đồng lúa, làng rau Trà Quế</li>
+            <li>9h00: Tham quan phố cổ Hội An</li>
+            <li>12h00: Ăn trưa Cao Lầu, Mì Quảng</li>
+            <li>14h00: Đạp xe ven sông Thu Bồn về homestay</li>
+            <li>18h00: Thả đèn hoa đăng trên sông Hoài</li>
+          </ul>
+          <h4>Ngày 2: Mỹ Sơn - Về Đà Nẵng</h4>
+          <ul>
+            <li>5h30: Đạp xe đến thánh địa Mỹ Sơn (35km)</li>
+            <li>8h00: Tham quan di tích Chăm Pa UNESCO</li>
+            <li>11h00: Xe đưa về Đà Nẵng</li>
+          </ul>
         `,
         properties: {
-          includes: ['Vé máy bay', 'Khách sạn 4*', 'Vé show', 'Xe đưa đón'],
-          excludes: ['Chi phí cá nhân'],
+          includes: ['Xe đạp + mũ bảo hiểm', 'Homestay 1 đêm', 'Bữa sáng + trưa', 'HDV đạp xe', 'Vé tham quan Mỹ Sơn', 'Xe hỗ trợ'],
+          excludes: ['Chi phí cá nhân', 'Bữa tối'],
           thumbnailUrl: 'https://images.unsplash.com/photo-1578271887552-5ac3a72752bc?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
@@ -878,19 +898,127 @@ async function main() {
     }),
     prisma.tour.create({
       data: {
-        title: 'Tour Nha Trang 3N2Đ - Beach Concert',
-        slug: 'tour-nha-trang-3n2d-beach-concert',
+        title: 'Rừng Ngập Mặn Cần Giờ 1 Ngày',
+        slug: 'rung-ngap-man-can-gio-1-ngay',
+        departureLocId: saiGon.id,
+        destinationLocId: saiGon.id,
+        duration: '1 ngày',
+        isCombo: false,
+        description: `
+          <h3>Lá phổi xanh Sài Gòn</h3>
+          <p>Khám phá khu dự trữ sinh quyển rừng ngập mặn Cần Giờ - lá phổi xanh của TP.HCM.</p>
+          <h4>Lịch trình chi tiết</h4>
+          <ul>
+            <li>6h00: Xe đón tại trung tâm Sài Gòn</li>
+            <li>8h00: Đến rừng Sác, tham quan đài quan sát</li>
+            <li>9h30: Chèo thuyền kayak qua rừng đước</li>
+            <li>11h00: Tham quan trại khỉ tự nhiên</li>
+            <li>12h00: Ăn trưa hải sản tại nhà hàng ven sông</li>
+            <li>14h00: Tham quan biển Cần Giờ, đảo Khỉ</li>
+            <li>16h00: Khởi hành về Sài Gòn</li>
+          </ul>
+        `,
+        properties: {
+          includes: ['Xe đưa đón', 'Vé tham quan', 'Kayak', 'Bữa trưa hải sản', 'HDV', 'Bảo hiểm'],
+          excludes: ['Chi phí cá nhân'],
+          thumbnailUrl: 'https://images.unsplash.com/photo-1621252179027-94459d278660?w=800&h=500&fit=crop'
+        },
+        createdBy: adminUser.id,
+      },
+    }),
+  ]);
+
+  // ============================================================================
+  // 8B. CREATE COMBOS (Tour + Show)
+  // ============================================================================
+  console.log('🎼 Creating combos (Tour + Show)...');
+  const combos = await Promise.all([
+    prisma.tour.create({
+      data: {
+        title: 'Combo Đà Lạt 3N2Đ + Đêm Nhạc Trịnh',
+        slug: 'combo-da-lat-3n2d-dem-nhac-trinh',
+        departureLocId: saiGon.id,
+        destinationLocId: daLat.id,
+        duration: '3 ngày 2 đêm',
+        isCombo: true,
+        linkedShowId: shows[0].id,
+        description: '<p>Trọn gói nghỉ dưỡng Đà Lạt kết hợp đêm nhạc Trịnh tại Thung Lũng Mây. Bao gồm khách sạn, xe đưa đón và vé show.</p>',
+        properties: {
+          includes: ['Xe limousine SG-ĐL', 'Khách sạn 4* 2 đêm', 'Vé show Đêm Nhạc Trịnh', 'Bữa sáng', 'HDV'],
+          excludes: ['Chi phí cá nhân', 'Bữa trưa/tối'],
+          thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=500&fit=crop'
+        },
+        createdBy: adminUser.id,
+      },
+    }),
+    prisma.tour.create({
+      data: {
+        title: 'Combo Đà Lạt 2N1Đ + Acoustic Night',
+        slug: 'combo-da-lat-2n1d-acoustic-night',
+        departureLocId: saiGon.id,
+        destinationLocId: daLat.id,
+        duration: '2 ngày 1 đêm',
+        isCombo: true,
+        linkedShowId: shows[1].id,
+        description: '<p>Gói nghỉ dưỡng cuối tuần tại Đà Lạt với đêm acoustic ấm cúng tại Mây In The Nest.</p>',
+        properties: {
+          includes: ['Xe đưa đón', 'Homestay 1 đêm', 'Vé show Acoustic Night', 'Bữa sáng'],
+          excludes: ['Chi phí cá nhân'],
+          thumbnailUrl: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&h=500&fit=crop'
+        },
+        createdBy: adminUser.id,
+      },
+    }),
+    prisma.tour.create({
+      data: {
+        title: 'Combo Sài Gòn City + Jazz Night',
+        slug: 'combo-sai-gon-city-jazz-night',
+        departureLocId: haNoi.id,
+        destinationLocId: saiGon.id,
+        duration: '2 ngày 1 đêm',
+        isCombo: true,
+        linkedShowId: shows[2].id,
+        description: '<p>Trải nghiệm Sài Gòn by night: city tour ban ngày, Jazz Under The Stars ban đêm tại Sky Garden.</p>',
+        properties: {
+          includes: ['Vé máy bay HN-SG', 'Khách sạn 4* 1 đêm', 'Vé show Jazz', 'City tour xe bus 2 tầng'],
+          excludes: ['Chi phí cá nhân', 'Bữa ăn'],
+          thumbnailUrl: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&h=500&fit=crop'
+        },
+        createdBy: adminUser.id,
+      },
+    }),
+    prisma.tour.create({
+      data: {
+        title: 'Combo Nha Trang 3N2Đ + Beach Concert',
+        slug: 'combo-nha-trang-3n2d-beach-concert',
         departureLocId: saiGon.id,
         destinationLocId: nhaTrang.id,
         duration: '3 ngày 2 đêm',
-        description: `
-          <h3>Biển xanh Nha Trang</h3>
-          <p>Nghỉ dưỡng biển kết hợp concert bãi biển.</p>
-        `,
+        isCombo: true,
+        linkedShowId: shows[6].id,
+        description: '<p>Nghỉ dưỡng biển Nha Trang kết hợp Beach Sunset Concert. Trọn gói resort, tour đảo và vé concert.</p>',
         properties: {
-          includes: ['Xe giường nằm', 'Resort 4*', 'Vé show', 'Tour 3 đảo'],
+          includes: ['Xe giường nằm', 'Resort 4* 2 đêm', 'Vé Beach Concert', 'Tour 3 đảo', 'Bữa sáng'],
+          excludes: ['Chi phí cá nhân', 'Bữa trưa/tối'],
+          thumbnailUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&h=500&fit=crop'
+        },
+        createdBy: adminUser.id,
+      },
+    }),
+    prisma.tour.create({
+      data: {
+        title: 'Combo Hà Nội + Indie Night',
+        slug: 'combo-ha-noi-indie-night',
+        departureLocId: saiGon.id,
+        destinationLocId: haNoi.id,
+        duration: '2 ngày 1 đêm',
+        isCombo: true,
+        linkedShowId: shows[3].id,
+        description: '<p>Khám phá Hà Nội cổ kính ban ngày, tận hưởng đêm nhạc Indie tại The Nest Hanoi ban đêm.</p>',
+        properties: {
+          includes: ['Vé máy bay SG-HN', 'Khách sạn 3* phố cổ 1 đêm', 'Vé show Indie Night', 'Walking tour phố cổ'],
           excludes: ['Chi phí cá nhân', 'Bữa ăn'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=500&fit=crop'
+          thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=500&fit=crop'
         },
         createdBy: adminUser.id,
       },
@@ -902,9 +1030,11 @@ async function main() {
   // ============================================================================
   console.log('📅 Creating tour schedules...');
 
-  for (const tour of tours) {
+  const allToursAndCombos = [...tours, ...combos];
+  for (const tour of allToursAndCombos) {
     const scheduleDates = [15, 22, 29, 36, 43, 50, 57, 64, 71, 78];
     const basePrice = tour.title.includes('Phú Quốc') ? 4590000 :
+      tour.title.includes('Combo') ? 3290000 :
       tour.title.includes('3N2Đ') ? 2990000 : 1890000;
 
     for (let i = 0; i < scheduleDates.length; i++) {
@@ -1204,9 +1334,10 @@ async function main() {
   ]);
 
   // ============================================================================
-  // 14. SEED SINGER PACKAGES
+  // 14. SEED SINGER PACKAGES & PAYMENT METHODS
   // ============================================================================
   await seedSingerPackages();
+  await seedPaymentMethods(prisma);
 
   // ============================================================================
   // SUMMARY

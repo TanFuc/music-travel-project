@@ -61,9 +61,7 @@ export class ToursService {
           slug: filterDto.destination,
         },
       }),
-      ...(filterDto.isCombo !== undefined && {
-        isCombo: filterDto.isCombo,
-      }),
+      ...(filterDto.isCombo !== undefined ? { isCombo: filterDto.isCombo } : {}),
     };
     const [tours, total] = await Promise.all([
       this.prisma.tour.findMany({

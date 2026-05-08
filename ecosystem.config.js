@@ -5,19 +5,30 @@ module.exports = {
       script: 'pnpm',
       args: 'run start:prod',
       cwd: './backend',
-      env_production: {
+      exec_mode: 'fork',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
         NODE_ENV: 'production',
-      },
+        PORT: 2222
+      }
     },
     {
       name: 'fsell-frontend',
       script: 'pnpm',
-      args: 'start',
+      args: 'run start',
       cwd: './frontend',
-      env_production: {
+      exec_mode: 'fork',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
         NODE_ENV: 'production',
-        PORT: 3000,
-      },
-    },
-  ],
+        PORT: 3333
+      }
+    }
+  ]
 };

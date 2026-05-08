@@ -5,7 +5,7 @@ import { CacheService } from '@/cache/cache.service';
 import { ConfigService } from '@nestjs/config';
 describe('BookingsService Base Mock', () => {
   let service: BookingsService;
-  const mockPrismaService = {
+  const mockPrismaService: any = {
     booking: {
       create: jest.fn(),
       findUnique: jest.fn(),
