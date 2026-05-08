@@ -6,7 +6,7 @@
     "dev": "node scripts/dev.js",
     "dev:webpack": "next dev -p 3333",
     "build": "next build",
-    "start": "next start -p 3333",
+    "start": "next build && next start -p 3333",
     "lint": "next lint --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",

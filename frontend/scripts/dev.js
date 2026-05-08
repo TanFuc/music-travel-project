@@ -17,6 +17,7 @@ if (fs.existsSync(envPath)) {
   }
 }
 
+// eslint-disable-next-line no-console
 console.log(`> Starting frontend on port ${port}...`);
 
 // Determine the command to run

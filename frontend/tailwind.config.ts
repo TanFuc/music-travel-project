@@ -22,6 +22,7 @@ const config: Config = {
           700: '#388E3C',
           800: '#2E7D32',  // Dark green (main logo color)
           900: '#1B5E20',  // Darkest
+          950: '#0D2611',  // Deepest dark green for backgrounds
         },
         // Accent - Lime green
         accent: {

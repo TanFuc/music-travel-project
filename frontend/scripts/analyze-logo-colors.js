@@ -78,6 +78,7 @@ function hexToRgb(hex) {
 /**
  * Generate color palette shades from base color
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 function generatePalette(baseHex, name) {
   const hsl = hexToHsl(baseHex);
   if (!hsl) return null;
@@ -101,6 +102,7 @@ function generatePalette(baseHex, name) {
 
 function adjustLightness(hsl, newL) {
   const h = hsl.h;
+// eslint-disable-next-line unused-imports/no-unused-vars
   const s = hsl.s;
 
   // Convert HSL to HEX
@@ -169,6 +171,7 @@ accent: {
 function generateCssVariables() {
   const primaryHsl = hexToHsl(LOGO_COLORS.primaryLight);
   const accentHsl = hexToHsl(LOGO_COLORS.accent);
+// eslint-disable-next-line unused-imports/no-unused-vars
   const primaryRgb = hexToRgb(LOGO_COLORS.primaryLight);
 
   return `
@@ -297,41 +300,66 @@ backgroundImage: {
  * Main function
  */
 function main() {
+// eslint-disable-next-line no-console
   console.log('\n🎨 ═══════════════════════════════════════════════════════════');
+// eslint-disable-next-line no-console
   console.log('   LOGO COLOR ANALYZER - "Mãi Cho Hành Tinh Xanh"');
+// eslint-disable-next-line no-console
   console.log('═══════════════════════════════════════════════════════════\n');
 
+// eslint-disable-next-line no-console
   console.log('📊 ANALYZED LOGO COLORS:');
+// eslint-disable-next-line no-console
   console.log('─────────────────────────────────────────────────────────────');
   Object.entries(LOGO_COLORS).forEach(([name, hex]) => {
     const hsl = hexToHsl(hex);
     const rgb = hexToRgb(hex);
+// eslint-disable-next-line no-console
     console.log(`  ${name.padEnd(15)} │ ${hex} │ HSL(${hsl?.css || 'N/A'}) │ RGB(${rgb?.css || 'N/A'})`);
   });
+// eslint-disable-next-line no-console
   console.log('─────────────────────────────────────────────────────────────\n');
 
+// eslint-disable-next-line no-console
   console.log('📝 GENERATED TAILWIND COLORS:');
+// eslint-disable-next-line no-console
   console.log(generateTailwindColors());
 
+// eslint-disable-next-line no-console
   console.log('📝 GENERATED CSS VARIABLES:');
+// eslint-disable-next-line no-console
   console.log(generateCssVariables());
 
+// eslint-disable-next-line no-console
   console.log('📝 GENERATED BOX SHADOWS:');
+// eslint-disable-next-line no-console
   console.log(generateBoxShadows());
 
+// eslint-disable-next-line no-console
   console.log('📝 GENERATED GRADIENTS:');
+// eslint-disable-next-line no-console
   console.log(generateGradients());
 
+// eslint-disable-next-line no-console
   console.log('📝 GENERATED PARTICLES CSS:');
+// eslint-disable-next-line no-console
   console.log(generateParticlesCss());
 
+// eslint-disable-next-line no-console
   console.log('\n✅ COLOR ANALYSIS COMPLETE!');
+// eslint-disable-next-line no-console
   console.log('─────────────────────────────────────────────────────────────');
+// eslint-disable-next-line no-console
   console.log('Next steps:');
+// eslint-disable-next-line no-console
   console.log('  1. Copy the Tailwind colors to tailwind.config.ts');
+// eslint-disable-next-line no-console
   console.log('  2. Copy the CSS variables to globals.css');
+// eslint-disable-next-line no-console
   console.log('  3. Update box shadows in tailwind.config.ts');
+// eslint-disable-next-line no-console
   console.log('  4. Update particles CSS in globals.css');
+// eslint-disable-next-line no-console
   console.log('─────────────────────────────────────────────────────────────\n');
 
   // Save to file
@@ -361,6 +389,7 @@ ${generateParticlesCss()}
 
   const outputPath = path.join(__dirname, 'logo-color-analysis.md');
   fs.writeFileSync(outputPath, output, 'utf8');
+// eslint-disable-next-line no-console
   console.log(`📄 Report saved to: ${outputPath}\n`);
 }
 
