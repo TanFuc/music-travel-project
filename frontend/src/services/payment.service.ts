@@ -115,7 +115,7 @@ class PaymentService {
     try {
       await navigator.clipboard.writeText(text);
       return true;
-    } catch (err) {
+    } catch {
       const textArea = document.createElement('textarea');
       textArea.value = text;
       document.body.appendChild(textArea);
@@ -136,7 +136,7 @@ class PaymentService {
         url: data.deeplink || undefined,
       });
       return true;
-    } catch (err) {
+    } catch {
       return false;
     }
   }

@@ -142,7 +142,7 @@ export function SearchResultsClient({
           const data = await response.json();
           setResults(data);
         }
-      } catch (error) {
+      } catch {
       } finally {
         setIsLoading(false);
       }

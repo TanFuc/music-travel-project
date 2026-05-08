@@ -57,19 +57,19 @@ export interface ReplyComplaintDto {
 }
 export const getPublicFAQs = async (): Promise<Record<string, SupportQuestion[]>> => {
   const response = await api.get('/support/faq');
-  return response.data;
+  return response.data?.data || {};
 };
 export const getFAQCategories = async (): Promise<string[]> => {
   const response = await api.get('/support/faq/categories');
-  return response.data;
+  return response.data?.data || [];
 };
 export const submitComplaint = async (dto: CreateComplaintDto): Promise<Complaint> => {
   const response = await api.post('/support/complaints', dto);
-  return response.data;
+  return response.data?.data;
 };
 export const getMyComplaints = async (params: { page?: number; limit?: number }) => {
   const response = await api.get('/support/my-complaints', { params });
-  return response.data;
+  return response.data?.data;
 };
 export const getAllFAQs = async (params: {
   page?: number;
@@ -78,19 +78,19 @@ export const getAllFAQs = async (params: {
   isActive?: boolean;
 }) => {
   const response = await api.get('/admin/faq', { params });
-  return response.data;
+  return response.data?.data;
 };
 export const getFAQById = async (id: number): Promise<SupportQuestion> => {
   const response = await api.get(`/admin/faq/${id}`);
-  return response.data;
+  return response.data?.data;
 };
 export const createFAQ = async (dto: CreateQuestionDto): Promise<SupportQuestion> => {
   const response = await api.post('/admin/faq', dto);
-  return response.data;
+  return response.data?.data;
 };
 export const updateFAQ = async (id: number, dto: UpdateQuestionDto): Promise<SupportQuestion> => {
   const response = await api.put(`/admin/faq/${id}`, dto);
-  return response.data;
+  return response.data?.data;
 };
 export const deleteFAQ = async (id: number): Promise<void> => {
   await api.delete(`/admin/faq/${id}`);
@@ -104,22 +104,22 @@ export const getAllComplaints = async (params: {
   endDate?: string;
 }) => {
   const response = await api.get('/admin/complaints', { params });
-  return response.data;
+  return response.data?.data;
 };
 export const getComplaintById = async (id: number): Promise<Complaint> => {
   const response = await api.get(`/admin/complaints/${id}`);
-  return response.data;
+  return response.data?.data;
 };
 export const replyToComplaint = async (id: number, dto: ReplyComplaintDto): Promise<Complaint> => {
   const response = await api.put(`/admin/complaints/${id}/reply`, dto);
-  return response.data;
+  return response.data?.data;
 };
 export const updateComplaintStatus = async (
   id: number,
   status: 'NEW' | 'PROCESSING' | 'RESOLVED'
 ): Promise<Complaint> => {
   const response = await api.put(`/admin/complaints/${id}/status`, { status });
-  return response.data;
+  return response.data?.data;
 };
 export const getComplaintStats = async (): Promise<{
   total: number;
@@ -128,5 +128,5 @@ export const getComplaintStats = async (): Promise<{
   resolved: number;
 }> => {
   const response = await api.get('/admin/complaints/stats');
-  return response.data;
+  return response.data?.data;
 };

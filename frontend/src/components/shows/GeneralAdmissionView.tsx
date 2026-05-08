@@ -20,7 +20,7 @@ interface GeneralAdmissionViewProps {
   maxQuantity?: number;
 }
 export function GeneralAdmissionView({
-  showId,
+  showId: _showId,
   ticketClasses,
   onSelectTicketClass,
   maxQuantity = 10,

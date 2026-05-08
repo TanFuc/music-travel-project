@@ -11,23 +11,22 @@ interface Tour {
   duration: string;
   departureLoc: {
     name: string;
-    slug?: string;
   } | null;
   destinationLoc: {
     name: string;
-    slug?: string;
   } | null;
-  branch: {
+  branch?: {
     id: number;
     name: string;
   } | null;
   minPrice: number | null;
   thumbnailUrl?: string;
-  nextSchedule: {
+  nextSchedule?: {
     id: number;
     startDate: string;
     price: number;
   } | null;
+  isCombo?: boolean;
 }
 interface ToursGridServerProps {
   tours: Tour[];
@@ -55,10 +54,9 @@ export function ToursGridServer({
       {tours.map((tour, idx) => (
         <article
           key={tour.id}
-          className="animate-fadeIn opacity-0"
+          className="animate-fadeIn"
           style={{
             animationDelay: `${idx * 0.05}s`,
-            animationFillMode: 'forwards',
           }}
         >
           <Link href={`/tours/${tour.slug}`} className="group block h-full">
@@ -92,6 +90,14 @@ export function ToursGridServer({
                     </Badge>
                   </div>
                 )}
+
+                <div className="absolute right-4 top-4">
+                  <Badge
+                    className={`border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-xl ${tour.isCombo ? 'bg-indigo-600' : 'bg-emerald-600'}`}
+                  >
+                    {tour.isCombo ? 'Eco Combo' : 'Tour'}
+                  </Badge>
+                </div>
               </div>
 
               <CardContent className="flex flex-1 flex-col bg-white p-6">
@@ -119,7 +125,10 @@ export function ToursGridServer({
                           <Calendar className="h-4 w-4 text-brand-500" />
                         </div>
                         <span className="font-medium">
-                          Khởi hành: {formatDate(tour.nextSchedule.startDate)}
+                          Khởi hành:{' '}
+                          {tour.nextSchedule?.startDate
+                            ? formatDate(tour.nextSchedule.startDate)
+                            : 'Chưa có lịch'}
                         </span>
                       </div>
                     )}

@@ -19,7 +19,7 @@ export class ErrorBoundary extends Component<Props, State> {
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {}
+  public componentDidCatch(_error: Error, _errorInfo: ErrorInfo) {}
   private handleReset = () => {
     this.setState({ hasError: false, error: null });
   };

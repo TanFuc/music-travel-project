@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,20 +21,20 @@ export default function BankSelector({
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-  useEffect(() => {
-    loadBanks();
-  }, []);
-  const loadBanks = async () => {
+  const loadBanks = useCallback(async () => {
     try {
       setLoading(true);
       const banksData = await paymentService.getSupportedBanks();
       setBanks(banksData);
-    } catch (error) {
+    } catch {
       toast.error('Không thể tải danh sách ngân hàng');
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+  useEffect(() => {
+    loadBanks();
+  }, [loadBanks]);
   const filteredBanks = Object.entries(banks).filter(
     ([code, bank]) =>
       bank.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

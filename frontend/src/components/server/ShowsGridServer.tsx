@@ -53,11 +53,8 @@ export function ShowsGridServer({
         return (
           <article
             key={show.id}
-            className="animate-fadeIn opacity-0"
-            style={{
-              animationDelay: `${idx * 0.05}s`,
-              animationFillMode: 'forwards',
-            }}
+            className="animate-fadeIn"
+            style={{ animationDelay: `${idx * 0.05}s` }}
           >
             <ShowCard
               id={show.id}

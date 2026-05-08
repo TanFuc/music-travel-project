@@ -961,7 +961,7 @@ export default function CheckoutPage() {
               clearCart();
               setIsQRModalOpen(false);
               router.push(`/profile?booking=${code}`);
-            } catch (error) {
+            } catch {
               toast.error('Có lỗi khi xác nhận thanh toán.');
             }
           } else {

@@ -33,7 +33,7 @@ export default function PaymentQRModal({
     setIsExpired(false);
     onClose();
   };
-  const generateQR = async () => {
+  const generateQR = useCallback(async () => {
     setLoading(true);
     setError(null);
     setQrData(null);
@@ -50,14 +50,9 @@ export default function PaymentQRModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [defaultAmount, defaultDescription, expirationSeconds]);
   const handleRetry = () => {
     generateQR();
-  };
-  const handleOpenBankApp = () => {
-    if (qrData?.deeplink) {
-      paymentService.openBankApp(qrData.deeplink);
-    }
   };
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
@@ -83,7 +78,7 @@ export default function PaymentQRModal({
       link.download = filename;
       link.click();
       URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       setError('Không thể tải ảnh QR. Vui lòng thử lại.');
     }
   }, [qrData]);
@@ -95,7 +90,7 @@ export default function PaymentQRModal({
       setTimeLeft(expirationSeconds);
       setIsExpired(false);
     }
-  }, [isOpen]);
+  }, [isOpen, qrData, loading, error, generateQR, expirationSeconds]);
   useEffect(() => {
     if (!isOpen || isExpired || loading || error) return;
     const timer = setInterval(() => {

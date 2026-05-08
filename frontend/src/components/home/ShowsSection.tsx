@@ -158,11 +158,8 @@ export function ShowsSection({ locationFilter }: ShowsSectionProps) {
             {activeShows.map((show, index) => (
               <div
                 key={show.id}
-                className="animate-fadeIn opacity-0"
-                style={{
-                  animationDelay: `${index * 0.05}s`,
-                  animationFillMode: 'forwards',
-                }}
+                className="animate-fadeIn"
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <ShowCard {...show} />
               </div>

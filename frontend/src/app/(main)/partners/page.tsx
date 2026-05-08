@@ -7,31 +7,31 @@ export default function PartnersPage() {
   usePageTitle();
   const partnerOptions = [
     {
-      title: 'Đăng ký làm Ca sĩ',
+      title: 'Nghệ sĩ & Tài năng',
       description:
-        'Thỏa sức đam mê ca hát, biểu diễn tại các sự kiện âm nhạc quy mô lớn và kết nối với hàng ngàn khán giả.',
-      icon: <Mic className="h-10 w-10 text-pink-500" />,
+        'Cơ hội biểu diễn nghệ thuật trên sân khấu sinh thái, lan tỏa thông điệp sống xanh và kết nối cộng đồng.',
+      icon: <Mic className="h-10 w-10 text-emerald-600" />,
       href: '/register-singer',
-      color: 'bg-pink-50 border-pink-100 hover:border-pink-300',
-      buttonClass: 'bg-pink-600 hover:bg-pink-700',
+      color: 'bg-white border-emerald-100 hover:border-emerald-300',
+      buttonClass: 'bg-emerald-600 hover:bg-emerald-700',
     },
     {
-      title: 'Đăng ký Tour du lịch',
+      title: 'Đối tác Du lịch & Nghỉ dưỡng',
       description:
-        'Hợp tác tổ chức các tour du lịch đẳng cấp kết hợp sự kiện âm nhạc, mang lại trải nghiệm không giới hạn cho khách hàng.',
-      icon: <Map className="h-10 w-10 text-amber-500" />,
+        'Hợp tác phát triển du lịch trải nghiệm - sinh thái. Kết nối truyền thông, media và phân phối dịch vụ chuyên nghiệp.',
+      icon: <Map className="h-10 w-10 text-emerald-600" />,
       href: '/register-tour',
-      color: 'bg-amber-50 border-amber-100 hover:border-amber-300',
-      buttonClass: 'bg-amber-600 hover:bg-amber-700',
+      color: 'bg-white border-emerald-100 hover:border-emerald-300',
+      buttonClass: 'bg-emerald-600 hover:bg-emerald-700',
     },
     {
-      title: 'Đăng ký Cộng tác viên',
+      title: 'Đại sứ Xanh (Green Ambassador)',
       description:
-        'Trở thành đối tác bán vé, giới thiệu khách hàng và nhận mức hoa hồng hấp dẫn từ hệ thống của chúng tôi.',
-      icon: <Users className="h-10 w-10 text-blue-500" />,
+        'Trở thành sứ giả lan tỏa lối sống bền vững, kết nối cộng đồng và nhận những đặc quyền hấp dẫn từ hệ sinh thái.',
+      icon: <Users className="h-10 w-10 text-emerald-600" />,
       href: '/collaborator/register',
-      color: 'bg-blue-50 border-blue-100 hover:border-blue-300',
-      buttonClass: 'bg-blue-600 hover:bg-blue-700',
+      color: 'bg-white border-emerald-100 hover:border-emerald-300',
+      buttonClass: 'bg-emerald-600 hover:bg-emerald-700',
     },
   ];
   return (

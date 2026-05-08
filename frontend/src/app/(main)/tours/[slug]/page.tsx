@@ -14,7 +14,7 @@ import {
   buildTourScheduleProductsJsonLd,
 } from '@/lib/seo-jsonld';
 export const revalidate = 300;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2222/api/v1';
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://maichohanhtinhxanh.com').replace(
   /\/$/,
   ''
@@ -33,6 +33,7 @@ interface TourDetail {
   title: string;
   slug: string;
   duration: string | null;
+  isCombo: boolean;
   description: string | null;
   properties: Record<string, unknown> | null;
   metaTitle: string | null;
@@ -62,7 +63,7 @@ export async function generateStaticParams() {
     return tours.map((tour: { slug: string }) => ({
       slug: tour.slug,
     }));
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -105,7 +106,7 @@ export async function generateMetadata({
         images: [ogImageUrl, ...(thumbnailUrl ? [thumbnailUrl] : [])],
       },
     };
-  } catch (error) {
+  } catch {
     return {
       title: 'Tour | Music Travel',
     };
@@ -118,7 +119,7 @@ async function fetchTourData(slug: string): Promise<TourDetail | null> {
       tags: [`tour-${slug}`],
     });
     return tour;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -189,33 +190,19 @@ export default async function TourDetailPage({
   };
   const tourScheduleProductsSchema = buildTourScheduleProductsJsonLd(tour, params.slug);
   return (
-    <div className="min-h-screen bg-neutral-50 pb-20">
+    <div className="min-h-screen bg-[#FDFDFF] pb-20">
       <JsonLd data={tourSchema} />
       <JsonLd data={tourScheduleProductsSchema} />
+
       <Suspense fallback={<TourDetailSkeleton />}>
-        <TourDetailServer tour={tour} />
-
-        <div className="container relative z-10 mx-auto -mt-20 px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <div className="space-y-8 lg:col-span-2">
-              <TourSchedulesClient
-                tourId={tour.id}
-                tourTitle={tour.title}
-                schedules={tour.schedules}
-              />
-            </div>
-
-            <div className="lg:col-span-1">
-              <div className="space-y-6 lg:sticky lg:top-24">
-                <TourBookingClient
-                  tourId={tour.id}
-                  tourTitle={tour.title}
-                  schedules={tour.schedules}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <TourDetailServer
+          tour={tour}
+          sidebarChildren={
+            <TourBookingClient tourId={tour.id} tourTitle={tour.title} schedules={tour.schedules} />
+          }
+        >
+          <TourSchedulesClient tourId={tour.id} tourTitle={tour.title} schedules={tour.schedules} />
+        </TourDetailServer>
       </Suspense>
     </div>
   );

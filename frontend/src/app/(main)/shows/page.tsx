@@ -48,7 +48,7 @@ async function fetchShowsData(searchParams: SearchParams) {
       meta: showsData?.meta || { page: 1, limit, total: 0, totalPages: 0 },
       locations: Array.isArray(locations) ? locations : [],
     };
-  } catch (error) {
+  } catch {
     return {
       shows: [],
       meta: { page: 1, limit, total: 0, totalPages: 0 },

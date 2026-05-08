@@ -94,7 +94,7 @@ async function fetchSearchResults(
       cache: 'no-store',
     });
     return results;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -105,7 +105,7 @@ async function fetchBranches(): Promise<Branch[]> {
       tags: ['branches'],
     });
     return branches || [];
-  } catch (error) {
+  } catch {
     return [];
   }
 }

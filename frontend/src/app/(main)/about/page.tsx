@@ -15,6 +15,8 @@ import {
   Target,
   Award,
   Lightbulb,
+  ArrowRight,
+  MapPin,
 } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'Giới thiệu - Mãi Cho Hành Tinh Xanh',
@@ -64,15 +66,16 @@ export default function AboutPage() {
               <Heart className="h-10 w-10 text-green-600" />
               <Leaf className="h-8 w-8 text-green-600" />
             </div>
-            <h1 className="mb-4 text-4xl font-bold leading-tight text-gray-900 md:text-6xl">
-              DỰ ÁN CHUỖI ĐÊM NHẠC
+            <h1 className="mb-4 text-4xl font-bold uppercase leading-tight tracking-tighter text-gray-900 md:text-6xl">
+              HỆ SINH THÁI
             </h1>
-            <h2 className="mb-6 text-2xl font-semibold text-green-600 md:text-4xl">
+            <h2 className="mb-6 text-2xl font-black tracking-tight text-brand-600 md:text-5xl">
               "MÃI CHO HÀNH TINH XANH"
             </h2>
-            <p className="mx-auto max-w-3xl text-lg leading-relaxed text-gray-700">
-              Chuỗi đêm nhạc nghệ thuật cộng đồng, lan tỏa thông điệp bảo vệ môi trường, chống biến
-              đổi khí hậu và sống hài hòa với thiên nhiên thông qua âm nhạc.
+            <p className="mx-auto max-w-3xl text-lg font-medium leading-relaxed text-gray-700">
+              Không chỉ là những đêm nhạc, chúng tôi xây dựng một hệ sinh thái kết nối Nghệ thuật,
+              Du lịch trải nghiệm và Cộng đồng sống xanh – nơi mỗi hành trình đều góp phần bảo vệ
+              tương lai của Trái Đất.
             </p>
           </div>
         </div>
@@ -89,11 +92,11 @@ export default function AboutPage() {
 
               <div className="prose prose-lg max-w-none space-y-6 leading-relaxed text-gray-700">
                 <p>
-                  Dự án Chuỗi đêm nhạc "Mãi cho Hành Tinh Xanh" là chuỗi đêm nhạc nghệ thuật cộng
-                  đồng, được tổ chức tại các khu du lịch sinh thái, Café vườn không gian xanh, vùng
-                  làng quê, vùng biển – cao nguyên. Với mục tiêu lan tỏa thông điệp bảo vệ môi
-                  trường, chống biến đổi khí hậu và sống hài hòa với thiên nhiên thông qua âm nhạc
-                  và các hoạt động trải nghiệm thực tế.
+                  Hệ sinh thái "Mãi cho Hành Tinh Xanh" là sự giao thoa giữa nghệ thuật trình diễn
+                  cộng đồng, du lịch sinh thái và các hoạt động bảo tồn. Được tổ chức tại những
+                  không gian xanh tuyển chọn – từ vùng cao nguyên lộng gió đến những ngôi làng ven
+                  biển yên bình – chúng tôi tạo ra những điểm chạm giúp con người quay về với thiên
+                  nhiên, thấu hiểu và hành động vì một môi trường bền vững.
                 </p>
 
                 <p>
@@ -351,114 +354,184 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="bg-gradient-to-r from-green-100 to-blue-100 px-4 py-16">
-        <div className="container mx-auto max-w-4xl">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-gray-900">TầM NHÌN DÀI HẠN</h2>
+      <section className="bg-white px-4 py-24">
+        <div className="container mx-auto max-w-6xl">
+          <div className="mb-20 text-center">
+            <Badge className="mb-4 border-none bg-brand-50 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-brand-600">
+              Our Vision
+            </Badge>
+            <h2 className="font-display text-4xl font-black uppercase tracking-tight text-gray-900 md:text-5xl">
+              Tầm nhìn dài hạn
+            </h2>
+            <div className="mx-auto mt-4 h-1.5 w-24 rounded-full bg-brand-600" />
           </div>
 
-          <Card className="border-green-300 shadow-xl">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div className="text-center">
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-200 px-6 py-2 text-lg text-green-800"
-                  >
-                    Chuỗi đêm nhạc sinh thái tiêu biểu tại Việt Nam
-                  </Badge>
-                </div>
-
-                <div className="grid gap-8 md:grid-cols-2">
-                  <div>
-                    <h4 className="mb-4 text-xl font-semibold text-green-800">Mục tiêu hàng năm</h4>
-                    <ul className="space-y-2 text-gray-700">
-                      <li className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-green-600"></div>
-                        <span>10 – 20 điểm đến xanh</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-green-600"></div>
-                        <span>Quy mô từ 1000 người</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="mb-4 text-xl font-semibold text-blue-800">Hình thành</h4>
-                    <ul className="space-y-2 text-gray-700">
-                      <li className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-600"></div>
-                        <span>Cộng đồng "Mãi cho Hành Tinh Xanh"</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-600"></div>
-                        <span>Mạng lưới nghệ sĩ – doanh nghiệp – người trẻ sống xanh</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="rounded-lg bg-white p-6">
-                  <h4 className="mb-4 text-center text-xl font-semibold text-gray-900">Tiến tới</h4>
-                  <div className="grid gap-4 text-center md:grid-cols-3">
-                    <div>
-                      <Leaf className="mx-auto mb-2 h-8 w-8 text-green-600" />
-                      <span className="text-gray-700">Quỹ môi trường</span>
-                    </div>
-                    <div>
-                      <TreePine className="mx-auto mb-2 h-8 w-8 text-green-600" />
-                      <span className="text-gray-700">Trồng rừng, bảo tồn</span>
-                    </div>
-                    <div>
-                      <Users className="mx-auto mb-2 h-8 w-8 text-green-600" />
-                      <span className="text-gray-700">Giáo dục môi trường</span>
-                    </div>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+            <div className="group relative rounded-[40px] border border-brand-100 bg-[#FDFDFF] p-8 shadow-sm transition-all hover:-translate-y-2 hover:shadow-xl">
+              <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-600 text-white shadow-lg shadow-brand-600/30">
+                <Globe className="h-8 w-8" />
               </div>
-            </CardContent>
-          </Card>
+              <h3 className="mb-4 font-display text-xl font-bold text-gray-900">
+                Tiêu biểu tại Việt Nam
+              </h3>
+              <p className="mb-6 text-sm leading-relaxed text-gray-600">
+                Trở thành chuỗi đêm nhạc sinh thái tiêu biểu, biểu tượng của sự kết hợp giữa nghệ
+                thuật và bảo tồn thiên nhiên.
+              </p>
+              <div className="flex items-center gap-2 border-t border-brand-50 pt-6">
+                <div className="h-2 w-2 rounded-full bg-brand-400" />
+                <span className="text-xs font-black uppercase tracking-widest text-brand-600">
+                  Mục tiêu hằng năm
+                </span>
+              </div>
+              <ul className="mt-4 space-y-3">
+                <li className="flex items-center gap-3 text-sm font-semibold text-gray-800">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-50 text-[10px] text-brand-600">
+                    01
+                  </div>
+                  10 – 20 điểm đến xanh
+                </li>
+                <li className="flex items-center gap-3 text-sm font-semibold text-gray-700">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-50 text-[10px] text-brand-600">
+                    02
+                  </div>
+                  Quy mô từ 1.000 người
+                </li>
+              </ul>
+            </div>
+
+            <div className="group relative rounded-[40px] border border-brand-100 bg-[#FDFDFF] p-8 shadow-sm transition-all hover:-translate-y-2 hover:shadow-xl">
+              <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-600 text-white shadow-lg shadow-blue-600/30">
+                <Users className="h-8 w-8" />
+              </div>
+              <h3 className="mb-4 font-display text-xl font-bold text-gray-900">
+                Hình thành cộng đồng
+              </h3>
+              <p className="mb-6 text-sm leading-relaxed text-gray-600">
+                Xây dựng hệ sinh thái bền vững nơi con người cùng nhau hành động vì một hành tinh
+                xanh hơn.
+              </p>
+              <div className="flex items-center gap-2 border-t border-brand-50 pt-6">
+                <div className="h-2 w-2 rounded-full bg-blue-400" />
+                <span className="text-xs font-black uppercase tracking-widest text-blue-500">
+                  Đối tượng kết nối
+                </span>
+              </div>
+              <ul className="mt-4 space-y-3">
+                <li className="flex items-center gap-3 text-sm font-semibold text-gray-800">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-[10px] text-blue-600">
+                    01
+                  </div>
+                  Cộng đồng "Mãi cho Hành Tinh Xanh"
+                </li>
+                <li className="flex items-center gap-3 text-sm font-semibold text-gray-700">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-[10px] text-blue-600">
+                    02
+                  </div>
+                  Mạng lưới Nghệ sĩ - Doanh nghiệp
+                </li>
+              </ul>
+            </div>
+
+            <div className="group relative rounded-[40px] bg-brand-900 p-8 text-white shadow-2xl shadow-brand-900/40 transition-all hover:-translate-y-2">
+              <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-500 text-white shadow-lg shadow-brand-500/30">
+                <Target className="h-8 w-8" />
+              </div>
+              <h3 className="mb-4 font-display text-xl font-bold text-white">
+                Hướng tới tương lai
+              </h3>
+              <p className="mb-6 text-sm leading-relaxed text-white/80">
+                Vươn tới những giá trị cốt lõi, bảo tồn tài nguyên cho thế hệ mai sau thông qua các
+                quỹ đóng góp.
+              </p>
+              <div className="flex items-center gap-2 border-t border-white/10 pt-6">
+                <div className="h-2 w-2 rounded-full bg-brand-400" />
+                <span className="text-xs font-black uppercase tracking-widest text-brand-300">
+                  Tầm nhìn tiến tới
+                </span>
+              </div>
+              <ul className="mt-4 space-y-4">
+                {[
+                  { icon: Leaf, text: 'Quỹ môi trường' },
+                  { icon: TreePine, text: 'Trồng rừng & Bảo tồn' },
+                  { icon: Globe, text: 'Giáo dục môi trường' },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm font-semibold">
+                    <item.icon className="h-4 w-4 text-brand-400" />
+                    {item.text}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="bg-gradient-to-r from-green-600 to-blue-600 px-4 py-20 text-white">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="mb-6 text-3xl font-bold md:text-4xl">
-            CÙNG CHÚNG TÔI XÂY DỰNG MỘT HÀNH TINH XANH
-          </h2>
-          <p className="mb-8 text-xl opacity-90">
-            Hãy tham gia cùng chúng tôi trong hành trình âm nhạc vì môi trường
-          </p>
-          <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
+      <section className="relative overflow-hidden bg-brand-950 px-4 py-24">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1600&q=80')] bg-cover bg-center opacity-30 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-950/50 via-brand-950 to-brand-950" />
+
+        <div className="container relative z-10 mx-auto">
+          <div className="mx-auto mb-20 max-w-3xl text-center">
+            <h2 className="mb-6 font-display text-4xl font-black leading-[1.1] text-white md:text-5xl lg:text-6xl">
+              CÙNG CHÚNG TÔI <br /> <span className="text-brand-400">XÂY DỰNG</span> HÀNH TINH XANH
+            </h2>
+            <p className="text-lg font-medium text-white/90">
+              Hãy tham gia cùng chúng tôi trong hành trình âm nhạc vì môi trường. Mỗi bước đi của
+              bạn đều góp phần làm thế giới tốt đẹp hơn.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                title: 'Đăng ký làm ca sĩ',
+                href: '/register-singer',
+                icon: Music,
+                color: 'bg-indigo-500',
+                desc: 'Tỏa sáng trên sân khấu sinh thái và lan tỏa thông điệp xanh.',
+              },
+              {
+                title: 'Đăng ký tổ chức Tour',
+                href: '/register-tour',
+                icon: MapPin,
+                color: 'bg-emerald-500',
+                desc: 'Hợp tác cùng chúng tôi tổ chức những hành trình khám phá thiên nhiên.',
+              },
+              {
+                title: 'Trở thành CTV',
+                href: '/collaborator/register',
+                icon: Heart,
+                color: 'bg-rose-500',
+                desc: 'Tham gia đội ngũ truyền thông và lan tỏa dự án đến cộng đồng.',
+              },
+              {
+                title: 'Khám phá Shows',
+                href: '/shows',
+                icon: Star,
+                color: 'bg-amber-500',
+                desc: 'Thưởng thức những đêm nhạc live đầy cảm xúc giữa thiên nhiên.',
+              },
+            ].map((item) => (
               <a
-                href="/register-singer"
-                className="rounded-full bg-white px-8 py-4 font-semibold text-green-600 shadow-xl transition-all hover:scale-105 hover:bg-gray-100"
+                key={item.title}
+                href={item.href}
+                className="group relative overflow-hidden rounded-[32px] border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-xl transition-all hover:-translate-y-2 hover:border-white/30 hover:bg-white/20"
               >
-                Đăng ký làm ca sĩ
+                <div
+                  className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl ${item.color} text-white shadow-lg`}
+                >
+                  <item.icon className="h-6 w-6" />
+                </div>
+                <h3 className="mb-2 font-display text-xl font-bold text-white transition-colors group-hover:text-brand-300">
+                  {item.title}
+                </h3>
+                <p className="text-sm leading-relaxed text-white/80">{item.desc}</p>
+                <div className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-400 transition-all group-hover:text-brand-300">
+                  Tham gia ngay <ArrowRight className="h-4 w-4" />
+                </div>
               </a>
-              <a
-                href="/register-tour"
-                className="rounded-full bg-amber-500 px-8 py-4 font-semibold text-white shadow-xl transition-all hover:scale-105 hover:bg-amber-400"
-              >
-                Đăng ký tổ chức Tour
-              </a>
-              <a
-                href="/collaborator/register"
-                className="rounded-full bg-blue-500 px-8 py-4 font-semibold text-white shadow-xl transition-all hover:scale-105 hover:bg-blue-400"
-              >
-                Trở thành Cộng Tác Viên
-              </a>
-            </div>
-            <div className="mt-8">
-              <a
-                href="/shows"
-                className="inline-block rounded-full border-2 border-white/60 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-green-600"
-              >
-                Khám phá các đêm nhạc (Shows)
-              </a>
-            </div>
+            ))}
           </div>
         </div>
       </section>

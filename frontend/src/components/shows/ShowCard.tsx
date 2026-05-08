@@ -38,7 +38,7 @@ const badgeConfig = {
   VIP: { label: '⭐ VIP', className: 'badge-vip' },
   NEW: { label: '🆕 MỚI', className: 'badge-new' },
   SOLD_OUT: { label: '❌ HẾT VÉ', className: 'badge-soldout' },
-  SOON: { label: '⏰ SẮP DIỄN RA', className: 'bg-orange-500 text-white' },
+  SOON: { label: '⏰ CHỜ DIỄN', className: 'bg-brand-500/90 text-white shadow-brand-500/20' },
 };
 export const ShowCard = React.memo(function ShowCard({
   id,
@@ -60,7 +60,7 @@ export const ShowCard = React.memo(function ShowCard({
         date: dateFormatter.format(date),
         time: timeFormatter.format(date),
       };
-    } catch (e) {
+    } catch {
       return { day: '', date: '--/--', time: '--:--' };
     }
   }, [performTime]);
@@ -122,7 +122,7 @@ export const ShowCard = React.memo(function ShowCard({
             )}
 
             {isLowStock && !isSoldOut && (
-              <div className="rounded-xl border border-white/20 bg-orange-500/90 px-3 py-1 text-center text-[9px] font-bold uppercase tracking-tight text-white shadow-xl backdrop-blur-sm">
+              <div className="rounded-xl border border-white/20 bg-brand-500/90 px-3 py-1 text-center text-[9px] font-bold uppercase tracking-tight text-white shadow-xl backdrop-blur-sm">
                 Còn {availableTickets} vé
               </div>
             )}

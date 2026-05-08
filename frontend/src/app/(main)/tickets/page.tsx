@@ -42,7 +42,7 @@ export default function TicketsPage() {
       if (tiersData) {
         setTiers(tiersData);
       }
-    } catch (error) {
+    } catch {
       toast.error('Không thể tải danh sách vé');
     } finally {
       setLoading(false);

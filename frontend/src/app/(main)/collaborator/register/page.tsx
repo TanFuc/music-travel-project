@@ -56,40 +56,45 @@ export default function CollaboratorRegisterPage() {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12">
       <div className="mb-12 text-center">
-        <h1 className="mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent">
-          Chương trình Cộng Tác Viên
+        <h1 className="mb-4 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text py-2 text-4xl font-extrabold leading-[1.1] tracking-tight text-transparent md:text-5xl lg:text-6xl">
+          Đại Sứ Xanh
         </h1>
-        <p className="text-xl text-neutral-600">
-          Kiếm thêm thu nhập không giới hạn cùng Music Travel
+        <p className="mx-auto max-w-2xl text-xl text-neutral-600">
+          Trở thành một phần của dự án "Mãi Cho Hành Tinh Xanh". Cùng lan tỏa niềm đam mê âm nhạc,
+          du lịch bền vững và nhận những đặc quyền xứng đáng.
         </p>
       </div>
 
       <div className="mb-12 grid gap-8 md:grid-cols-3">
-        <Card className="border-blue-100 bg-blue-50/50">
+        <Card className="rounded-[2rem] border-emerald-100 bg-emerald-50/50">
           <CardHeader>
-            <Wallet className="mb-2 h-10 w-10 text-blue-600" />
-            <CardTitle>Hoa hồng hấp dẫn</CardTitle>
-            <CardDescription>
-              Nhận ngay hoa hồng lên đến 100,000đ cho mỗi vé bán được.
+            <Wallet className="mb-4 h-12 w-12 text-emerald-600" />
+            <CardTitle className="text-xl font-black">Cùng Tăng Thu Nhập</CardTitle>
+            <CardDescription className="font-medium">
+              Chính sách thưởng minh bạch, hấp dẫn cho mỗi hành trình và vé show được kết nối thành
+              công.
             </CardDescription>
           </CardHeader>
         </Card>
 
-        <Card className="border-indigo-100 bg-indigo-50/50">
+        <Card className="rounded-[2rem] border-teal-100 bg-teal-50/50">
           <CardHeader>
-            <TrendingUp className="mb-2 h-10 w-10 text-indigo-600" />
-            <CardTitle>Thu nhập thụ động</CardTitle>
-            <CardDescription>
-              Không giới hạn số lượng vé, thu nhập tăng trưởng theo nỗ lực của bạn.
+            <TrendingUp className="mb-4 h-12 w-12 text-teal-600" />
+            <CardTitle className="text-xl font-black">Giá Trị Lan Tỏa</CardTitle>
+            <CardDescription className="font-medium">
+              Góp phần phát triển du lịch sinh thái và văn hóa nghệ thuật tại các địa phương trên
+              khắp Việt Nam.
             </CardDescription>
           </CardHeader>
         </Card>
 
-        <Card className="border-purple-100 bg-purple-50/50">
+        <Card className="rounded-[2rem] border-cyan-100 bg-cyan-50/50">
           <CardHeader>
-            <Users className="mb-2 h-10 w-10 text-purple-600" />
-            <CardTitle>Mạng lưới rộng mở</CardTitle>
-            <CardDescription>Kết nối cộng đồng yêu nhạc và du lịch trên toàn quốc.</CardDescription>
+            <Users className="mb-4 h-12 w-12 text-cyan-600" />
+            <CardTitle className="text-xl font-black">Đội Ngũ Tri Thức</CardTitle>
+            <CardDescription className="font-medium">
+              Kết nối mạng lưới những người trẻ sống xanh, yêu nghệ thuật và du lịch trải nghiệm.
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -105,19 +110,19 @@ export default function CollaboratorRegisterPage() {
         <CardContent className="flex justify-center pb-10">
           <Button
             size="lg"
-            className="h-14 w-full bg-gradient-to-r from-blue-600 to-indigo-600 px-12 text-lg shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-indigo-700 md:w-auto"
+            className="h-16 w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-12 text-xl font-black shadow-xl shadow-emerald-600/20 hover:from-emerald-700 hover:to-teal-700 md:w-auto"
             onClick={handleRegister}
             disabled={loading}
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                 Đang xử lý...
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                Đăng ký làm Cộng Tác Viên
+                <CheckCircle className="h-6 w-6" />
+                Đăng ký trở thành Đại Sứ Xanh
               </span>
             )}
           </Button>

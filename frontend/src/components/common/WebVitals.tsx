@@ -1,7 +1,7 @@
 'use client';
 import { useReportWebVitals } from 'next/web-vitals';
 export function WebVitals() {
-  useReportWebVitals((metric) => {
+  useReportWebVitals((_metric) => {
     if (process.env.NODE_ENV === 'development') {
     }
   });

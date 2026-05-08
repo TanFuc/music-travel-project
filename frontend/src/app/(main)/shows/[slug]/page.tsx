@@ -13,7 +13,7 @@ import {
   buildShowTicketProductsJsonLd,
 } from '@/lib/seo-jsonld';
 export const revalidate = 300;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2222/api/v1';
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://maichohanhtinhxanh.com').replace(
   /\/$/,
   ''
@@ -78,7 +78,7 @@ export async function generateStaticParams() {
     return shows.map((show: { slug: string }) => ({
       slug: show.slug,
     }));
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -120,7 +120,7 @@ export async function generateMetadata({
         images: [ogImageUrl, ...(show.thumbnailUrl ? [show.thumbnailUrl] : [])],
       },
     };
-  } catch (error) {
+  } catch {
     return {
       title: 'Show | Music Travel',
     };
@@ -133,7 +133,7 @@ async function fetchShowData(slug: string): Promise<ShowDetail | null> {
       tags: [`show-${slug}`],
     });
     return show;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

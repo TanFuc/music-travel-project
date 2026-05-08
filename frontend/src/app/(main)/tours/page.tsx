@@ -25,18 +25,6 @@ interface SearchParams {
   search?: string;
   page?: string;
 }
-interface TourListItem extends Omit<Tour, 'nextSchedule'> {
-  branch: {
-    id: number;
-    name: string;
-  } | null;
-  nextSchedule: {
-    id: number;
-    startDate: string;
-    price: number;
-    availableSlots?: number;
-  } | null;
-}
 async function fetchToursData(searchParams: SearchParams) {
   const page = parseInt(searchParams.page || '1', 10);
   const limit = 12;
@@ -58,14 +46,11 @@ async function fetchToursData(searchParams: SearchParams) {
       params.search = searchParams.search;
     }
     const [toursData, locations] = await Promise.all([
-      serverAPI.tours.getAll(params).catch(() => ({
-        items: [] as TourListItem[],
-        meta: { page: 1, limit, total: 0, totalPages: 0 },
-      })),
+      serverAPI.tours.getAll(params),
       serverAPI.locations.getAll().catch(() => [] as Location[]),
     ]);
     return {
-      tours: (toursData?.items || []) as TourListItem[],
+      tours: (toursData?.items || []) as Tour[],
       meta: toursData?.meta || { page: 1, limit, total: 0, totalPages: 0 },
       locations: Array.isArray(locations) ? locations : [],
     };

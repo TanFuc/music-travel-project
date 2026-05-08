@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Download,
@@ -35,10 +35,7 @@ export default function BankQRPayment({
   const [downloadingImage, setDownloadingImage] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
   const { toast } = useToast();
-  useEffect(() => {
-    generateQR();
-  }, [paymentData]);
-  const generateQR = async () => {
+  const generateQR = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -51,7 +48,10 @@ export default function BankQRPayment({
     } finally {
       setLoading(false);
     }
-  };
+  }, [paymentData, onError]);
+  useEffect(() => {
+    generateQR();
+  }, [generateQR]);
   const handleDownloadImage = async () => {
     if (!qrData) return;
     try {
@@ -60,7 +60,7 @@ export default function BankQRPayment({
       const filename = `qr-${qrData.bankCode}-${Date.now()}.png`;
       paymentService.downloadQRImage(blob, filename);
       toast.success('Đã tải xuống mã QR');
-    } catch (err) {
+    } catch {
       toast.error('Không thể tải xuống hình ảnh');
     } finally {
       setDownloadingImage(false);

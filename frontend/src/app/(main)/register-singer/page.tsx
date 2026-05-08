@@ -143,14 +143,14 @@ export default function RegisterSingerPage() {
             <span>Trải Nghiệm Sân Khấu Chuyên Nghiệp</span>
           </div>
           <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-gray-900 md:text-5xl lg:text-6xl">
-            Đăng Ký{' '}
+            Kết Nối{' '}
             <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              Ca Sĩ Biểu Diễn
+              Tài Năng & Nghệ Thuật
             </span>
           </h1>
           <p className="mx-auto max-w-3xl text-lg leading-relaxed text-gray-600">
-            Cơ hội tỏa sáng trên sân khấu "Mãi cho Hành Tinh Xanh". Được đào tạo, tập luyện cùng ban
-            nhạc và lưu giữ khoảnh khắc đáng nhớ.
+            Cơ hội tỏa sáng trên sân khấu sinh thái "Mãi cho Hành Tinh Xanh". Cùng chúng tôi lan tỏa
+            thông điệp bảo vệ môi trường qua những giai điệu cảm xúc giữa thiên nhiên hùng vĩ.
           </p>
         </div>
       </div>

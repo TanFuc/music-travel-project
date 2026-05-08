@@ -60,7 +60,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
     try {
-      const { confirmPassword, ...submitData } = data;
+      const { confirmPassword: _confirmPassword, ...submitData } = data;
       const response = await post<RegisterResponse>('/auth/register', submitData);
       login(response.user, response.accessToken, response.refreshToken);
       toast.success('Đăng ký thành công!');
