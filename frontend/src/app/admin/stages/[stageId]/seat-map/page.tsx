@@ -67,7 +67,7 @@ export default function StageSeatMapPage() {
       setStage(stageData.stage);
       setTemplates(templatesData);
       setPresets(presetsData);
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,7 @@ export default function StageSeatMapPage() {
       });
       alert('Đã lưu cấu hình sơ đồ chỗ ngồi!');
       await loadData();
-    } catch (error) {
+    } catch {
       alert('Lỗi khi lưu cấu hình!');
     } finally {
       setSaving(false);
@@ -94,7 +94,7 @@ export default function StageSeatMapPage() {
       });
       alert('Đã áp dụng template!');
       await loadData();
-    } catch (error) {
+    } catch {
       alert('Lỗi khi áp dụng template!');
     } finally {
       setSaving(false);
@@ -109,7 +109,7 @@ export default function StageSeatMapPage() {
       });
       alert('Đã áp dụng preset!');
       await loadData();
-    } catch (error) {
+    } catch {
       alert('Lỗi khi áp dụng preset!');
     } finally {
       setSaving(false);

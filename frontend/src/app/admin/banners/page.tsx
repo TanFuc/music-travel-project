@@ -53,7 +53,7 @@ export default function AdminBannersPage() {
       await del(`/banners/admin/${deleteId}`);
       toast.success('Xóa banner thành công');
       queryClient.invalidateQueries({ queryKey: ['admin-banners'] });
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi xóa banner');
     } finally {
       setDeleteId(null);

@@ -70,14 +70,13 @@ export default function EditHomeStagePage() {
       });
     }
   }, [stage, reset]);
-  const imageUrl = watch('imageUrl');
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
       await put(`/home-stages/${id}`, data);
       toast.success('Cập nhật sân khấu thành công');
       router.push('/admin/home-stages');
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi cập nhật sân khấu');
     } finally {
       setIsSubmitting(false);

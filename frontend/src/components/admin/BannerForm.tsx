@@ -67,7 +67,7 @@ export function BannerForm({ initialData, isEdit }: BannerFormProps) {
       }
       router.push('/admin/banners');
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra');
     } finally {
       setLoading(false);

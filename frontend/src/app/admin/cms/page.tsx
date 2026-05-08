@@ -59,7 +59,7 @@ export default function AdminCmsPage() {
     try {
       const parsedValue = formData.type === 'JSON' ? JSON.parse(formData.value) : formData.value;
       upsertMutation.mutate({ ...formData, value: parsedValue });
-    } catch (e) {
+    } catch {
       toast.error('Value không đúng định dạng JSON hợp lệ');
     }
   };

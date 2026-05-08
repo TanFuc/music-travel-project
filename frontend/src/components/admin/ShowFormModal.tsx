@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,15 +17,6 @@ import { toast } from 'sonner';
 import { stageService } from '@/services/stage.service';
 import { branchService } from '@/services/branch.service';
 import { ImageUpload } from '@/components/common/ImageUpload';
-interface Stage {
-  id: number;
-  name: string;
-  location: {
-    id: number;
-    name: string;
-  };
-  seatMapConfig: unknown;
-}
 interface Artist {
   id: number;
   name: string;
@@ -70,7 +61,6 @@ interface ShowFormModalProps {
   onSuccess?: () => void;
   initialData?: any;
 }
-const DEFAULT_COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
 export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowFormModalProps) {
   const [activeTab, setActiveTab] = useState('basic');
   const [artistSearch, setArtistSearch] = useState('');
@@ -156,14 +146,6 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
       }))
     );
   }, [selectedArtists, setValue]);
-  const {
-    fields: ticketFields,
-    append: appendTicket,
-    remove: removeTicket,
-  } = useFieldArray({
-    control,
-    name: 'ticketClasses',
-  });
   const { data: stages } = useQuery({
     queryKey: ['stages'],
     queryFn: () => stageService.getStages(),
@@ -247,7 +229,7 @@ export function ShowFormModal({ isOpen, onClose, onSuccess, initialData }: ShowF
       } else {
         await createMutation.mutateAsync(data);
       }
-    } catch (error) {}
+    } catch {}
   };
   const onFormError = (err: any) => {
     const errorFields = Object.keys(err).join(', ');

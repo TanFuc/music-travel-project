@@ -47,7 +47,7 @@ export default function CreateHomeStagePage() {
       await post('/home-stages', data);
       toast.success('Thêm sân khấu thành công');
       router.push('/admin/home-stages');
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi thêm sân khấu');
     } finally {
       setIsSubmitting(false);

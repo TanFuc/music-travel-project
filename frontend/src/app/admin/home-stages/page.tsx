@@ -42,7 +42,7 @@ export default function AdminHomeStagesPage() {
       await del(`/home-stages/${deleteId}`);
       toast.success('Xóa sân khấu thành công');
       queryClient.invalidateQueries({ queryKey: ['admin-home-stages'] });
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi xóa sân khấu');
     } finally {
       setDeleteId(null);
