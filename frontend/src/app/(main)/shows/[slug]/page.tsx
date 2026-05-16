@@ -7,13 +7,16 @@ import { ShowDetailSkeleton } from '@/components/server/Skeletons';
 import { fetchServer } from '@/lib/api-server';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { stripHtml, toAbsoluteUrl } from '@/lib/seo';
+import { RelatedProducts } from '@/components/common/RelatedProducts';
 import {
   buildLanguageAlternates,
   buildShowOffers,
   buildShowTicketProductsJsonLd,
 } from '@/lib/seo-jsonld';
 export const revalidate = 300;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2222/api/v1';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1');
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://maichohanhtinhxanh.com').replace(
   /\/$/,
   ''
@@ -218,29 +221,35 @@ export default async function ShowDetailPage({
             </div>
 
             <div className="lg:col-span-1">
-              <div className="space-y-6 lg:sticky lg:top-24">
-                <TicketBookingClient
-                  showId={show.id}
-                  showTitle={show.title}
-                  ticketClasses={show.ticketClasses}
-                  isBookable={isBookable}
-                />
+              <div className="lg:sticky lg:top-24">
+                <div className="space-y-6">
+                  <TicketBookingClient
+                    showId={show.id}
+                    showTitle={show.title}
+                    ticketClasses={show.ticketClasses}
+                    isBookable={isBookable}
+                  />
 
-                <div className="rounded-2xl border border-neutral-100 bg-white p-6 text-center shadow-sm">
-                  <p className="mb-2 font-bold text-gray-900">Bạn cần hỗ trợ?</p>
-                  <p className="mb-4 text-sm text-neutral-500">
-                    Liên hệ với chúng tôi để được tư vấn thêm về show diễn
-                  </p>
-                  <a
-                    href="tel:0912946549"
-                    className="text-lg font-bold text-brand-600 hover:underline"
-                  >
-                    0912 946 549
-                  </a>
+                  <div className="rounded-2xl border border-neutral-100 bg-white p-6 text-center shadow-sm">
+                    <p className="mb-2 font-bold text-gray-900">Bạn cần hỗ trợ?</p>
+                    <p className="mb-4 text-sm text-neutral-500">
+                      Liên hệ với chúng tôi để được tư vấn thêm về show diễn
+                    </p>
+                    <a
+                      href="tel:0912946549"
+                      className="text-lg font-bold text-brand-600 hover:underline"
+                    >
+                      0912 946 549
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="container mx-auto mt-24 px-4 sm:px-6 lg:px-8">
+          <RelatedProducts currentId={show.id} type="show" />
         </div>
       </Suspense>
     </div>

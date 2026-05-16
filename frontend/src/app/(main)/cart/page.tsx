@@ -18,17 +18,34 @@ export default function CartPage() {
   const {
     tickets,
     tours,
-    ticketTiers,
     singerPackages,
     removeTicket,
     removeTour,
-    removeTicketTier,
     removeSingerPackage,
-    updateTicketTierQuantity,
+    updateTourQuantity,
+    updateTicketQuantity,
     updateSingerPackageQuantity,
     discount,
     voucherCode,
   } = useCartStore();
+  const groupedTickets = tickets.reduce(
+    (acc, ticket) => {
+      const key = `${ticket.showId}-${ticket.ticketClassId}`;
+      if (!acc[key]) {
+        acc[key] = { ...ticket, quantity: 0, ids: [] as number[] };
+      }
+      acc[key].quantity += 1;
+      acc[key].ids.push(ticket.ticketId);
+      return acc;
+    },
+    {} as Record<
+      string,
+      (typeof tickets)[0] & {
+        quantity: number;
+        ids: number[];
+      }
+    >
+  );
   const { isAuthenticated } = useAuthStore();
   const [selectedTickets, setSelectedTickets] = useState<Set<number>>(
     new Set(tickets.map((t) => t.ticketId))
@@ -36,18 +53,11 @@ export default function CartPage() {
   const [selectedTours, setSelectedTours] = useState<Set<number>>(
     new Set(tours.map((t) => t.scheduleId))
   );
-  const [selectedTiers, setSelectedTiers] = useState<Set<number>>(
-    new Set(ticketTiers.map((t) => t.tierId))
-  );
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(
     new Set(singerPackages.map((p) => p.packageId))
   );
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const isEmpty =
-    tickets.length === 0 &&
-    tours.length === 0 &&
-    ticketTiers.length === 0 &&
-    singerPackages.length === 0;
+  const isEmpty = tickets.length === 0 && tours.length === 0 && singerPackages.length === 0;
   const getSelectedSubtotal = () => {
     const ticketTotal = tickets
       .filter((t) => selectedTickets.has(t.ticketId))
@@ -55,18 +65,14 @@ export default function CartPage() {
     const tourTotal = tours
       .filter((t) => selectedTours.has(t.scheduleId))
       .reduce((sum, t) => sum + Number(t.price) * Number(t.quantity), 0);
-    const tierTotal = ticketTiers
-      .filter((t) => selectedTiers.has(t.tierId))
-      .reduce((sum, t) => sum + Number(t.price) * Number(t.quantity), 0);
     const packageTotal = singerPackages
       .filter((p) => selectedPackages.has(p.packageId))
       .reduce((sum, p) => sum + Number(p.price) * Number(p.quantity), 0);
-    return ticketTotal + tourTotal + tierTotal + packageTotal;
+    return ticketTotal + tourTotal + packageTotal;
   };
   const selectedSubtotal = getSelectedSubtotal();
   const selectedTotal = selectedSubtotal - discount;
-  const selectedCount =
-    selectedTickets.size + selectedTours.size + selectedTiers.size + selectedPackages.size;
+  const selectedCount = selectedTickets.size + selectedTours.size + selectedPackages.size;
   const toggleTicket = (id: number) => {
     const newSet = new Set(selectedTickets);
     if (newSet.has(id)) newSet.delete(id);
@@ -78,12 +84,6 @@ export default function CartPage() {
     if (newSet.has(id)) newSet.delete(id);
     else newSet.add(id);
     setSelectedTours(newSet);
-  };
-  const toggleTier = (id: number) => {
-    const newSet = new Set(selectedTiers);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedTiers(newSet);
   };
   const togglePackage = (id: string) => {
     const newSet = new Set(selectedPackages);
@@ -100,20 +100,16 @@ export default function CartPage() {
     try {
       const selectedTicketsList = tickets.filter((t) => selectedTickets.has(t.ticketId));
       const selectedToursList = tours.filter((t) => selectedTours.has(t.scheduleId));
-      const selectedTiersList = ticketTiers.filter((t) => selectedTiers.has(t.tierId));
       const selectedPackagesList = singerPackages.filter((p) => selectedPackages.has(p.packageId));
       const body: {
         ticketsWithSeats?: Array<{
           ticketId: number;
           physicalSeatId?: number;
         }>;
-        ticketTiers?: Array<{
-          tierId: number;
-          quantity: number;
-        }>;
         tourItems?: Array<{
           scheduleId: number;
           quantity: number;
+          ticketTypeName?: string;
         }>;
         singerPackages?: Array<{
           packageId: string;
@@ -127,16 +123,11 @@ export default function CartPage() {
           ticketId: Number(t.ticketId),
         }));
       }
-      if (selectedTiersList.length) {
-        body.ticketTiers = selectedTiersList.map((t) => ({
-          tierId: Number(t.tierId),
-          quantity: Number(t.quantity),
-        }));
-      }
       if (selectedToursList.length) {
         body.tourItems = selectedToursList.map((t) => ({
           scheduleId: Number(t.scheduleId),
           quantity: Number(t.quantity),
+          ticketTypeName: t.ticketTypeName,
         }));
       }
       if (selectedPackagesList.length) {
@@ -287,101 +278,88 @@ export default function CartPage() {
             </Card>
           )}
 
-          {ticketTiers.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Vé Tham Dự ({ticketTiers.length})</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {ticketTiers.map((tier) => (
-                  <div
-                    key={tier.tierId}
-                    className="flex items-start gap-3 rounded-lg bg-neutral-50 p-3 sm:p-4"
-                  >
-                    <Checkbox
-                      checked={selectedTiers.has(tier.tierId)}
-                      onCheckedChange={() => toggleTier(tier.tierId)}
-                      className="mt-1"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-sm font-semibold sm:text-base">{tier.tierName}</h4>
-                      <p className="text-xs text-neutral-600 sm:text-sm">
-                        {formatCurrency(tier.price)} × {tier.quantity}
-                      </p>
-                      <div className="mt-2 flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => updateTicketTierQuantity(tier.tierId, tier.quantity - 1)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-8 text-center text-sm font-medium">{tier.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => updateTicketTierQuantity(tier.tierId, tier.quantity + 1)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className="text-sm font-bold text-brand-600 sm:text-base">
-                        {formatCurrency(tier.price * tier.quantity)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-error-50 h-8 w-8 text-error-500 hover:text-error-600"
-                        onClick={() => removeTicketTier(tier.tierId)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
           {tickets.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Vé Sự Kiện ({tickets.length})</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {tickets.map((ticket) => (
+                {Object.values(groupedTickets).map((group) => (
                   <div
-                    key={ticket.ticketId}
+                    key={`${group.showId}-${group.ticketClassId}`}
                     className="flex items-start gap-3 rounded-lg bg-neutral-50 p-3 sm:p-4"
                   >
                     <Checkbox
-                      checked={selectedTickets.has(ticket.ticketId)}
-                      onCheckedChange={() => toggleTicket(ticket.ticketId)}
+                      checked={group.ids.every((id) => selectedTickets.has(id))}
+                      onCheckedChange={(checked) => {
+                        const newSet = new Set(selectedTickets);
+                        group.ids.forEach((id) => {
+                          if (checked) newSet.add(id);
+                          else newSet.delete(id);
+                        });
+                        setSelectedTickets(newSet);
+                      }}
                       className="mt-1"
                     />
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-sm font-semibold sm:text-base">{ticket.showTitle}</h4>
+                      <h4 className="text-sm font-semibold sm:text-base">{group.showTitle}</h4>
                       <p className="text-xs text-neutral-600 sm:text-sm">
-                        {ticket.ticketClassName}
-                        {ticket.seatInfo && ` - ${ticket.seatInfo}`}
+                        {group.ticketClassName}
+                        {group.seatInfo && ` - ${group.seatInfo}`}
                       </p>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="text-xs text-neutral-500">Số lượng:</span>
+                        <div className="flex items-center gap-1 rounded-lg border border-neutral-100 bg-white p-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() =>
+                              updateTicketQuantity(
+                                group.showId,
+                                group.ticketClassId,
+                                group.quantity - 1
+                              )
+                            }
+                            disabled={group.quantity <= 1}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center text-sm font-bold">
+                            {group.quantity}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() =>
+                              updateTicketQuantity(
+                                group.showId,
+                                group.ticketClassId,
+                                group.quantity + 1
+                              )
+                            }
+                            disabled={group.quantity >= 10}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-brand-600 sm:text-base">
-                        {formatCurrency(ticket.price)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-error-50 text-error-500 hover:text-error-600"
-                        onClick={() => removeTicket(ticket.ticketId)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-brand-600 sm:text-base">
+                          {formatCurrency(group.price * group.quantity)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover:bg-error-50 h-8 w-8 text-error-500 hover:text-error-600"
+                          onClick={() => updateTicketQuantity(group.showId, group.ticketClassId, 0)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -408,22 +386,48 @@ export default function CartPage() {
                     <div className="min-w-0 flex-1">
                       <h4 className="text-sm font-semibold sm:text-base">{tour.tourTitle}</h4>
                       <p className="text-xs text-neutral-600 sm:text-sm">
-                        Khởi hành: {new Date(tour.startDate).toLocaleDateString('vi-VN')} •{' '}
-                        {tour.quantity} người
+                        Khởi hành: {new Date(tour.startDate).toLocaleDateString('vi-VN')}
+                        {tour.ticketTypeName ? ` • ${tour.ticketTypeName}` : ''}
                       </p>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="text-xs text-neutral-500">Số lượng:</span>
+                        <div className="flex items-center gap-1 rounded-lg border border-neutral-100 bg-white p-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => updateTourQuantity(tour.scheduleId, tour.quantity - 1)}
+                            disabled={tour.quantity <= 1}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center text-sm font-bold">{tour.quantity}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => updateTourQuantity(tour.scheduleId, tour.quantity + 1)}
+                            disabled={tour.quantity >= 10}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-brand-600 sm:text-base">
-                        {formatCurrency(tour.price * tour.quantity)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-error-50 text-error-500 hover:text-error-600"
-                        onClick={() => removeTour(tour.scheduleId)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-brand-600 sm:text-base">
+                          {formatCurrency(tour.price * tour.quantity)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover:bg-error-50 h-8 w-8 text-error-500 hover:text-error-600"
+                          onClick={() => removeTour(tour.scheduleId)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}

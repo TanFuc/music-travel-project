@@ -8,13 +8,16 @@ import { TourDetailSkeleton } from '@/components/server/Skeletons';
 import { fetchServer } from '@/lib/api-server';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { stripHtml, toAbsoluteUrl } from '@/lib/seo';
+import { RelatedProducts } from '@/components/common/RelatedProducts';
 import {
   buildLanguageAlternates,
   buildTourOffers,
   buildTourScheduleProductsJsonLd,
 } from '@/lib/seo-jsonld';
 export const revalidate = 300;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2222/api/v1';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1');
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://maichohanhtinhxanh.com').replace(
   /\/$/,
   ''
@@ -52,6 +55,10 @@ interface TourDetail {
   } | null;
   schedules: TourSchedule[];
 }
+interface TourTicketType {
+  name: string;
+  price: number;
+}
 export async function generateStaticParams() {
   try {
     const response = await fetch(`${API_URL}/tours?limit=20&sortBy=createdAt&order=desc`);
@@ -59,7 +66,7 @@ export async function generateStaticParams() {
       return [];
     }
     const data = await response.json();
-    const tours = data.data || data.items || [];
+    const tours = data.data?.items || data.items || [];
     return tours.map((tour: { slug: string }) => ({
       slug: tour.slug,
     }));
@@ -132,6 +139,16 @@ export default async function TourDetailPage({
 }) {
   const tour = await fetchTourData(params.slug);
   if (!tour) {
+    try {
+      const combo = await fetchServer<TourDetail>(`/combos/${params.slug}`, {
+        revalidate: 300,
+        tags: [`combo-${params.slug}`],
+      });
+      if (combo) {
+        const { redirect } = await import('next/navigation');
+        redirect(`/combo/${params.slug}`);
+      }
+    } catch {}
     notFound();
   }
   const nextSchedule = tour.schedules
@@ -140,6 +157,22 @@ export default async function TourDetailPage({
   const thumbnailUrl = (tour.properties?.thumbnailUrl || tour.properties?.bannerUrl) as
     | string
     | undefined;
+  const parsedTicketTypes = Array.isArray((tour.properties as any)?.ticketTypes)
+    ? (
+        (tour.properties as any).ticketTypes as Array<{
+          name?: unknown;
+          price?: unknown;
+        }>
+      )
+        .filter(
+          (ticketType) =>
+            typeof ticketType?.name === 'string' && typeof ticketType?.price === 'number'
+        )
+        .map((ticketType) => ({
+          name: String(ticketType.name),
+          price: Number(ticketType.price),
+        }))
+    : [];
   const hasSlots = nextSchedule ? nextSchedule.capacity - nextSchedule.bookedCount > 0 : false;
   const itineraryItems: Array<{
     '@type': 'ListItem';
@@ -198,12 +231,26 @@ export default async function TourDetailPage({
         <TourDetailServer
           tour={tour}
           sidebarChildren={
-            <TourBookingClient tourId={tour.id} tourTitle={tour.title} schedules={tour.schedules} />
+            <TourBookingClient
+              tourId={tour.id}
+              tourTitle={tour.title}
+              schedules={tour.schedules}
+              ticketTypes={parsedTicketTypes as TourTicketType[]}
+            />
           }
         >
-          <TourSchedulesClient tourId={tour.id} tourTitle={tour.title} schedules={tour.schedules} />
+          <TourSchedulesClient
+            tourId={tour.id}
+            tourTitle={tour.title}
+            schedules={tour.schedules}
+            ticketTypes={parsedTicketTypes as TourTicketType[]}
+          />
         </TourDetailServer>
       </Suspense>
+
+      <div className="container mx-auto mt-24 px-4 sm:px-6 lg:px-8">
+        <RelatedProducts currentId={tour.id} type="tour" />
+      </div>
     </div>
   );
 }

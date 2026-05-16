@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@/components/common/Link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -41,8 +41,21 @@ interface LoginResponse {
 export default function LoginPage() {
   usePageTitle();
   const router = useRouter();
-  const { login } = useAuthStore();
+  const { login, isAuthenticated, user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  useEffect(() => {
+    if (mounted && isAuthenticated && user) {
+      if (user.role === 'ADMIN' || user.role === 'STAFF') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/shows');
+      }
+    }
+  }, [mounted, isAuthenticated, user, router]);
   const {
     register,
     handleSubmit,

@@ -397,7 +397,7 @@ export default function ProfilePage() {
           <div className="absolute -bottom-10 -right-10 h-64 w-64 animate-pulse rounded-full bg-white/10 blur-3xl" />
         </div>
 
-        <div className="px-4 pb-6 md:px-8">
+        <div className="mx-auto max-w-7xl px-4 pb-6 md:px-8">
           <div className="relative z-10 -mt-12 flex flex-col items-start gap-4 sm:-mt-14 sm:flex-row sm:items-end">
             <div className="group relative">
               <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-white shadow-md sm:h-32 sm:w-32">
@@ -449,7 +449,7 @@ export default function ProfilePage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="sticky top-16 z-20 border-b border-slate-200 bg-white shadow-sm">
-          <div className="scrollbar-none overflow-x-auto px-4 md:px-8">
+          <div className="mx-auto max-w-7xl overflow-x-auto px-4 md:px-8">
             <TabsList className="h-auto w-full justify-start gap-6 bg-transparent p-0">
               <TabsTrigger
                 value="overview"
@@ -477,7 +477,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="mx-auto min-h-[500px] w-full max-w-[1920px] px-4 py-6 md:px-8 md:py-8">
+        <div className="mx-auto min-h-[500px] w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
           <TabsContent value="overview" className="mt-0 space-y-6">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">

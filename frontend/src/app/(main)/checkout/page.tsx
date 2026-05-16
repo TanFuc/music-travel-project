@@ -126,7 +126,6 @@ export default function CheckoutPage() {
   const {
     tickets,
     tours,
-    ticketTiers,
     singerPackages,
     getSubtotal,
     getTotal,
@@ -137,7 +136,6 @@ export default function CheckoutPage() {
     clearCart,
     removeTicket,
     removeTour,
-    removeTicketTier,
     removeSingerPackage,
   } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -157,8 +155,7 @@ export default function CheckoutPage() {
       .catch(console.error);
   }, []);
   const isBuyNowMode = !!bookingCode;
-  const isEmpty =
-    !isBuyNowMode && tickets.length === 0 && tours.length === 0 && ticketTiers.length === 0;
+  const isEmpty = !isBuyNowMode && tickets.length === 0 && tours.length === 0;
   useEffect(() => {
     if (hasHydrated && !isAuthenticated) {
       router.push('/login');
@@ -246,13 +243,10 @@ export default function CheckoutPage() {
             ticketsWithSeats?: Array<{
               ticketId: number;
             }>;
-            ticketTiers?: Array<{
-              tierId: number;
-              quantity: number;
-            }>;
             tourItems?: Array<{
               scheduleId: number;
               quantity: number;
+              ticketTypeName?: string;
             }>;
             singerPackages?: Array<{
               packageId: string;
@@ -264,16 +258,11 @@ export default function CheckoutPage() {
           if (tickets.length) {
             bookingPayload.ticketsWithSeats = tickets.map((t) => ({ ticketId: t.ticketId }));
           }
-          if (ticketTiers.length) {
-            bookingPayload.ticketTiers = ticketTiers.map((t) => ({
-              tierId: t.tierId,
-              quantity: t.quantity,
-            }));
-          }
           if (tours.length) {
             bookingPayload.tourItems = tours.map((t) => ({
               scheduleId: t.scheduleId,
               quantity: t.quantity,
+              ticketTypeName: t.ticketTypeName,
             }));
           }
           if (singerPackages.length) {
@@ -324,9 +313,7 @@ export default function CheckoutPage() {
           window.location.href = result.paymentUrl;
         } else {
           booking.items.forEach((item) => {
-            if (item.ticketTier) {
-              removeTicketTier(item.ticketTier.id);
-            } else if (item.tourSchedule) {
+            if (item.tourSchedule) {
               removeTour(item.tourSchedule.id);
             } else if (item.ticket) {
               removeTicket(item.ticket.id);
@@ -340,13 +327,10 @@ export default function CheckoutPage() {
           ticketsWithSeats?: Array<{
             ticketId: number;
           }>;
-          ticketTiers?: Array<{
-            tierId: number;
-            quantity: number;
-          }>;
           tourItems?: Array<{
             scheduleId: number;
             quantity: number;
+            ticketTypeName?: string;
           }>;
           singerPackages?: Array<{
             packageId: string;
@@ -358,16 +342,11 @@ export default function CheckoutPage() {
         if (tickets.length) {
           bookingPayload.ticketsWithSeats = tickets.map((t) => ({ ticketId: t.ticketId }));
         }
-        if (ticketTiers.length) {
-          bookingPayload.ticketTiers = ticketTiers.map((t) => ({
-            tierId: t.tierId,
-            quantity: t.quantity,
-          }));
-        }
         if (tours.length) {
           bookingPayload.tourItems = tours.map((t) => ({
             scheduleId: t.scheduleId,
             quantity: t.quantity,
+            ticketTypeName: t.ticketTypeName,
           }));
         }
         if (singerPackages.length) {
@@ -681,39 +660,6 @@ export default function CheckoutPage() {
                     </>
                   ) : (
                     <>
-                      {ticketTiers.map((tier, index) => (
-                        <div key={tier.tierId} className="space-y-2 rounded-lg bg-neutral-50 p-3">
-                          <div className="flex items-start justify-between">
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-neutral-900">
-                                {tier.tierName}
-                              </p>
-                              <Badge variant="outline" className="mt-1 text-xs">
-                                Vé xem show
-                              </Badge>
-                            </div>
-                            <span className="text-xs text-neutral-500">#{index + 1}</span>
-                          </div>
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-neutral-600">Số lượng:</span>
-                              <span className="font-medium">{tier.quantity}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-neutral-600">Đơn giá:</span>
-                              <span className="font-medium">{formatCurrency(tier.price)}</span>
-                            </div>
-                          </div>
-                          <div className="flex justify-between border-t border-neutral-200 pt-2">
-                            <span className="text-sm font-medium text-neutral-700">
-                              Thành tiền:
-                            </span>
-                            <span className="font-bold text-brand-600">
-                              {formatCurrency(tier.price * tier.quantity)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
                       {tickets.map((ticket, index) => (
                         <div
                           key={ticket.ticketId}
@@ -728,9 +674,7 @@ export default function CheckoutPage() {
                                 Vé xem show
                               </Badge>
                             </div>
-                            <span className="text-xs text-neutral-500">
-                              #{ticketTiers.length + index + 1}
-                            </span>
+                            <span className="text-xs text-neutral-500">#{index + 1}</span>
                           </div>
                           <div className="space-y-1 text-sm">
                             <div className="flex justify-between">
@@ -771,10 +715,16 @@ export default function CheckoutPage() {
                               </Badge>
                             </div>
                             <span className="text-xs text-neutral-500">
-                              #{ticketTiers.length + tickets.length + index + 1}
+                              #{tickets.length + index + 1}
                             </span>
                           </div>
                           <div className="space-y-1 text-sm">
+                            {tour.ticketTypeName && (
+                              <div className="flex justify-between">
+                                <span className="text-neutral-600">Loại vé:</span>
+                                <span className="font-medium">{tour.ticketTypeName}</span>
+                              </div>
+                            )}
                             <div className="flex justify-between">
                               <span className="text-neutral-600">Số người:</span>
                               <span className="font-medium">{tour.quantity}</span>
@@ -812,7 +762,7 @@ export default function CheckoutPage() {
                               </Badge>
                             </div>
                             <span className="text-xs text-neutral-500">
-                              #{ticketTiers.length + tickets.length + tours.length + index + 1}
+                              #{tickets.length + tours.length + index + 1}
                             </span>
                           </div>
 
@@ -871,8 +821,7 @@ export default function CheckoutPage() {
                     <span className="font-medium">
                       {isBuyNowMode && booking
                         ? booking.items.reduce((sum, item) => sum + item.quantity, 0)
-                        : ticketTiers.reduce((sum, t) => sum + t.quantity, 0) +
-                          tickets.length +
+                        : tickets.length +
                           tours.reduce((sum, t) => sum + t.quantity, 0) +
                           singerPackages.reduce((sum, p) => sum + p.quantity, 0)}{' '}
                       mục
