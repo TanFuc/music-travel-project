@@ -24,7 +24,6 @@ import { PerformanceModule } from './modules/performance/performance.module';
 import { BranchesModule } from './modules/branches/branches.module';
 import { SearchModule } from './modules/search/search.module';
 import { HomeStagesModule } from './modules/home-stages/home-stages.module';
-import { TicketTiersModule } from './modules/ticket-tiers/ticket-tiers.module';
 import { TicketVerificationModule } from './modules/ticket-verification/ticket-verification.module';
 import { ShowActivityModule } from './modules/show-activity/show-activity.module';
 import { SingersModule } from './modules/singers/singers.module';
@@ -45,62 +44,65 @@ import redisConfig from './config/redis.config';
 import cloudinaryConfig from './config/cloudinary.config';
 import r2Config from './config/r2.config';
 import { resolve } from 'path';
+import { StaticPagesModule } from './modules/static-pages/static-pages.module';
+import { CombosModule } from './modules/combos/combos.module';
 const envRoot = resolve(__dirname, '..');
 @Module({
-  imports: [
-    CommonModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: [appConfig, databaseConfig, redisConfig, cloudinaryConfig, r2Config],
-      envFilePath: [resolve(envRoot, '.env.local'), resolve(envRoot, '.env')],
-    }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 100,
-      },
-    ]),
-    ScheduleModule.forRoot(),
-    PrismaModule,
-    CacheModule,
-    AuthModule,
-    UsersModule,
-    WalletModule,
-    ShowsModule,
-    TicketsModule,
-    ToursModule,
-    BookingsModule,
-    PaymentsModule,
-    VouchersModule,
-    MediaModule,
-    NotificationsModule,
-    AdminModule,
-    BannersModule,
-    LocationsModule,
-    StagesModule,
-    SeatMapsModule,
-    PerformanceModule,
-    BranchesModule,
-    SearchModule,
-    HomeStagesModule,
-    TicketTiersModule,
-    TicketVerificationModule,
-    ShowActivityModule,
-    SingersModule,
-    SingerPackagesModule,
-    ContactChannelsModule,
-    PaymentMethodConfigsModule,
-    WishlistModule,
-    AuditModule,
-    CollaboratorModule,
-    SmartSupportModule,
-    SystemConfigsModule,
-  ],
-  providers: [EnhancedLoggerService],
-  exports: [EnhancedLoggerService],
+    imports: [
+        CommonModule,
+        ConfigModule.forRoot({
+            isGlobal: true,
+            load: [appConfig, databaseConfig, redisConfig, cloudinaryConfig, r2Config],
+            envFilePath: [resolve(envRoot, '.env.local'), resolve(envRoot, '.env')],
+        }),
+        ThrottlerModule.forRoot([
+            {
+                ttl: 60000,
+                limit: 100,
+            },
+        ]),
+        ScheduleModule.forRoot(),
+        PrismaModule,
+        CacheModule,
+        AuthModule,
+        UsersModule,
+        WalletModule,
+        ShowsModule,
+        TicketsModule,
+        ToursModule,
+        BookingsModule,
+        PaymentsModule,
+        VouchersModule,
+        MediaModule,
+        NotificationsModule,
+        AdminModule,
+        BannersModule,
+        LocationsModule,
+        StagesModule,
+        SeatMapsModule,
+        PerformanceModule,
+        BranchesModule,
+        SearchModule,
+        HomeStagesModule,
+        TicketVerificationModule,
+        ShowActivityModule,
+        SingersModule,
+        SingerPackagesModule,
+        ContactChannelsModule,
+        PaymentMethodConfigsModule,
+        WishlistModule,
+        AuditModule,
+        CollaboratorModule,
+        SmartSupportModule,
+        SystemConfigsModule,
+        CombosModule,
+        StaticPagesModule,
+    ],
+    providers: [EnhancedLoggerService],
+    exports: [EnhancedLoggerService],
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
-  }
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+    }
 }

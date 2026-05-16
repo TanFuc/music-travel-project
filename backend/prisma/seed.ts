@@ -1,9 +1,22 @@
-import { PrismaClient, UserRole, ShowStatus, TicketStatus, TourScheduleStatus, VoucherDiscountType, BannerPosition, MediaType, MediaTargetType, SeatType, BookingStatus, PaymentStatus, BookingItemType, WalletTransactionType } from '@prisma/client';
+import { Prisma, PrismaClient, UserRole, ShowStatus, TicketStatus, TourScheduleStatus, VoucherDiscountType, BannerPosition, MediaType, MediaTargetType, SeatType, BookingStatus, PaymentStatus, BookingItemType, WalletTransactionType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { seedSingerPackages } from './seed-singer-packages';
 import { seedPaymentMethods } from './seed-payment-methods';
+import { seedStaticPages } from './seed-static-pages';
+import { loadShowSeedItemsFromMarkdown, loadTourSeedItemsFromMarkdown } from './content-seed-loader';
 
 const prisma = new PrismaClient();
+
+function toSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-+/g, '-');
+}
 
 async function main() {
   console.log('🌱 Starting seed...');
@@ -43,6 +56,7 @@ async function main() {
   await prisma.banner.deleteMany();
   await prisma.marketingEvent.deleteMany();
   await prisma.location.deleteMany();
+  await prisma.staticPage.deleteMany();
   await prisma.user.deleteMany();
 
   // ============================================================================
@@ -232,38 +246,6 @@ async function main() {
     }),
     prisma.artist.create({
       data: {
-        name: 'Mỹ Tâm',
-        bio: 'Nữ ca sĩ hàng đầu Việt Nam, được mệnh danh là "Họa mi tóc nâu".',
-        socialLinks: { facebook: 'https://facebook.com/mytam', instagram: 'https://instagram.com/mytam' },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.artist.create({
-      data: {
-        name: 'Đen Vâu',
-        bio: 'Rapper nổi tiếng với những bài hát về cuộc sống đời thường.',
-        socialLinks: { facebook: 'https://facebook.com/denvau', youtube: 'https://youtube.com/denvau' },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.artist.create({
-      data: {
-        name: 'Tùng Dương',
-        bio: 'Ca sĩ với phong cách âm nhạc đa dạng, từ nhạc dân gian đến đương đại.',
-        socialLinks: { facebook: 'https://facebook.com/tungduong' },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.artist.create({
-      data: {
-        name: 'Hoàng Thùy Linh',
-        bio: 'Ca sĩ kết hợp nhạc dân gian với hiện đại, nổi tiếng với "Để Mị nói cho mà nghe".',
-        socialLinks: { facebook: 'https://facebook.com/hoangthuylinh', instagram: 'https://instagram.com/hoangthuylinh' },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.artist.create({
-      data: {
         name: 'Sơn Tùng M-TP',
         bio: 'Ca sĩ, nhạc sĩ trẻ với nhiều hit và lượng fan đông đảo.',
         socialLinks: { facebook: 'https://facebook.com/sontungmtp', instagram: 'https://instagram.com/sontungmtp' },
@@ -272,25 +254,65 @@ async function main() {
     }),
     prisma.artist.create({
       data: {
-        name: 'Trịnh Công Sơn Band',
-        bio: 'Ban nhạc chuyên biểu diễn các ca khúc bất hủ của nhạc sĩ Trịnh Công Sơn.',
-        socialLinks: { facebook: 'https://facebook.com/trinhcongsonband' },
+        name: 'Vicky Nhung',
+        bio: 'Nữ ca sĩ với giọng hát đầy nội lực và phong cách âm nhạc cá tính.',
+        socialLinks: { facebook: 'https://facebook.com/vickynhung' },
         createdBy: adminUser.id,
       },
     }),
     prisma.artist.create({
       data: {
-        name: 'Ngọt Band',
-        bio: 'Ban nhạc indie nổi tiếng với những ca khúc acoustic đầy cảm xúc.',
-        socialLinks: { facebook: 'https://facebook.com/ngotband', instagram: 'https://instagram.com/ngotband' },
+        name: 'Trung Quân Idol',
+        bio: 'Được mệnh danh là "Thánh mưa" với những bản ballad da diết.',
+        socialLinks: { facebook: 'https://facebook.com/trungquanidol' },
         createdBy: adminUser.id,
       },
     }),
     prisma.artist.create({
       data: {
-        name: 'Vũ.',
-        bio: 'Ca sĩ indie với giọng hát trầm buồn và phong cách acoustic.',
-        socialLinks: { facebook: 'https://facebook.com/vu.artist', instagram: 'https://instagram.com/vu.artist' },
+        name: 'Vũ Cát Tường',
+        bio: 'Nghệ sĩ đa năng với khả năng sáng tác và biểu diễn độc đáo.',
+        socialLinks: { facebook: 'https://facebook.com/vucattuong' },
+        createdBy: adminUser.id,
+      },
+    }),
+    prisma.artist.create({
+      data: {
+        name: 'S.T Sơn Thạch',
+        bio: 'Nam ca sĩ, diễn viên với phong cách biểu diễn sôi động.',
+        socialLinks: { facebook: 'https://facebook.com/stsonthach' },
+        createdBy: adminUser.id,
+      },
+    }),
+    prisma.artist.create({
+      data: {
+        name: 'Thành Vá',
+        bio: 'Giọng ca đặc biệt với những bản cover đầy cảm xúc.',
+        socialLinks: { facebook: 'https://facebook.com/thanhva' },
+        createdBy: adminUser.id,
+      },
+    }),
+    prisma.artist.create({
+      data: {
+        name: 'Chu Thúy Quỳnh',
+        bio: 'Nữ ca sĩ sở hữu giọng hát lạ và đầy cuốn hút.',
+        socialLinks: { facebook: 'https://facebook.com/chuthuyquynh' },
+        createdBy: adminUser.id,
+      },
+    }),
+    prisma.artist.create({
+      data: {
+        name: 'Đinh Tùng Huy',
+        bio: 'Chủ nhân của nhiều bản hit triệu view trên mạng xã hội.',
+        socialLinks: { facebook: 'https://facebook.com/dinhtunghuy' },
+        createdBy: adminUser.id,
+      },
+    }),
+    prisma.artist.create({
+      data: {
+        name: 'Hồ Trung Dũng',
+        bio: 'Nam ca sĩ với phong cách lịch lãm và giọng hát truyền cảm.',
+        socialLinks: { facebook: 'https://facebook.com/hotrungdung' },
         createdBy: adminUser.id,
       },
     }),
@@ -453,244 +475,112 @@ async function main() {
   // ============================================================================
   console.log('🎵 Creating shows...');
 
-  const baseDate = new Date();
-  const getDate = (daysFromNow: number) => {
-    const date = new Date(baseDate);
-    date.setDate(date.getDate() + daysFromNow);
-    date.setHours(20, 0, 0, 0);
-    return date;
+    const showSeedItems = loadShowSeedItemsFromMarkdown();
+  const showSlugs = new Set<string>();
+
+  const resolveStageId = (city: string, index: number) => {
+    const normalized = city.toLowerCase();
+    if (normalized.includes('ha noi')) return theNestHanoi.id;
+    if (normalized.includes('da nang')) return gardenStageDN.id;
+    if (normalized.includes('nha trang')) return beachStageNT.id;
+    if (normalized.includes('ho chi minh') || normalized.includes('sai gon')) return skyGarden.id;
+    if (normalized.includes('da lat')) return thungLungMay.id;
+    return [thungLungMay.id, mayInTheNest.id, skyGarden.id, theNestHanoi.id, gardenStageDN.id, beachStageNT.id][index % 6];
   };
 
-  const shows = await Promise.all([
-    // Show 1: Dem Nhac Trinh - Thung Lung May
-    prisma.show.create({
-      data: {
-        stageId: thungLungMay.id,
-        title: 'Đêm Nhạc Trịnh - Thung Lũng Mây',
-        slug: 'dem-nhac-trinh-thung-lung-may',
-        description: 'Đêm nhạc tưởng nhớ nhạc sĩ Trịnh Công Sơn với những ca khúc bất hủ, trong không gian Thung Lũng Mây đầy thơ mộng.',
-        performTime: getDate(15),
-        checkInTime: getDate(15),
-        status: ShowStatus.UPCOMING,
-        properties: { badge: ['HOT', 'VIP'], featured: true },
-        metaTitle: 'Đêm Nhạc Trịnh - Thung Lũng Mây | Music Travel',
-        metaDescription: 'Tham gia đêm nhạc Trịnh tại Thung Lũng Mây Đà Lạt',
-        createdBy: adminUser.id,
-      },
-    }),
-    // Show 2: Acoustic Night - May In The Nest
-    prisma.show.create({
-      data: {
-        stageId: mayInTheNest.id,
-        title: 'Acoustic Night - Mây In The Nest',
-        slug: 'acoustic-night-may-in-the-nest',
-        description: 'Đêm nhạc acoustic ấm cúng với những bản ballad nhẹ nhàng.',
-        performTime: getDate(20),
-        checkInTime: getDate(20),
-        status: ShowStatus.UPCOMING,
-        properties: { badge: ['NEW'], featured: true },
-        createdBy: adminUser.id,
-      },
-    }),
-    // Show 3: Jazz Under The Stars - Sky Garden
-    prisma.show.create({
-      data: {
-        stageId: skyGarden.id,
-        title: 'Jazz Under The Stars',
-        slug: 'jazz-under-the-stars',
-        description: 'Đêm nhạc Jazz đỉnh cao trên tầng thượng Sky Garden với view toàn thành phố.',
-        performTime: getDate(25),
-        checkInTime: getDate(25),
-        status: ShowStatus.UPCOMING,
-        properties: { badge: ['VIP'], featured: true },
-        createdBy: adminUser.id,
-      },
-    }),
-    // Show 4: Indie Night - The Nest Hanoi
-    prisma.show.create({
-      data: {
-        stageId: theNestHanoi.id,
-        title: 'Indie Night - Những Câu Chuyện Nhỏ',
-        slug: 'indie-night-nhung-cau-chuyen-nho',
-        description: 'Đêm nhạc indie với những nghệ sĩ underground nổi bật nhất.',
-        performTime: getDate(32),
-        checkInTime: getDate(32),
-        status: ShowStatus.UPCOMING,
-        properties: { badge: ['SOON'] },
-        createdBy: adminUser.id,
-      },
-    }),
-    // Show 5: Folk & Soul Night - Garden Stage Da Nang
-    prisma.show.create({
-      data: {
-        stageId: gardenStageDN.id,
-        title: 'Folk & Soul Night',
-        slug: 'folk-soul-night',
-        description: 'Đêm nhạc Folk & Soul đầy cảm xúc bên bờ biển Đà Nẵng.',
-        performTime: getDate(40),
-        checkInTime: getDate(40),
-        status: ShowStatus.UPCOMING,
-        properties: { badge: ['NEW'] },
-        createdBy: adminUser.id,
-      },
-    }),
-    // Show 6: Moonlight Serenade - Thung Lung May
-    prisma.show.create({
-      data: {
-        stageId: thungLungMay.id,
-        title: 'Moonlight Serenade',
-        slug: 'moonlight-serenade',
-        description: 'Đêm nhạc lãng mạn dưới ánh trăng tại Thung Lũng Mây.',
-        performTime: getDate(45),
-        checkInTime: getDate(45),
-        status: ShowStatus.UPCOMING,
-        properties: { badge: ['HOT', 'VIP'] },
-        createdBy: adminUser.id,
-      },
-    }),
-    // Show 7: Beach Sunset Concert - Nha Trang
-    prisma.show.create({
-      data: {
-        stageId: beachStageNT.id,
-        title: 'Beach Sunset Concert',
-        slug: 'beach-sunset-concert',
-        description: 'Concert hoàng hôn bên bãi biển Nha Trang tuyệt đẹp.',
-        performTime: getDate(50),
-        checkInTime: getDate(50),
-        status: ShowStatus.UPCOMING,
-        properties: { badge: ['HOT'] },
-        createdBy: adminUser.id,
-      },
-    }),
-    // Show 8: Electric Night - Sky Garden
-    prisma.show.create({
-      data: {
-        stageId: skyGarden.id,
-        title: 'Electric Night - EDM Party',
-        slug: 'electric-night-edm-party',
-        description: 'Đêm nhạc điện tử sôi động nhất Sài Gòn.',
-        performTime: getDate(55),
-        checkInTime: getDate(55),
-        status: ShowStatus.UPCOMING,
-        properties: { badge: ['HOT', 'NEW'] },
-        createdBy: adminUser.id,
-      },
-    }),
-  ]);
+  const shows = await Promise.all(
+    showSeedItems.map((item, index) => {
+      const dedupSlug = showSlugs.has(item.slug) ? `${item.slug}-${index + 1}` : item.slug;
+      showSlugs.add(dedupSlug);
 
-  // ============================================================================
-  // 7A. CREATE TICKET TIERS (GLOBAL)
-  // ============================================================================
-  console.log('🎫 Creating global ticket tiers...');
-  await Promise.all([
-    prisma.ticketTier.create({
-      data: {
-        name: 'Vé Test 2K',
-        price: 2000,
-        description: 'Vé giá 2.000đ dùng cho test thanh toán.',
-        benefits: 'Vé test.',
-        colorCode: '#9E9E9E',
-        priority: 1,
-      },
-    }),
-    prisma.ticketTier.create({
-      data: {
-        name: 'Vé Hạt Xanh - Green Solo',
-        price: 350000,
-        description: 'Mỗi cá nhân là một "hạt mầm" lan tỏa lối sống xanh. Dành cho: Khách lẻ, bạn trẻ, người yêu âm nhạc.',
-        benefits: 'Đồ uống + ăn nhẹ. Ghế ngồi khu Green Solo.',
-        colorCode: '#4CAF50',
-        priority: 1,
-      },
-    }),
-    prisma.ticketTier.create({
-      data: {
-        name: 'Vé Gia Đình Xanh - Happy Green Family',
-        price: 500000,
-        description: 'Gắn kết gia đình - nuôi dưỡng ý thức bảo vệ môi trường cho trẻ nhỏ. Dành cho: Gia đình trẻ, phụ huynh (02 người lớn + 1 trẻ em).',
-        benefits: 'Đồ uống + ăn nhẹ. Ghế ngồi khu Happy Green Family.',
-        colorCode: '#8BC34A',
-        priority: 2,
-      },
-    }),
-    prisma.ticketTier.create({
-      data: {
-        name: 'Vé Tuổi Trẻ Xanh - Green Youth',
-        price: 1000000,
-        description: 'Nhiệt huyết - sáng tạo - hành động vì tương lai xanh. Dành cho: CLB sinh viên, nhóm bạn trẻ (05 người).',
-        benefits: 'Đồ uống + ăn nhẹ. Ghế ngồi khu Green Youth.',
-        colorCode: '#CDDC39',
-        priority: 3,
-      },
-    }),
-    prisma.ticketTier.create({
-      data: {
-        name: 'Vé Doanh Nghiệp Đồng Hành Xanh - Green Partner',
-        price: 3000000,
-        description: 'Doanh nghiệp chung tay vì cộng đồng & môi trường. Dành cho: Công ty, tổ chức (10 người).',
-        benefits: 'Đồ uống + ăn nhẹ + rượu vang. Ghế ngồi khu Green Partner. Khu vực ngồi riêng, Check-in & truyền thông riêng.',
-        colorCode: '#FF9800',
-        priority: 4,
-      },
-    }),
-    prisma.ticketTier.create({
-      data: {
-        name: 'Vé VIP Doanh Nhân Xanh - Green Business Class',
-        price: 1000000,
-        description: 'Đẳng cấp - kết nối - trách nhiệm xã hội. Dành cho: Doanh nhân, nhà tài trợ (1 người).',
-        benefits: 'Đồ uống + ăn nhẹ + rượu vang + món khô. Ghế ngồi khu VIP - Green Business Class. Khu vực ngồi đẹp/riêng. Ưu tiên giao lưu - kết nối đối tác.',
-        colorCode: '#FFD700',
-        priority: 5,
-      },
-    }),
-  ]);
+      const normalizedTicketTypes = item.ticketTypes.length
+        ? item.ticketTypes
+        : [{ name: 'Vé tiêu chuẩn', price: 199000, imageUrl: '' }];
+
+      return prisma.show.create({
+        data: {
+          stageId: resolveStageId(item.city, index),
+          title: item.title,
+          slug: dedupSlug,
+          description: item.description || `<p>${item.title}</p>`,
+          performTime: item.performTime,
+          checkInTime: item.checkInTime,
+          status: item.performTime > new Date() ? ShowStatus.UPCOMING : ShowStatus.ONGOING,
+          properties: {
+            featured: index < 6,
+            locationText: item.locationText,
+            thumbnailUrl: item.thumbnailUrl,
+            ticketTypes: normalizedTicketTypes as unknown as Prisma.InputJsonValue,
+          },
+          metaTitle: `${item.title} | FSell`,
+          metaDescription: item.locationText || item.title,
+          createdBy: adminUser.id,
+        },
+      });
+    })
+  );
 
   // Link artists to shows
   console.log('🎤 Linking artists to shows...');
-  await Promise.all([
-    prisma.showArtist.create({ data: { showId: shows[0].id, artistId: artists[6].id, isHeadline: true } }), // Trinh Cong Son Band
-    prisma.showArtist.create({ data: { showId: shows[0].id, artistId: artists[0].id, isHeadline: false } }), // Ha Anh Tuan
-    prisma.showArtist.create({ data: { showId: shows[1].id, artistId: artists[7].id, isHeadline: true } }), // Ngot Band
-    prisma.showArtist.create({ data: { showId: shows[1].id, artistId: artists[8].id, isHeadline: false } }), // Vu.
-    prisma.showArtist.create({ data: { showId: shows[2].id, artistId: artists[3].id, isHeadline: true } }), // Tung Duong
-    prisma.showArtist.create({ data: { showId: shows[3].id, artistId: artists[9].id, isHeadline: true } }), // Ca Hoi Hoang
-    prisma.showArtist.create({ data: { showId: shows[3].id, artistId: artists[8].id, isHeadline: false } }), // Vu.
-    prisma.showArtist.create({ data: { showId: shows[4].id, artistId: artists[4].id, isHeadline: true } }), // Hoang Thuy Linh
-    prisma.showArtist.create({ data: { showId: shows[5].id, artistId: artists[0].id, isHeadline: true } }), // Ha Anh Tuan
-    prisma.showArtist.create({ data: { showId: shows[5].id, artistId: artists[1].id, isHeadline: false } }), // My Tam
-    prisma.showArtist.create({ data: { showId: shows[6].id, artistId: artists[2].id, isHeadline: true } }), // Den Vau
-    prisma.showArtist.create({ data: { showId: shows[7].id, artistId: artists[5].id, isHeadline: true } }), // Son Tung M-TP
-  ]);
+  await Promise.all(
+    shows.map((show) => {
+      // Find matching artists based on title
+      const matchingArtists = artists.filter((artist) =>
+        show.title.toLowerCase().includes(artist.name.toLowerCase())
+      );
+
+      if (matchingArtists.length > 0) {
+        return Promise.all(
+          matchingArtists.map((artist) =>
+            prisma.showArtist.create({
+              data: {
+                showId: show.id,
+                artistId: artist.id,
+                isHeadline: true,
+              },
+            })
+          )
+        );
+      }
+
+      // Fallback: Link a random artist if no match found
+      const randomIndex = Math.floor(Math.random() * artists.length);
+      return prisma.showArtist.create({
+        data: {
+          showId: show.id,
+          artistId: artists[randomIndex].id,
+          isHeadline: true,
+        },
+      });
+    })
+  );
 
   // ============================================================================
   // 7. CREATE TICKET CLASSES AND TICKETS FOR EACH SHOW
   // ============================================================================
   console.log('🎫 Creating ticket classes and tickets...');
 
-  async function createTicketsForShow(
+  async function createGeneralAdmissionTicketsForShow(
     showId: number,
-    stageSeats: { id: number; zoneName: string | null }[],
-    ticketClassConfigs: { name: string; price: number; colorCode: string; zones: string[] }[]
+    ticketClassConfigs: { name: string; price: number; colorCode: string }[]
   ) {
-    for (const config of ticketClassConfigs) {
-      const zoneSeats = stageSeats.filter(s => config.zones.includes(s.zoneName || ''));
+    const quantityPerClass = 120;
 
+    for (const config of ticketClassConfigs) {
       const ticketClass = await prisma.ticketClass.create({
         data: {
           showId,
           name: config.name,
           price: config.price,
           colorCode: config.colorCode,
-          totalQuantity: zoneSeats.length,
+          totalQuantity: quantityPerClass,
         },
       });
 
-      // Create tickets for each seat in this class
-      const ticketData = zoneSeats.map((seat, index) => ({
+      const ticketData = Array.from({ length: quantityPerClass }, (_, index) => ({
         ticketCode: `TK${showId.toString().padStart(3, '0')}${ticketClass.id.toString().padStart(3, '0')}${(index + 1).toString().padStart(4, '0')}`,
         showId,
         ticketClassId: ticketClass.id,
-        physicalSeatId: seat.id,
         status: TicketStatus.AVAILABLE,
       }));
 
@@ -698,344 +588,136 @@ async function main() {
     }
   }
 
-  // Thung Lung May shows
-  await createTicketsForShow(shows[0].id, thungLungMaySeats, [
-    { name: 'VIP', price: 500000, colorCode: '#FFD700', zones: ['VIP'] },
-    { name: 'Standard', price: 350000, colorCode: '#4CAF50', zones: ['Standard'] },
-    { name: 'Standing', price: 250000, colorCode: '#2196F3', zones: ['Standing'] },
-  ]);
+  const classColors = ['#D97706', '#0EA5E9', '#059669', '#7C3AED', '#F43F5E', '#F59E0B'];
 
-  await createTicketsForShow(shows[5].id, thungLungMaySeats, [
-    { name: 'VIP', price: 600000, colorCode: '#FFD700', zones: ['VIP'] },
-    { name: 'Standard', price: 400000, colorCode: '#4CAF50', zones: ['Standard'] },
-    { name: 'Standing', price: 300000, colorCode: '#2196F3', zones: ['Standing'] },
-  ]);
+  for (let i = 0; i < shows.length; i += 1) {
+    const item = showSeedItems[i];
+    const ticketTypes = item.ticketTypes.length
+      ? item.ticketTypes
+      : [{ name: 'Vé tiêu chuẩn', price: 199000 }];
 
-  // May In The Nest shows
-  await createTicketsForShow(shows[1].id, mayInTheNestSeats, [
-    { name: 'VIP', price: 450000, colorCode: '#FFD700', zones: ['VIP'] },
-    { name: 'Standard', price: 299000, colorCode: '#4CAF50', zones: ['Standard'] },
-  ]);
-
-  // Sky Garden shows
-  await createTicketsForShow(shows[2].id, skyGardenSeats, [
-    { name: 'VIP', price: 650000, colorCode: '#FFD700', zones: ['VIP'] },
-    { name: 'Standard', price: 450000, colorCode: '#4CAF50', zones: ['Standard'] },
-    { name: 'Standing', price: 350000, colorCode: '#2196F3', zones: ['Standing'] },
-  ]);
-
-  await createTicketsForShow(shows[7].id, skyGardenSeats, [
-    { name: 'VIP', price: 800000, colorCode: '#FFD700', zones: ['VIP'] },
-    { name: 'Standard', price: 550000, colorCode: '#4CAF50', zones: ['Standard'] },
-    { name: 'Standing', price: 400000, colorCode: '#2196F3', zones: ['Standing'] },
-  ]);
-
-  // The Nest Hanoi show
-  await createTicketsForShow(shows[3].id, theNestHanoiSeats, [
-    { name: 'VIP', price: 400000, colorCode: '#FFD700', zones: ['VIP'] },
-    { name: 'Standard', price: 280000, colorCode: '#4CAF50', zones: ['Standard'] },
-  ]);
-
-  // Garden Stage Da Nang show
-  await createTicketsForShow(shows[4].id, gardenStageDNSeats, [
-    { name: 'VIP', price: 450000, colorCode: '#FFD700', zones: ['VIP'] },
-    { name: 'Standard', price: 320000, colorCode: '#4CAF50', zones: ['Standard'] },
-  ]);
-
-  // Beach Stage Nha Trang show
-  await createTicketsForShow(shows[6].id, beachStageNTSeats, [
-    { name: 'VIP', price: 550000, colorCode: '#FFD700', zones: ['VIP'] },
-    { name: 'Standard', price: 380000, colorCode: '#4CAF50', zones: ['Standard'] },
-    { name: 'Standing', price: 280000, colorCode: '#2196F3', zones: ['Standing'] },
-  ]);
+    await createGeneralAdmissionTicketsForShow(
+      shows[i].id,
+      ticketTypes.map((ticketType, index) => ({
+        name: ticketType.name,
+        price: ticketType.price,
+        colorCode: classColors[index % classColors.length],
+      }))
+    );
+  }
 
   // ============================================================================
-  // ============================================================================
+  // ==========================================================================
   // 8. CREATE TOURS
   // ============================================================================
   console.log('🌄 Creating tours...');
-  const tours = await Promise.all([
-    prisma.tour.create({
-      data: {
-        title: 'Trekking Langbiang - Đà Lạt 2N1Đ',
-        slug: 'trekking-langbiang-da-lat-2n1d',
-        departureLocId: saiGon.id,
-        destinationLocId: daLat.id,
-        duration: '2 ngày 1 đêm',
-        isCombo: false,
-        description: `
-          <h3>Chinh phục đỉnh Langbiang</h3>
-          <p>Hành trình trekking đỉnh Langbiang 2167m - nóc nhà Đà Lạt, ngắm bình minh trên biển mây.</p>
-          <h4>Ngày 1: Sài Gòn - Đà Lạt - Langbiang</h4>
-          <ul>
-            <li>5h00: Khởi hành từ Sài Gòn bằng xe limousine</li>
-            <li>11h00: Đến Đà Lạt, nhận phòng homestay chân núi</li>
-            <li>14h00: Bắt đầu trekking đường mòn rừng thông</li>
-            <li>17h00: Cắm trại tại điểm dừng 1800m</li>
-            <li>19h00: BBQ lửa trại, ngắm sao trời</li>
-          </ul>
-          <h4>Ngày 2: Đỉnh Langbiang - Về Sài Gòn</h4>
-          <ul>
-            <li>4h30: Xuất phát chinh phục đỉnh</li>
-            <li>6h00: Ngắm bình minh trên đỉnh 2167m</li>
-            <li>9h00: Hạ sơn, ăn sáng tại homestay</li>
-            <li>12h00: Tham quan chợ Đà Lạt</li>
-            <li>14h00: Khởi hành về Sài Gòn</li>
-          </ul>
-        `,
-        properties: {
-          includes: ['Xe limousine đưa đón', 'Homestay 1 đêm', 'Bữa sáng + BBQ tối', 'HDV trekking chuyên nghiệp', 'Lều trại + đồ cắm trại'],
-          excludes: ['Chi phí cá nhân', 'Bữa trưa ngày 2'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&h=500&fit=crop'
+  const tourSeedItems = loadTourSeedItemsFromMarkdown();
+  const tourSlugs = new Set<string>();
+
+  const resolveLocationId = (city: string) => {
+    const normalized = city.toLowerCase();
+    if (normalized.includes('ha noi')) return haNoi.id;
+    if (normalized.includes('da nang')) return daNang.id;
+    if (normalized.includes('nha trang') || normalized.includes('khanh hoa')) return nhaTrang.id;
+    if (normalized.includes('ninh binh')) return ninhBinh.id;
+    if (normalized.includes('da lat') || normalized.includes('lam dong')) return daLat.id;
+    if (normalized.includes('phu quoc') || normalized.includes('kien giang')) return phuQuoc.id;
+    if (normalized.includes('ho chi minh') || normalized.includes('sai gon')) return saiGon.id;
+    return saiGon.id;
+  };
+
+  const tours = await Promise.all(
+    tourSeedItems.map((item, index) => {
+      const dedupSlug = tourSlugs.has(item.slug) ? `${item.slug}-${index + 1}` : item.slug;
+      tourSlugs.add(dedupSlug);
+
+      const ticketTypes = item.ticketTypes.length
+        ? item.ticketTypes
+        : [{ name: 'Gói tiêu chuẩn', price: 599000, imageUrl: '' }];
+
+      const minPrice = Math.min(...ticketTypes.map((ticketType) => ticketType.price));
+
+      return prisma.tour.create({
+        data: {
+          title: item.title,
+          slug: dedupSlug,
+          departureLocId: saiGon.id,
+          destinationLocId: resolveLocationId(item.city),
+          duration: '1 ngày',
+          isCombo: false,
+          minPrice,
+          description: item.description || `<p>${item.title}</p>`,
+          properties: {
+            locationText: item.locationText,
+            thumbnailUrl: item.thumbnailUrl,
+            ticketTypes: ticketTypes as unknown as Prisma.InputJsonValue,
+          },
+          createdBy: adminUser.id,
         },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.tour.create({
-      data: {
-        title: 'Kayak Tràng An - Ninh Bình 1 Ngày',
-        slug: 'kayak-trang-an-ninh-binh-1-ngay',
-        departureLocId: haNoi.id,
-        destinationLocId: ninhBinh.id,
-        duration: '1 ngày',
-        isCombo: false,
-        description: `
-          <h3>Chèo kayak xuyên Tràng An</h3>
-          <p>Trải nghiệm chèo kayak qua 12 hang động và thung lũng tại di sản UNESCO Tràng An.</p>
-          <h4>Lịch trình chi tiết</h4>
-          <ul>
-            <li>6h30: Xe đón tại Hà Nội</li>
-            <li>9h00: Đến bến thuyền Tràng An</li>
-            <li>9h30: Nhận kayak, hướng dẫn an toàn</li>
-            <li>10h00: Bắt đầu chèo - Hang Sáng → Hang Tối → Hang Ba Giọt</li>
-            <li>12h00: Nghỉ trưa tại đảo giữa hồ, ăn trưa picnic</li>
-            <li>13h30: Tiếp tục chèo - Thung Nham → Đền Trần</li>
-            <li>15h30: Kết thúc, tắm rửa</li>
-            <li>16h00: Khởi hành về Hà Nội</li>
-          </ul>
-        `,
-        properties: {
-          includes: ['Xe đưa đón', 'Kayak + áo phao', 'Bữa trưa picnic', 'HDV', 'Vé tham quan', 'Bảo hiểm'],
-          excludes: ['Chi phí cá nhân', 'Tip cho HDV'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1583417267826-aebc4d1542e1?w=800&h=500&fit=crop'
-        },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.tour.create({
-      data: {
-        title: 'Lặn San Hô Phú Quốc 3N2Đ',
-        slug: 'lan-san-ho-phu-quoc-3n2d',
-        departureLocId: saiGon.id,
-        destinationLocId: phuQuoc.id,
-        duration: '3 ngày 2 đêm',
-        isCombo: false,
-        description: `
-          <h3>Khám phá đại dương Phú Quốc</h3>
-          <p>Tour lặn biển chuyên nghiệp, khám phá rạn san hô nguyên sinh tại Hòn Thơm.</p>
-          <h4>Ngày 1: Bay đến Phú Quốc</h4>
-          <ul>
-            <li>Bay Sài Gòn → Phú Quốc</li>
-            <li>Nhận phòng resort biển</li>
-            <li>Chiều: Tự do tắm biển Bãi Sao</li>
-          </ul>
-          <h4>Ngày 2: Tour lặn biển</h4>
-          <ul>
-            <li>7h00: Khởi hành ra Hòn Thơm bằng cano</li>
-            <li>9h00: Lặn snorkeling điểm 1 - Rạn san hô cứng</li>
-            <li>11h00: Lặn scuba điểm 2 - Vườn san hô mềm</li>
-            <li>12h30: Ăn trưa trên đảo hoang</li>
-            <li>14h00: Lặn điểm 3 - Hang động ngầm</li>
-          </ul>
-          <h4>Ngày 3: Về Sài Gòn</h4>
-          <ul>
-            <li>Tham quan chợ đêm Phú Quốc</li>
-            <li>Bay về Sài Gòn</li>
-          </ul>
-        `,
-        properties: {
-          includes: ['Vé máy bay khứ hồi', 'Resort 3* ven biển', 'Tour lặn + thiết bị', 'Cano ra đảo', 'Bữa trưa trên đảo', 'HDV lặn chuyên nghiệp'],
-          excludes: ['Chi phí cá nhân', 'Bữa tối'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=500&fit=crop'
-        },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.tour.create({
-      data: {
-        title: 'Đạp Xe Hội An - Mỹ Sơn 2N1Đ',
-        slug: 'dap-xe-hoi-an-my-son-2n1d',
-        departureLocId: daNang.id,
-        destinationLocId: daNang.id,
-        duration: '2 ngày 1 đêm',
-        isCombo: false,
-        description: `
-          <h3>Đạp xe khám phá miền Trung</h3>
-          <p>Tour đạp xe xanh từ phố cổ Hội An đến thánh địa Mỹ Sơn, xuyên qua làng quê yên bình.</p>
-          <h4>Ngày 1: Hội An cycling</h4>
-          <ul>
-            <li>6h00: Nhận xe đạp tại Hội An</li>
-            <li>6h30: Đạp xe qua cánh đồng lúa, làng rau Trà Quế</li>
-            <li>9h00: Tham quan phố cổ Hội An</li>
-            <li>12h00: Ăn trưa Cao Lầu, Mì Quảng</li>
-            <li>14h00: Đạp xe ven sông Thu Bồn về homestay</li>
-            <li>18h00: Thả đèn hoa đăng trên sông Hoài</li>
-          </ul>
-          <h4>Ngày 2: Mỹ Sơn - Về Đà Nẵng</h4>
-          <ul>
-            <li>5h30: Đạp xe đến thánh địa Mỹ Sơn (35km)</li>
-            <li>8h00: Tham quan di tích Chăm Pa UNESCO</li>
-            <li>11h00: Xe đưa về Đà Nẵng</li>
-          </ul>
-        `,
-        properties: {
-          includes: ['Xe đạp + mũ bảo hiểm', 'Homestay 1 đêm', 'Bữa sáng + trưa', 'HDV đạp xe', 'Vé tham quan Mỹ Sơn', 'Xe hỗ trợ'],
-          excludes: ['Chi phí cá nhân', 'Bữa tối'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1578271887552-5ac3a72752bc?w=800&h=500&fit=crop'
-        },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.tour.create({
-      data: {
-        title: 'Rừng Ngập Mặn Cần Giờ 1 Ngày',
-        slug: 'rung-ngap-man-can-gio-1-ngay',
-        departureLocId: saiGon.id,
-        destinationLocId: saiGon.id,
-        duration: '1 ngày',
-        isCombo: false,
-        description: `
-          <h3>Lá phổi xanh Sài Gòn</h3>
-          <p>Khám phá khu dự trữ sinh quyển rừng ngập mặn Cần Giờ - lá phổi xanh của TP.HCM.</p>
-          <h4>Lịch trình chi tiết</h4>
-          <ul>
-            <li>6h00: Xe đón tại trung tâm Sài Gòn</li>
-            <li>8h00: Đến rừng Sác, tham quan đài quan sát</li>
-            <li>9h30: Chèo thuyền kayak qua rừng đước</li>
-            <li>11h00: Tham quan trại khỉ tự nhiên</li>
-            <li>12h00: Ăn trưa hải sản tại nhà hàng ven sông</li>
-            <li>14h00: Tham quan biển Cần Giờ, đảo Khỉ</li>
-            <li>16h00: Khởi hành về Sài Gòn</li>
-          </ul>
-        `,
-        properties: {
-          includes: ['Xe đưa đón', 'Vé tham quan', 'Kayak', 'Bữa trưa hải sản', 'HDV', 'Bảo hiểm'],
-          excludes: ['Chi phí cá nhân'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1621252179027-94459d278660?w=800&h=500&fit=crop'
-        },
-        createdBy: adminUser.id,
-      },
-    }),
-  ]);
+      });
+    })
+  );
 
   // ============================================================================
   // 8B. CREATE COMBOS (Tour + Show)
   // ============================================================================
   console.log('🎼 Creating combos (Tour + Show)...');
-  const combos = await Promise.all([
-    prisma.tour.create({
-      data: {
-        title: 'Combo Đà Lạt 3N2Đ + Đêm Nhạc Trịnh',
-        slug: 'combo-da-lat-3n2d-dem-nhac-trinh',
-        departureLocId: saiGon.id,
-        destinationLocId: daLat.id,
-        duration: '3 ngày 2 đêm',
-        isCombo: true,
-        linkedShowId: shows[0].id,
-        description: '<p>Trọn gói nghỉ dưỡng Đà Lạt kết hợp đêm nhạc Trịnh tại Thung Lũng Mây. Bao gồm khách sạn, xe đưa đón và vé show.</p>',
-        properties: {
-          includes: ['Xe limousine SG-ĐL', 'Khách sạn 4* 2 đêm', 'Vé show Đêm Nhạc Trịnh', 'Bữa sáng', 'HDV'],
-          excludes: ['Chi phí cá nhân', 'Bữa trưa/tối'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=500&fit=crop'
+  const comboSeedCount = Math.min(5, tours.length, shows.length, tourSeedItems.length, showSeedItems.length);
+  const comboSlugSet = new Set<string>();
+
+  const combos = await Promise.all(
+    Array.from({ length: comboSeedCount }, (_, index) => {
+      const tourEntity = tours[index];
+      const showEntity = shows[index];
+      const tourSeed = tourSeedItems[index];
+      const showSeed = showSeedItems[index];
+
+      const comboTitle = `Combo ${tourSeed.title} + ${showSeed.title}`;
+      const baseSlug = toSlug(comboTitle);
+      const slug = comboSlugSet.has(baseSlug) ? `${baseSlug}-${index + 1}` : baseSlug;
+      comboSlugSet.add(slug);
+
+      const comboTicketTypes = showSeed.ticketTypes.length
+        ? showSeed.ticketTypes
+        : tourSeed.ticketTypes.length
+          ? tourSeed.ticketTypes
+          : [{ name: 'Gói combo tiêu chuẩn', price: 999000, imageUrl: '' }];
+
+      const comboMinPrice = Math.min(...comboTicketTypes.map((ticketType) => ticketType.price));
+      const thumbnailUrl = tourSeed.thumbnailUrl || showSeed.thumbnailUrl;
+
+      return prisma.tour.create({
+        data: {
+          title: comboTitle,
+          slug,
+          departureLocId: tourEntity.departureLocId,
+          destinationLocId: tourEntity.destinationLocId,
+          duration: tourEntity.duration || '2 ngày 1 đêm',
+          isCombo: true,
+          linkedShowId: showEntity.id,
+          minPrice: comboMinPrice,
+          description: `<p>${comboTitle}</p>`,
+          properties: {
+            locationText: tourSeed.locationText,
+            thumbnailUrl,
+            ticketTypes: comboTicketTypes as unknown as Prisma.InputJsonValue,
+          },
+          createdBy: adminUser.id,
         },
-        createdBy: adminUser.id,
-      },
+      });
     }),
-    prisma.tour.create({
-      data: {
-        title: 'Combo Đà Lạt 2N1Đ + Acoustic Night',
-        slug: 'combo-da-lat-2n1d-acoustic-night',
-        departureLocId: saiGon.id,
-        destinationLocId: daLat.id,
-        duration: '2 ngày 1 đêm',
-        isCombo: true,
-        linkedShowId: shows[1].id,
-        description: '<p>Gói nghỉ dưỡng cuối tuần tại Đà Lạt với đêm acoustic ấm cúng tại Mây In The Nest.</p>',
-        properties: {
-          includes: ['Xe đưa đón', 'Homestay 1 đêm', 'Vé show Acoustic Night', 'Bữa sáng'],
-          excludes: ['Chi phí cá nhân'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&h=500&fit=crop'
-        },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.tour.create({
-      data: {
-        title: 'Combo Sài Gòn City + Jazz Night',
-        slug: 'combo-sai-gon-city-jazz-night',
-        departureLocId: haNoi.id,
-        destinationLocId: saiGon.id,
-        duration: '2 ngày 1 đêm',
-        isCombo: true,
-        linkedShowId: shows[2].id,
-        description: '<p>Trải nghiệm Sài Gòn by night: city tour ban ngày, Jazz Under The Stars ban đêm tại Sky Garden.</p>',
-        properties: {
-          includes: ['Vé máy bay HN-SG', 'Khách sạn 4* 1 đêm', 'Vé show Jazz', 'City tour xe bus 2 tầng'],
-          excludes: ['Chi phí cá nhân', 'Bữa ăn'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&h=500&fit=crop'
-        },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.tour.create({
-      data: {
-        title: 'Combo Nha Trang 3N2Đ + Beach Concert',
-        slug: 'combo-nha-trang-3n2d-beach-concert',
-        departureLocId: saiGon.id,
-        destinationLocId: nhaTrang.id,
-        duration: '3 ngày 2 đêm',
-        isCombo: true,
-        linkedShowId: shows[6].id,
-        description: '<p>Nghỉ dưỡng biển Nha Trang kết hợp Beach Sunset Concert. Trọn gói resort, tour đảo và vé concert.</p>',
-        properties: {
-          includes: ['Xe giường nằm', 'Resort 4* 2 đêm', 'Vé Beach Concert', 'Tour 3 đảo', 'Bữa sáng'],
-          excludes: ['Chi phí cá nhân', 'Bữa trưa/tối'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&h=500&fit=crop'
-        },
-        createdBy: adminUser.id,
-      },
-    }),
-    prisma.tour.create({
-      data: {
-        title: 'Combo Hà Nội + Indie Night',
-        slug: 'combo-ha-noi-indie-night',
-        departureLocId: saiGon.id,
-        destinationLocId: haNoi.id,
-        duration: '2 ngày 1 đêm',
-        isCombo: true,
-        linkedShowId: shows[3].id,
-        description: '<p>Khám phá Hà Nội cổ kính ban ngày, tận hưởng đêm nhạc Indie tại The Nest Hanoi ban đêm.</p>',
-        properties: {
-          includes: ['Vé máy bay SG-HN', 'Khách sạn 3* phố cổ 1 đêm', 'Vé show Indie Night', 'Walking tour phố cổ'],
-          excludes: ['Chi phí cá nhân', 'Bữa ăn'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=500&fit=crop'
-        },
-        createdBy: adminUser.id,
-      },
-    }),
-  ]);
+  );
 
   // ============================================================================
   // 9. CREATE TOUR SCHEDULES
   // ============================================================================
   console.log('📅 Creating tour schedules...');
 
+  const baseDate = new Date();
   const allToursAndCombos = [...tours, ...combos];
   for (const tour of allToursAndCombos) {
     const scheduleDates = [15, 22, 29, 36, 43, 50, 57, 64, 71, 78];
-    const basePrice = tour.title.includes('Phú Quốc') ? 4590000 :
-      tour.title.includes('Combo') ? 3290000 :
-      tour.title.includes('3N2Đ') ? 2990000 : 1890000;
+    const basePrice = Number(tour.minPrice) || 1890000;
 
     for (let i = 0; i < scheduleDates.length; i++) {
       const startDate = new Date(baseDate);
@@ -1061,10 +743,11 @@ async function main() {
   await Promise.all([
     prisma.banner.create({
       data: {
-        title: 'Đêm Nhạc Trịnh - Thung Lũng Mây',
-        imageUrl: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1920&h=1080&fit=crop',
-        mobileImageUrl: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=768&h=1024&fit=crop',
-        actionLink: '/shows/dem-nhac-trinh-thung-lung-may',
+        title: 'Đêm Nhạc Ca Sĩ Thành Vá - Hồ Chí Minh',
+        imageUrl: 'https://bizmall.world/st/uploads/show/2026/04/22/69e830e5058ac.jpeg',
+        actionLink: '/shows/ca-si-thanh-va',
+        location: '37B Phạm Ngọc Thạch, Q.3, TP. HCM',
+        date: '16/05/2026 | 17:49',
         position: BannerPosition.HOME_MAIN_SLIDER,
         displayOrder: 1,
         isActive: true,
@@ -1073,10 +756,11 @@ async function main() {
     }),
     prisma.banner.create({
       data: {
-        title: 'Acoustic Night - Mây In The Nest',
-        imageUrl: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=1920&h=1080&fit=crop',
-        mobileImageUrl: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=768&h=1024&fit=crop',
-        actionLink: '/shows/acoustic-night-may-in-the-nest',
+        title: 'Vinpearl Wonderworld Phú Quốc - Nghỉ dưỡng đẳng cấp',
+        imageUrl: 'https://bizmall.world/st/uploads/tour/2026/04/25/69ecaf90a1522.jpeg',
+        actionLink: '/tours/vinpearl-wonderworld-phu-quoc',
+        location: 'Bãi Dài, Gành Dầu, Phú Quốc',
+        date: 'Khởi hành hàng ngày',
         position: BannerPosition.HOME_MAIN_SLIDER,
         displayOrder: 2,
         isActive: true,
@@ -1085,10 +769,11 @@ async function main() {
     }),
     prisma.banner.create({
       data: {
-        title: 'Tour Đà Lạt 3N2Đ - Combo Show',
-        imageUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1920&h=1080&fit=crop',
-        mobileImageUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=768&h=1024&fit=crop',
-        actionLink: '/tours/tour-da-lat-3n2d-combo-may-lang-thang',
+        title: 'Vicky Nhung + Chu Thúy Quỳnh - Đêm nhạc tình ca',
+        imageUrl: 'https://bizmall.world/st/uploads/show/2026/04/22/69e837898df2e.jpeg',
+        actionLink: '/shows/vicky-nhung-chu-thuy-quynh',
+        location: 'Sân khấu Sky Garden - Sài Gòn',
+        date: '20/05/2026 | 19:30',
         position: BannerPosition.HOME_MAIN_SLIDER,
         displayOrder: 3,
         isActive: true,
@@ -1097,10 +782,11 @@ async function main() {
     }),
     prisma.banner.create({
       data: {
-        title: 'Jazz Under The Stars',
-        imageUrl: 'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=1920&h=1080&fit=crop',
-        mobileImageUrl: 'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=768&h=1024&fit=crop',
-        actionLink: '/shows/jazz-under-the-stars',
+        title: 'Vinpearl Empire Nha Trang - Thiên đường biển gọi',
+        imageUrl: 'https://bizmall.world/st/uploads/tour/2026/04/26/69ee1f4cc6af0.png',
+        actionLink: '/tours/vinpearl-empire-nha-trang-affiliated-by-melia',
+        location: 'Lê Thánh Tôn, Nha Trang, Khánh Hòa',
+        date: 'Tour 3 ngày 2 đêm',
         position: BannerPosition.HOME_MAIN_SLIDER,
         displayOrder: 4,
         isActive: true,
@@ -1360,6 +1046,8 @@ async function main() {
     bookings: await prisma.booking.count(),
   };
 
+  await seedStaticPages(prisma);
+
   console.log('\n✅ Seed completed successfully!');
   console.log('📊 Summary:');
   console.log(`   👤 Users: ${counts.users}`);
@@ -1391,3 +1079,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
