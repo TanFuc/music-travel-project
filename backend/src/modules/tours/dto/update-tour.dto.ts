@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsOptional, IsObject, MinLength } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsObject, MinLength, IsNumber } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 export class UpdateTourDto {
   @ApiPropertyOptional({ example: 'Tour Đà Lạt 3N2Đ - Updated', description: 'Tour title' })
@@ -42,4 +42,14 @@ export class UpdateTourDto {
   @IsOptional()
   @IsInt()
   branchId?: number;
+  @ApiPropertyOptional({ description: 'Base minimum price' })
+  @IsOptional()
+  @IsNumber()
+  minPrice?: number;
+  @ApiPropertyOptional({
+    description: 'ID of the show this combo is linked to (or null to unlink)',
+  })
+  @IsOptional()
+  @IsInt()
+  linkedShowId?: number | null;
 }

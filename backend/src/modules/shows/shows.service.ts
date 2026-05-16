@@ -55,11 +55,25 @@ export class ShowsService {
         performTime: { lte: new Date(filterDto.toDate) },
       }),
       ...(filterDto.location && {
-        stage: {
-          location: {
-            slug: filterDto.location,
+        OR: [
+          {
+            stage: {
+              location: {
+                slug: filterDto.location,
+              },
+            },
           },
-        },
+          {
+            linkedTours: {
+              some: {
+                OR: [
+                  { departureLoc: { slug: filterDto.location } },
+                  { destinationLoc: { slug: filterDto.location } },
+                ],
+              },
+            },
+          },
+        ],
       }),
     };
     const [shows, total] = await Promise.all([
@@ -86,6 +100,12 @@ export class ShowsService {
               colorCode: true,
             },
           },
+          linkedTours: {
+            include: {
+              departureLoc: true,
+              destinationLoc: true,
+            },
+          },
           _count: {
             select: {
               tickets: {
@@ -100,37 +120,54 @@ export class ShowsService {
       }),
       this.prisma.show.count({ where }),
     ]);
-    const formattedShows = shows.map((show) => ({
-      id: show.id,
-      title: show.title,
-      slug: show.slug,
-      description: show.description,
-      performTime: show.performTime,
-      checkInTime: show.checkInTime,
-      status: show.status,
-      seatSelectionEnabled: (show as any).seatSelectionEnabled ?? true,
-      stage: {
-        id: show.stage.id,
-        name: show.stage.name,
-        location: show.stage.location,
-      },
-      branch: show.branch
-        ? {
-            id: show.branch.id,
-            name: show.branch.name,
-          }
-        : null,
-      artists: show.artists.map((sa) => ({
-        id: sa.artist.id,
-        name: sa.artist.name,
-        isHeadline: sa.isHeadline,
-      })),
-      ticketClasses: show.ticketClasses,
-      availableTickets: show._count.tickets,
-      minPrice: show.ticketClasses.length
-        ? Math.min(...show.ticketClasses.map((tc) => Number(tc.price)))
-        : null,
-    }));
+    const formattedShows = shows.map((show) => {
+      const properties = (show.properties as Record<string, unknown> | null) || null;
+      const thumbnailUrl =
+        (typeof properties?.thumbnailUrl === 'string' && properties.thumbnailUrl) ||
+        (typeof properties?.bannerUrl === 'string' && properties.bannerUrl) ||
+        null;
+      return {
+        id: show.id,
+        title: show.title,
+        slug: show.slug,
+        thumbnailUrl,
+        description: show.description,
+        performTime: show.performTime,
+        checkInTime: show.checkInTime,
+        status: show.status,
+        seatSelectionEnabled: (show as any).seatSelectionEnabled ?? true,
+        stage: {
+          id: show.stage.id,
+          name: show.stage.name,
+          location: show.stage.location,
+        },
+        branch: show.branch
+          ? {
+              id: show.branch.id,
+              name: show.branch.name,
+            }
+          : null,
+        artists: show.artists.map((sa) => ({
+          id: sa.artist.id,
+          name: sa.artist.name,
+          isHeadline: sa.isHeadline,
+        })),
+        ticketClasses: show.ticketClasses,
+        availableTickets: show._count.tickets,
+        minPrice: show.ticketClasses.length
+          ? Math.min(...show.ticketClasses.map((tc) => Number(tc.price)))
+          : null,
+        linkedTours:
+          show.linkedTours?.map((t) => ({
+            departureLoc: t.departureLoc
+              ? { name: t.departureLoc.name, slug: t.departureLoc.slug }
+              : null,
+            destinationLoc: t.destinationLoc
+              ? { name: t.destinationLoc.name, slug: t.destinationLoc.slug }
+              : null,
+          })) || [],
+      };
+    });
     const result = paginate(formattedShows, total, filterDto.page || 1, filterDto.limit || 10);
     await this.cache.set(cacheKey, result, CACHE_TTL.SHORT);
     return result;
@@ -170,6 +207,12 @@ export class ShowsService {
             },
           },
         },
+        linkedTours: {
+          include: {
+            departureLoc: true,
+            destinationLoc: true,
+          },
+        },
       },
     });
     if (!show) {
@@ -178,10 +221,16 @@ export class ShowsService {
         message: getErrorMessage(ERROR_CODES.SHOW_001),
       });
     }
+    const properties = (show.properties as Record<string, unknown> | null) || null;
+    const thumbnailUrl =
+      (typeof properties?.thumbnailUrl === 'string' && properties.thumbnailUrl) ||
+      (typeof properties?.bannerUrl === 'string' && properties.bannerUrl) ||
+      null;
     const result = {
       id: show.id,
       title: show.title,
       slug: show.slug,
+      thumbnailUrl,
       description: show.description,
       performTime: show.performTime,
       checkInTime: show.checkInTime,
@@ -217,6 +266,15 @@ export class ShowsService {
         colorCode: tc.colorCode,
         availableCount: tc._count.tickets,
       })),
+      linkedTours:
+        show.linkedTours?.map((t) => ({
+          departureLoc: t.departureLoc
+            ? { name: t.departureLoc.name, slug: t.departureLoc.slug }
+            : null,
+          destinationLoc: t.destinationLoc
+            ? { name: t.destinationLoc.name, slug: t.destinationLoc.slug }
+            : null,
+        })) || [],
     };
     await this.cache.set(cacheKey, result, CACHE_TTL.MEDIUM);
     return result;
@@ -456,6 +514,82 @@ export class ShowsService {
     }
     await this.cache.delMany(keysToDelete);
     await this.cache.delPattern(CachePatterns.showLists());
+  }
+  async getRelated(id: number) {
+    const show = await this.prisma.show.findUnique({
+      where: { id },
+      include: {
+        stage: {
+          include: {
+            location: true,
+          },
+        },
+      },
+    });
+    if (!show) return [];
+    const relatedShows = await this.prisma.show.findMany({
+      where: {
+        id: { not: id },
+        status: ShowStatus.UPCOMING,
+        deletedAt: null,
+      },
+      include: {
+        stage: {
+          include: {
+            location: true,
+          },
+        },
+        ticketClasses: {
+          where: { deletedAt: null },
+        },
+      },
+      take: 8,
+      orderBy: [
+        {
+          stage: {
+            locationId: show.stage.locationId ? 'asc' : 'desc',
+          },
+        },
+        { performTime: 'asc' },
+      ],
+    });
+    const sorted = [...relatedShows]
+      .sort((a, b) => {
+        if (
+          a.stage.locationId === show.stage.locationId &&
+          b.stage.locationId !== show.stage.locationId
+        )
+          return -1;
+        if (
+          a.stage.locationId !== show.stage.locationId &&
+          b.stage.locationId === show.stage.locationId
+        )
+          return 1;
+        return 0;
+      })
+      .slice(0, 4);
+    return sorted.map((s) => {
+      const properties = (s.properties as Record<string, unknown> | null) || null;
+      const thumbnailUrl =
+        (typeof properties?.thumbnailUrl === 'string' && properties.thumbnailUrl) ||
+        (typeof properties?.bannerUrl === 'string' && properties.bannerUrl) ||
+        null;
+      return {
+        id: s.id,
+        title: s.title,
+        slug: s.slug,
+        thumbnailUrl,
+        performTime: s.performTime,
+        status: s.status,
+        stage: {
+          name: s.stage.name,
+          location: s.stage.location,
+        },
+        minPrice: s.ticketClasses.length
+          ? Math.min(...s.ticketClasses.map((tc) => Number(tc.price)))
+          : null,
+      };
+    });
   }
   private generateSlug(title: string): string {
     return title

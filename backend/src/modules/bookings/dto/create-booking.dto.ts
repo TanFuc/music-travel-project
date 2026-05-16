@@ -7,6 +7,9 @@ class TourItemDto {
   @IsInt()
   quantity: number;
   @IsOptional()
+  @IsString()
+  ticketTypeName?: string;
+  @IsOptional()
   @IsArray()
   passengerInfo?: Record<string, unknown>[];
 }
@@ -17,12 +20,6 @@ class TicketWithSeatDto {
   @IsInt()
   physicalSeatId?: number;
   phyiscalSeatId?: number;
-}
-export class TicketTierItemDto {
-  @IsInt()
-  tierId: number;
-  @IsInt()
-  quantity: number;
 }
 class SingerPackageItemDto {
   @IsString()
@@ -53,17 +50,6 @@ export class CreateBookingDto {
   @Type(() => TicketWithSeatDto)
   @Type(() => TicketWithSeatDto)
   ticketsWithSeats?: TicketWithSeatDto[];
-  @ApiPropertyOptional({
-    type: 'object',
-    isArray: true,
-    description: 'Array of ticket tiers to book (Open Ticket flow)',
-    example: [{ tierId: 1, quantity: 2 }],
-  })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TicketTierItemDto)
-  ticketTiers?: TicketTierItemDto[];
   @ApiPropertyOptional({ type: [TourItemDto], description: 'Tour booking items' })
   @IsOptional()
   @IsArray()

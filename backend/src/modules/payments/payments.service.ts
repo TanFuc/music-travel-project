@@ -248,18 +248,6 @@ export class PaymentsService {
       if (ticketIds.length > 0) {
         await this.ticketsService.markTicketsAsSold(ticketIds, bookingId);
       }
-      const tierItems = await tx.bookingItem.findMany({
-        where: { bookingId, ticketTierId: { not: null } },
-      });
-      for (const item of tierItems) {
-        if (item.ticketTierId && item.quantity > 0) {
-          await this.ticketsService.generateTicketsForBooking(
-            bookingId,
-            item.ticketTierId,
-            item.quantity,
-          );
-        }
-      }
       const tourItems = await tx.bookingItem.findMany({
         where: { bookingId, itemType: 'TOUR_SLOT' },
       });
@@ -494,18 +482,6 @@ export class PaymentsService {
         const ticketIds = ticketItems.filter((i) => i.ticketId).map((i) => i.ticketId as number);
         if (ticketIds.length > 0) {
           await this.ticketsService.markTicketsAsSold(ticketIds, bookingId);
-        }
-        const tierItems = await tx.bookingItem.findMany({
-          where: { bookingId, ticketTierId: { not: null } },
-        });
-        for (const item of tierItems) {
-          if (item.ticketTierId && item.quantity > 0) {
-            await this.ticketsService.generateTicketsForBooking(
-              bookingId,
-              item.ticketTierId,
-              item.quantity,
-            );
-          }
         }
         const tourItems = await tx.bookingItem.findMany({
           where: { bookingId, itemType: 'TOUR_SLOT' },

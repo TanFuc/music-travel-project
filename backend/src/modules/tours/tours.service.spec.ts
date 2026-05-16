@@ -18,7 +18,9 @@ describe('ToursService', () => {
   const mockCacheService = {
     get: jest.fn(),
     set: jest.fn(),
-    deletePattern: jest.fn(),
+    del: jest.fn(),
+    delMany: jest.fn(),
+    delPattern: jest.fn(),
   };
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -65,22 +67,26 @@ describe('ToursService', () => {
     });
   });
   describe('findAll', () => {
-    it('returns split data based on isCombo flag', async () => {
+    it('regular tours service always enforces isCombo=false', async () => {
       mockCacheService.get.mockResolvedValue(null);
-      mockPrismaService.tour.findMany.mockResolvedValue([{ id: 3, title: 'A', isCombo: true }]);
+      mockPrismaService.tour.findMany.mockResolvedValue([
+        { id: 3, title: 'A', isCombo: false, schedules: [] },
+      ]);
       mockPrismaService.tour.count.mockResolvedValue(1);
       const result = (await service.findAll({ page: 1, limit: 10, isCombo: true })) as any;
       expect(prisma.tour.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ isCombo: true }),
+          where: expect.objectContaining({ isCombo: false }),
         }),
       );
       expect(result.meta.total).toBe(1);
-      expect(result.items[0].isCombo).toBe(true);
+      expect(result.items[0].isCombo).toBe(false);
     });
     it('handles isCombo as string "false" (common in query params)', async () => {
       mockCacheService.get.mockResolvedValue(null);
-      mockPrismaService.tour.findMany.mockResolvedValue([{ id: 4, title: 'B', isCombo: false }]);
+      mockPrismaService.tour.findMany.mockResolvedValue([
+        { id: 4, title: 'B', isCombo: false, schedules: [] },
+      ]);
       mockPrismaService.tour.count.mockResolvedValue(1);
       const result = (await service.findAll({ page: 1, limit: 10, isCombo: false })) as any;
       expect(prisma.tour.findMany).toHaveBeenCalledWith(
@@ -90,20 +96,57 @@ describe('ToursService', () => {
       );
       expect(result.items[0].isCombo).toBe(false);
     });
-    it('returns all tours when isCombo is undefined', async () => {
+    it('defaults to regular tours when isCombo is undefined', async () => {
       mockCacheService.get.mockResolvedValue(null);
       mockPrismaService.tour.findMany.mockResolvedValue([
-        { id: 5, title: 'C', isCombo: true },
-        { id: 6, title: 'D', isCombo: false },
+        { id: 6, title: 'D', isCombo: false, schedules: [] },
       ]);
-      mockPrismaService.tour.count.mockResolvedValue(2);
+      mockPrismaService.tour.count.mockResolvedValue(1);
       const result = (await service.findAll({ page: 1, limit: 10 })) as any;
       expect(prisma.tour.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.not.objectContaining({ isCombo: expect.anything() }),
+          where: expect.objectContaining({ isCombo: false }),
         }),
       );
-      expect(result.items.length).toBe(2);
+      expect(result.items.length).toBe(1);
+      expect(result.items[0].isCombo).toBe(false);
+    });
+    it('supports type=TOUR as an alias for isCombo=false', async () => {
+      mockCacheService.get.mockResolvedValue(null);
+      mockPrismaService.tour.findMany.mockResolvedValue([
+        { id: 7, title: 'Regular', isCombo: false, schedules: [] },
+      ]);
+      mockPrismaService.tour.count.mockResolvedValue(1);
+      await service.findAll({ page: 1, limit: 10, type: 'TOUR' } as any);
+      expect(prisma.tour.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ isCombo: false }),
+        }),
+      );
+    });
+    it('regular tours service always enforces isCombo=false', async () => {
+      mockCacheService.get.mockResolvedValue(null);
+      mockPrismaService.tour.findMany.mockResolvedValue([
+        { id: 8, title: 'Regular endpoint', isCombo: false, schedules: [] },
+      ]);
+      mockPrismaService.tour.count.mockResolvedValue(1);
+      await service.findAll({ page: 1, limit: 10, isCombo: true } as any);
+      expect(prisma.tour.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ isCombo: false }),
+        }),
+      );
+    });
+    it('type=COMBO does not override regular tours endpoint scope', async () => {
+      mockCacheService.get.mockResolvedValue(null);
+      mockPrismaService.tour.findMany.mockResolvedValue([]);
+      mockPrismaService.tour.count.mockResolvedValue(1);
+      await service.findAll({ page: 1, limit: 10, type: 'COMBO' } as any);
+      expect(prisma.tour.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ isCombo: false }),
+        }),
+      );
     });
   });
 });

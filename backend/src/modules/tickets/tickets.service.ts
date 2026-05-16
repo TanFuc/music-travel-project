@@ -331,38 +331,6 @@ export class TicketsService {
     const expirationTime = new Date(lockedAt.getTime() + LOCK_TTL_MINUTES * 60 * 1000);
     return new Date() > expirationTime;
   }
-  async getTicketTiers() {
-    const cacheKey = 'ticket_tiers_all_v2';
-    const cached = await this.cache.get(cacheKey);
-    if (cached) return cached;
-    const tiers = await this.prisma.ticketTier.findMany({
-      where: { isActive: true },
-      orderBy: { priority: 'asc' },
-    });
-    await this.cache.set(cacheKey, tiers, CACHE_TTL.LONG);
-    return tiers;
-  }
-  async generateTicketsForBooking(bookingId: number, tierId: number, quantity: number) {
-    if (quantity <= 0) return;
-    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
-    if (!booking) return;
-    const ticketsData = [];
-    for (let i = 0; i < quantity; i++) {
-      const ticketCode = `TK${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)
-        .toString()
-        .padStart(3, '0')}`;
-      ticketsData.push({
-        ticketCode,
-        ticketTierId: tierId,
-        bookingId,
-        status: TicketStatus.SOLD,
-        showId: null,
-        ticketClassId: null,
-      });
-    }
-    await this.prisma.ticket.createMany({ data: ticketsData });
-    this.logger.log(`Generated ${quantity} tickets for booking ${bookingId}, tier ${tierId}`);
-  }
   async getTicketsByBooking(bookingId: number) {
     const tickets = await this.prisma.ticket.findMany({
       where: { bookingId },

@@ -29,7 +29,8 @@ export class ToursService {
       location: filterDto.location,
       departure: filterDto.departure,
       destination: filterDto.destination,
-      isCombo: filterDto.isCombo,
+      isCombo: false,
+      type: filterDto.type,
     });
     const cacheKey = CacheKeys.tourList(filterHash);
     const cached = await this.cache.get(cacheKey);
@@ -39,6 +40,7 @@ export class ToursService {
     const { skip, take } = getPaginationParams(filterDto);
     const where = {
       deletedAt: null,
+      isCombo: false,
       ...(filterDto.search && {
         OR: [
           { title: { contains: filterDto.search } },
@@ -61,7 +63,7 @@ export class ToursService {
           slug: filterDto.destination,
         },
       }),
-      ...(filterDto.isCombo !== undefined ? { isCombo: filterDto.isCombo } : {}),
+      ...(filterDto.branchId && { branchId: filterDto.branchId }),
     };
     const [tours, total] = await Promise.all([
       this.prisma.tour.findMany({
@@ -86,25 +88,33 @@ export class ToursService {
       }),
       this.prisma.tour.count({ where }),
     ]);
-    const formattedTours = tours.map((tour) => ({
-      id: tour.id,
-      title: tour.title,
-      slug: tour.slug,
-      duration: tour.duration,
-      isCombo: tour.isCombo,
-      departureLoc: tour.departureLoc,
-      destinationLoc: tour.destinationLoc,
-      branch: tour.branch
-        ? {
-            id: tour.branch.id,
-            name: tour.branch.name,
-          }
-        : null,
-      minPrice: tour.schedules.length
-        ? Math.min(...tour.schedules.map((s) => Number(s.price)))
-        : null,
-      nextSchedule: tour.schedules[0] || null,
-    }));
+    const formattedTours = tours.map((tour) => {
+      const properties = (tour.properties as Record<string, unknown> | null) || null;
+      const thumbnailUrl =
+        (typeof properties?.thumbnailUrl === 'string' && properties.thumbnailUrl) ||
+        (typeof properties?.bannerUrl === 'string' && properties.bannerUrl) ||
+        null;
+      return {
+        id: tour.id,
+        title: tour.title,
+        slug: tour.slug,
+        thumbnailUrl,
+        duration: tour.duration,
+        isCombo: tour.isCombo,
+        departureLoc: tour.departureLoc,
+        destinationLoc: tour.destinationLoc,
+        branch: tour.branch
+          ? {
+              id: tour.branch.id,
+              name: tour.branch.name,
+            }
+          : null,
+        minPrice: tour.schedules.length
+          ? Math.min(...tour.schedules.map((s) => Number(s.price)))
+          : null,
+        nextSchedule: tour.schedules[0] || null,
+      };
+    });
     const result = paginate(formattedTours, total, filterDto.page || 1, filterDto.limit || 10);
     await this.cache.set(cacheKey, result, CACHE_TTL.MEDIUM);
     return result;
@@ -116,7 +126,7 @@ export class ToursService {
       return cached;
     }
     const tour = await this.prisma.tour.findFirst({
-      where: { slug, deletedAt: null },
+      where: { slug, isCombo: false, deletedAt: null },
       include: {
         departureLoc: true,
         destinationLoc: true,
@@ -137,8 +147,17 @@ export class ToursService {
         message: getErrorMessage(ERROR_CODES.TOUR_001),
       });
     }
-    await this.cache.set(cacheKey, tour, CACHE_TTL.STANDARD);
-    return tour;
+    const properties = (tour.properties as Record<string, unknown> | null) || null;
+    const thumbnailUrl =
+      (typeof properties?.thumbnailUrl === 'string' && properties.thumbnailUrl) ||
+      (typeof properties?.bannerUrl === 'string' && properties.bannerUrl) ||
+      null;
+    const result = {
+      ...tour,
+      thumbnailUrl,
+    };
+    await this.cache.set(cacheKey, result, CACHE_TTL.STANDARD);
+    return result;
   }
   async getSchedules(tourId: number) {
     const cacheKey = CacheKeys.tourSchedules(tourId);
@@ -147,7 +166,7 @@ export class ToursService {
       return cached;
     }
     const tour = await this.prisma.tour.findFirst({
-      where: { id: tourId, deletedAt: null },
+      where: { id: tourId, isCombo: false, deletedAt: null },
     });
     if (!tour) {
       throw new NotFoundException({
@@ -178,8 +197,8 @@ export class ToursService {
         destinationLocId: createTourDto.destinationLocId,
         branchId: createTourDto.branchId,
         properties: createTourDto.properties as object | undefined,
-        isCombo: createTourDto.isCombo ?? false,
-        linkedShowId: createTourDto.linkedShowId,
+        isCombo: (createTourDto as any).isCombo ?? false,
+        linkedShowId: (createTourDto as any).linkedShowId ?? null,
         minPrice: createTourDto.minPrice,
         metaTitle: createTourDto.metaTitle,
         metaDescription: createTourDto.metaDescription,
@@ -215,14 +234,8 @@ export class ToursService {
     if (updateTourDto.properties !== undefined) {
       updateData.properties = updateTourDto.properties;
     }
-    if ((updateTourDto as any).isCombo !== undefined) {
-      updateData.isCombo = (updateTourDto as any).isCombo;
-    }
     if ((updateTourDto as any).minPrice !== undefined) {
       updateData.minPrice = (updateTourDto as any).minPrice;
-    }
-    if ((updateTourDto as any).linkedShowId !== undefined) {
-      updateData.linkedShowId = (updateTourDto as any).linkedShowId;
     }
     if (updateTourDto.metaTitle !== undefined) {
       updateData.metaTitle = updateTourDto.metaTitle;
@@ -288,7 +301,7 @@ export class ToursService {
   }
   private async findById(id: number) {
     const tour = await this.prisma.tour.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, isCombo: false, deletedAt: null },
     });
     if (!tour) {
       throw new NotFoundException({
@@ -328,6 +341,68 @@ export class ToursService {
     }
     await this.cache.delMany(keysToDelete);
     await this.cache.delPattern(CachePatterns.tourLists());
+  }
+  async getRelated(id: number) {
+    const tour = await this.prisma.tour.findUnique({
+      where: { id },
+      include: {
+        departureLoc: true,
+        destinationLoc: true,
+      },
+    });
+    if (!tour) return [];
+    const relatedTours = await this.prisma.tour.findMany({
+      where: {
+        id: { not: id },
+        isCombo: false,
+        deletedAt: null,
+      },
+      include: {
+        departureLoc: true,
+        destinationLoc: true,
+        schedules: {
+          where: {
+            status: 'OPEN',
+            startDate: { gte: new Date() },
+            deletedAt: null,
+          },
+          orderBy: { startDate: 'asc' },
+          take: 1,
+        },
+      },
+      take: 8,
+      orderBy: { createdAt: 'desc' },
+    });
+    const sorted = [...relatedTours]
+      .sort((a, b) => {
+        const aMatch =
+          a.destinationLocId === tour.destinationLocId || a.departureLocId === tour.departureLocId;
+        const bMatch =
+          b.destinationLocId === tour.destinationLocId || b.departureLocId === tour.departureLocId;
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return 0;
+      })
+      .slice(0, 4);
+    return sorted.map((t) => {
+      const properties = (t.properties as Record<string, unknown> | null) || null;
+      const thumbnailUrl =
+        (typeof properties?.thumbnailUrl === 'string' && properties.thumbnailUrl) ||
+        (typeof properties?.bannerUrl === 'string' && properties.bannerUrl) ||
+        null;
+      return {
+        id: t.id,
+        title: t.title,
+        slug: t.slug,
+        thumbnailUrl,
+        duration: t.duration,
+        departureLoc: t.departureLoc,
+        destinationLoc: t.destinationLoc,
+        minPrice: t.schedules.length
+          ? Math.min(...t.schedules.map((s) => Number(s.price)))
+          : Number(t.minPrice) || null,
+      };
+    });
   }
   private generateSlug(title: string): string {
     return title

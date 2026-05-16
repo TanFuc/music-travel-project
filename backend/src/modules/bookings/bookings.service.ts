@@ -30,22 +30,20 @@ export class BookingsService {
       userId,
       ticketsWithSeatsCount: createBookingDto.ticketsWithSeats?.length ?? 0,
       ticketIdsCount: createBookingDto.ticketIds?.length ?? 0,
-      ticketTiersCount: createBookingDto.ticketTiers?.length ?? 0,
       tourItemsCount: createBookingDto.tourItems?.length ?? 0,
       singerPackagesCount: createBookingDto.singerPackages?.length ?? 0,
     });
     const hasTickets =
       (createBookingDto.ticketsWithSeats?.length ?? 0) > 0 ||
       (createBookingDto.ticketIds?.length ?? 0) > 0;
-    const hasTiers = (createBookingDto.ticketTiers?.length ?? 0) > 0;
     const hasTours = (createBookingDto.tourItems?.length ?? 0) > 0;
     const hasSingerPackages = (createBookingDto.singerPackages?.length ?? 0) > 0;
-    if (!hasTickets && !hasTiers && !hasTours && !hasSingerPackages) {
+    if (!hasTickets && !hasTours && !hasSingerPackages) {
       this.logger.warn('Booking validation failed - no items provided', { userId });
       throw new BadRequestException({
         code: ERROR_CODES.VAL_001,
         message:
-          'Đơn hàng phải có ít nhất một mục: vé (ticketsWithSeats/ticketIds), loại vé (ticketTiers), tour (tourItems), hoặc gói ca sĩ (singerPackages).',
+          'Đơn hàng phải có ít nhất một mục: vé (ticketsWithSeats/ticketIds), tour (tourItems), hoặc gói ca sĩ (singerPackages).',
       });
     }
     const bookingCode = this.generateBookingCode();
@@ -140,48 +138,52 @@ export class BookingsService {
       scheduleId: number;
       quantity: number;
       price: Decimal;
+      ticketTypeName?: string;
+      passengerInfo?: Record<string, unknown>[];
     }[] = [];
     if (createBookingDto.tourItems?.length) {
       for (const item of createBookingDto.tourItems) {
         await this.toursService.checkScheduleAvailability(item.scheduleId, item.quantity);
         const schedule = await this.prisma.tourSchedule.findUnique({
           where: { id: item.scheduleId },
+          include: {
+            tour: {
+              select: {
+                properties: true,
+              },
+            },
+          },
         });
         if (schedule) {
-          const itemTotal = schedule.price.mul(item.quantity);
+          let unitPrice = schedule.price;
+          let resolvedTicketTypeName: string | undefined;
+          if (item.ticketTypeName?.trim()) {
+            const normalizedTypeName = item.ticketTypeName.trim().toLowerCase();
+            const tourProperties = (schedule.tour?.properties || {}) as {
+              ticketTypes?: Array<{
+                name?: string;
+                price?: number;
+              }>;
+            };
+            const matchedTicketType = tourProperties.ticketTypes?.find(
+              (ticketType) => ticketType?.name?.trim().toLowerCase() === normalizedTypeName,
+            );
+            if (!matchedTicketType || typeof matchedTicketType.price !== 'number') {
+              throw new BadRequestException({
+                code: ERROR_CODES.VAL_001,
+                message: `Loại vé tour không hợp lệ cho lịch #${item.scheduleId}.`,
+              });
+            }
+            unitPrice = new Decimal(matchedTicketType.price);
+            resolvedTicketTypeName = matchedTicketType.name?.trim() || item.ticketTypeName.trim();
+          }
+          const itemTotal = unitPrice.mul(item.quantity);
           tourItems.push({
             scheduleId: item.scheduleId,
             quantity: item.quantity,
-            price: schedule.price,
-          });
-          totalAmount = totalAmount.plus(itemTotal);
-        }
-      }
-    }
-    const tierItems: {
-      tierId: number;
-      quantity: number;
-      price: Decimal;
-    }[] = [];
-    if (createBookingDto.ticketTiers?.length) {
-      const tierIds = createBookingDto.ticketTiers.map((t) => t.tierId);
-      const tiers = await this.prisma.ticketTier.findMany({
-        where: { id: { in: tierIds }, isActive: true },
-      });
-      if (tiers.length !== tierIds.length) {
-        throw new BadRequestException({
-          code: ERROR_CODES.TICKET_001,
-          message: 'Một số loại vé không tồn tại hoặc ngừng hoạt động.',
-        });
-      }
-      for (const item of createBookingDto.ticketTiers) {
-        const tier = tiers.find((t) => t.id === item.tierId);
-        if (tier) {
-          const itemTotal = tier.price.mul(item.quantity);
-          tierItems.push({
-            tierId: item.tierId,
-            quantity: item.quantity,
-            price: tier.price,
+            price: unitPrice,
+            ticketTypeName: resolvedTicketTypeName,
+            passengerInfo: item.passengerInfo,
           });
           totalAmount = totalAmount.plus(itemTotal);
         }
@@ -307,19 +309,17 @@ export class BookingsService {
             tourScheduleId: item.scheduleId,
             quantity: item.quantity,
             originalPrice: item.price,
-            passengerInfo: createBookingDto.tourItems?.find((t) => t.scheduleId === item.scheduleId)
-              ?.passengerInfo as object[] | undefined,
-          },
-        });
-      }
-      for (const item of tierItems) {
-        await tx.bookingItem.create({
-          data: {
-            bookingId: newBooking.id,
-            itemType: BookingItemType.SHOW_TICKET,
-            ticketTierId: item.tierId,
-            quantity: item.quantity,
-            originalPrice: item.price,
+            passengerInfo: [
+              ...(item.passengerInfo || []),
+              ...(item.ticketTypeName
+                ? [
+                    {
+                      type: 'TOUR_TICKET_TYPE',
+                      name: item.ticketTypeName,
+                    },
+                  ]
+                : []),
+            ] as object[] | undefined,
           },
         });
       }
@@ -345,8 +345,7 @@ export class BookingsService {
       discountAmount: booking.discountAmount.toString(),
       finalAmount: booking.finalAmount.toString(),
       status: booking.status,
-      itemCount:
-        ticketItems.length + tourItems.length + tierItems.length + singerPackageItems.length,
+      itemCount: ticketItems.length + tourItems.length + singerPackageItems.length,
     });
     return {
       bookingCode: booking.bookingCode,

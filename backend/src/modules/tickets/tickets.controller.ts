@@ -17,20 +17,12 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
-import { Public } from '@/common/decorators/public.decorator';
 @ApiTags('tickets')
 @Controller('tickets')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
-  @Public()
-  @Get('tiers')
-  @ApiOperation({ summary: 'Get all ticket tiers (Public)' })
-  @ApiResponse({ status: 200, description: 'Ticket tiers retrieved' })
-  async getTierList() {
-    return this.ticketsService.getTicketTiers();
-  }
   @Post('lock')
   @ApiOperation({ summary: 'Lock tickets for purchase (TTL based)' })
   @ApiResponse({ status: 201, description: 'Tickets locked successfully' })

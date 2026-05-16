@@ -46,6 +46,16 @@ export class ToursController {
     return this.toursService.findBySlug(slug);
   }
   @Public()
+  @Get(':id/related')
+  @ApiOperation({ summary: 'Get related tours' })
+  @ApiResponse({ status: 200, description: 'Related tours retrieved successfully' })
+  async getRelated(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
+    return this.toursService.getRelated(id);
+  }
+  @Public()
   @Get(':id/schedules')
   @ApiOperation({ summary: 'Get tour schedules' })
   @ApiResponse({ status: 200, description: 'Tour schedules retrieved successfully' })

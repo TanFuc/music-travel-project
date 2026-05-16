@@ -46,6 +46,16 @@ export class ShowsController {
     return this.showsService.findBySlug(slug);
   }
   @Public()
+  @Get(':id/related')
+  @ApiOperation({ summary: 'Get related shows' })
+  @ApiResponse({ status: 200, description: 'Related shows retrieved successfully' })
+  async getRelated(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
+    return this.showsService.getRelated(id);
+  }
+  @Public()
   @Get(':id/seats')
   @ApiOperation({ summary: 'Get show seat map' })
   @ApiResponse({ status: 200, description: 'Seat map retrieved successfully' })

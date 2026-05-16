@@ -23,7 +23,7 @@ export class BookingsController {
   @ApiResponse({ status: 201, description: 'Booking created successfully' })
   @ApiBody({
     description:
-      'Booking payload. Either an object with tourItems/ticketTiers/ticketsWithSeats, or a raw array of tour items: [{ scheduleId, quantity }, ...]',
+      'Booking payload. Either an object with tourItems/ticketsWithSeats, or a raw array of tour items: [{ scheduleId, quantity }, ...]',
     schema: {
       oneOf: [
         {
@@ -33,10 +33,13 @@ export class BookingsController {
               type: 'array',
               items: {
                 type: 'object',
-                properties: { scheduleId: { type: 'number' }, quantity: { type: 'number' } },
+                properties: {
+                  scheduleId: { type: 'number' },
+                  quantity: { type: 'number' },
+                  ticketTypeName: { type: 'string' },
+                },
               },
             },
-            ticketTiers: { type: 'array', items: { type: 'object' } },
             ticketsWithSeats: { type: 'array', items: { type: 'object' } },
             voucherCode: { type: 'string' },
             note: { type: 'string' },
