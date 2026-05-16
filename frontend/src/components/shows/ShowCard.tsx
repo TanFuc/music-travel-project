@@ -1,11 +1,11 @@
 'use client';
 import React, { useMemo } from 'react';
-import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { MapPin, Calendar, Clock, Ticket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { WishlistButton } from '@/components/shows/WishlistButton';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 const priceFormatter = new Intl.NumberFormat('vi-VN');
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' });
 const weekdayFormatter = new Intl.DateTimeFormat('vi-VN', { weekday: 'short' });
@@ -86,7 +86,7 @@ export const ShowCard = React.memo(function ShowCard({
 
       <Link href={`/shows/${slug}`} className="flex h-full flex-1 flex-col">
         <div className="relative aspect-[3/4] shrink-0 overflow-hidden">
-          <Image
+          <OptimizedImage
             src={
               thumbnailUrl ||
               'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400&h=600&fit=crop'
@@ -96,6 +96,8 @@ export const ShowCard = React.memo(function ShowCard({
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             loading="lazy"
             className="object-cover transition-transform duration-700 group-hover:scale-110"
+            quality={80}
+            blurPlaceholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 600'%3E%3Crect fill='%23e5e7eb' width='400' height='600'/%3E%3C/svg%3E"
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-80" />

@@ -1,9 +1,9 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
-import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { ChevronLeft, ChevronRight, MapPin, Calendar } from 'lucide-react';
 import { cleanImageUrl, cn } from '@/lib/utils';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 interface Banner {
   id: number;
   title: string;
@@ -69,16 +69,16 @@ export function HeroBannerClient({ banners }: HeroBannerClientProps) {
             index === currentIndex ? 'opacity-100' : 'opacity-0'
           )}
         >
-          <Image
+          <OptimizedImage
             src={cleanImageUrl(banner.imageUrl)}
             alt={banner.title || 'Banner'}
             fill
             className={cn('object-cover', index === currentIndex && 'ken-burns')}
             priority={index === 0}
             loading={index === 0 ? 'eager' : 'lazy'}
-            decoding="async"
             sizes="100vw"
-            quality={90}
+            quality={85}
+            blurPlaceholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%23111827' width='1920' height='1080'/%3E%3C/svg%3E"
           />
         </div>
       ))}

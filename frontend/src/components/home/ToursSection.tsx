@@ -1,9 +1,9 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { MapPin, Clock, ArrowRight, Loader2 } from 'lucide-react';
 import { get } from '@/lib/api';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 interface Tour {
   id: number;
   title: string;
@@ -71,7 +71,7 @@ export function ToursSection() {
                 className="group flex h-full flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/10"
               >
                 <div className="relative aspect-[16/9] overflow-hidden">
-                  <Image
+                  <OptimizedImage
                     src={
                       tour.thumbnailUrl ||
                       'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'
@@ -79,6 +79,10 @@ export function ToursSection() {
                     alt={tour.title}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    quality={85}
+                    loading="lazy"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    blurPlaceholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 450'%3E%3Crect fill='%23e5e7eb' width='800' height='450'/%3E%3C/svg%3E"
                   />
                   <div className="absolute left-4 top-4">
                     <span className="rounded-lg bg-orange-500/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur-md">

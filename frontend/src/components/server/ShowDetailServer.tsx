@@ -1,8 +1,8 @@
-import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { Calendar, MapPin, Clock, ArrowLeft, Navigation } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatDateTime } from '@/lib/utils';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 interface Artist {
   id: number;
   name: string;
@@ -62,13 +62,15 @@ export function ShowHero({ show }: ShowDetailServerProps) {
   return (
     <div className="relative h-[40vh] min-h-[300px] w-full overflow-hidden">
       {bannerUrl ? (
-        <Image
+        <OptimizedImage
           src={bannerUrl}
           alt={show.title}
           fill
           className="object-cover"
           priority
           sizes="100vw"
+          quality={85}
+          blurPlaceholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%23f3f4f6' width='1920' height='1080'/%3E%3C/svg%3E"
         />
       ) : (
         <div className="h-full w-full bg-gradient-to-br from-brand-100 to-brand-300" />

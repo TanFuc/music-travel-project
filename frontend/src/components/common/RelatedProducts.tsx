@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { Calendar, MapPin, Clock, ArrowRight, Sparkles } from 'lucide-react';
 import { formatPrice, formatDateTime } from '@/lib/utils';
 import { get } from '@/lib/api';
 import { motion } from 'framer-motion';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 interface RelatedProduct {
   id: number;
   title: string;
@@ -136,12 +136,15 @@ export function RelatedProducts({ currentId, type, title }: RelatedProductsProps
               >
                 <div className="relative aspect-[4/5] w-full overflow-hidden">
                   {product.thumbnailUrl ? (
-                    <Image
+                    <OptimizedImage
                       src={product.thumbnailUrl}
                       alt={product.title}
                       fill
                       className="object-cover transition-transform duration-1000 group-hover:scale-110"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                      quality={80}
+                      loading="lazy"
+                      blurPlaceholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 500'%3E%3Crect fill='%23f3f4f6' width='400' height='500'/%3E%3C/svg%3E"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-brand-50 text-brand-200">

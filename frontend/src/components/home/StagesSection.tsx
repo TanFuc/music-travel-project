@@ -1,8 +1,8 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import Image from 'next/image';
 import { MapPin, ArrowRight, Loader2 } from 'lucide-react';
 import { get } from '@/lib/api';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 interface HomeStage {
   id: number;
   title: string;
@@ -53,11 +53,15 @@ export function StagesSection() {
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="relative aspect-[4/3] w-full overflow-hidden">
-                  <Image
+                  <OptimizedImage
                     src={stage.imageUrl}
                     alt={stage.title}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    quality={80}
+                    loading="lazy"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    blurPlaceholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Crect fill='%23d1d5db' width='800' height='600'/%3E%3C/svg%3E"
                   />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
