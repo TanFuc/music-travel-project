@@ -25,7 +25,7 @@ export default function AdminToursPage() {
   const [editingItem, setEditingItem] = useState<any>(null);
   const { data, isLoading } = useQuery({
     queryKey: ['admin-tours', page],
-    queryFn: () => get<any>(`/tours?isCombo=false&page=${page}&limit=20`),
+    queryFn: () => get<any>(`/tours?page=${page}&limit=20`),
   });
   const deleteMutation = useMutation({
     mutationFn: (id: number) => del(`/tours/${id}`),

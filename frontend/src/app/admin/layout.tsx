@@ -19,8 +19,8 @@ import {
   Menu,
   ChevronRight,
   Theater,
-  Tags,
   Mic,
+  Package,
 } from 'lucide-react';
 import { Logo } from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
@@ -42,96 +42,144 @@ function AdminPageSkeleton() {
     </div>
   );
 }
-const sidebarItems = [
+const sidebarGroups = [
   {
-    title: 'Tổng quan',
-    href: '/admin/dashboard',
-    icon: LayoutDashboard,
+    group: 'Tổng quan',
+    items: [
+      {
+        title: 'Bảng điều khiển',
+        description: 'Thống kê tổng quan',
+        href: '/admin/dashboard',
+        icon: LayoutDashboard,
+      },
+    ],
   },
   {
-    title: 'Người dùng',
-    href: '/admin/users',
-    icon: Users,
+    group: 'Dịch vụ & Sản phẩm',
+    items: [
+      {
+        title: 'Show diễn',
+        description: 'Quản lý đêm nhạc',
+        href: '/admin/shows',
+        icon: Music,
+      },
+      {
+        title: 'Tour sinh thái',
+        description: 'Quản lý lịch trình tour',
+        href: '/admin/tours',
+        icon: MapPin,
+      },
+      {
+        title: 'Siêu Combo',
+        description: 'Gói kết hợp Tour & Show',
+        href: '/admin/combos',
+        icon: Package,
+      },
+      {
+        title: 'Gói ca sĩ',
+        description: 'Dịch vụ thu âm ca sĩ',
+        href: '/admin/singer-packages',
+        icon: Tag,
+      },
+    ],
   },
   {
-    title: 'Show diễn',
-    href: '/admin/shows',
-    icon: Music,
+    group: 'Sân khấu & Vé',
+    items: [
+      {
+        title: 'Quản lý sân khấu',
+        description: 'Danh sách và sơ đồ ghế',
+        href: '/admin/stages',
+        icon: Theater,
+      },
+      {
+        title: 'Sân khấu nổi bật',
+        description: 'Hiển thị trên trang chủ',
+        href: '/admin/home-stages',
+        icon: Image,
+      },
+      {
+        title: 'Kho vé',
+        description: 'Theo dõi vé đã xuất',
+        href: '/admin/tickets',
+        icon: Ticket,
+      },
+    ],
   },
   {
-    title: 'Đăng ký ca sĩ',
-    href: '/admin/singer-registrations',
-    icon: Mic,
+    group: 'Kinh doanh',
+    items: [
+      {
+        title: 'Đơn hàng',
+        description: 'Quản lý đơn đặt chỗ',
+        href: '/admin/bookings',
+        icon: ShoppingBag,
+      },
+      {
+        title: 'Thanh toán',
+        description: 'Lịch sử giao dịch',
+        href: '/admin/payments',
+        icon: CreditCard,
+      },
+      {
+        title: 'Mã giảm giá',
+        description: 'Chương trình khuyến mãi',
+        href: '/admin/vouchers',
+        icon: Tag,
+      },
+    ],
   },
   {
-    title: 'Gói ca sĩ',
-    href: '/admin/singer-packages',
-    icon: Tag,
+    group: 'Tài khoản',
+    items: [
+      {
+        title: 'Người dùng',
+        description: 'Quản lý khách hàng',
+        href: '/admin/users',
+        icon: Users,
+      },
+      {
+        title: 'Duyệt ca sĩ',
+        description: 'Yêu cầu đăng ký ca sĩ',
+        href: '/admin/singer-registrations',
+        icon: Mic,
+      },
+    ],
   },
   {
-    title: 'Tour',
-    href: '/admin/tours',
-    icon: MapPin,
-  },
-  {
-    title: 'Sân khấu',
-    href: '/admin/stages',
-    icon: Theater,
-  },
-  {
-    title: 'Sân khấu (Home)',
-    href: '/admin/home-stages',
-    icon: Image,
-  },
-  {
-    title: 'Vé',
-    href: '/admin/tickets',
-    icon: Ticket,
-  },
-  {
-    title: 'Loại vé bán',
-    href: '/admin/ticket-tiers',
-    icon: Tags,
-  },
-  {
-    title: 'Đơn hàng',
-    href: '/admin/bookings',
-    icon: ShoppingBag,
-  },
-  {
-    title: 'Thanh toán',
-    href: '/admin/payments',
-    icon: CreditCard,
-  },
-  {
-    title: 'Cấu hình thanh toán',
-    href: '/admin/payment-methods',
-    icon: Settings,
-  },
-  {
-    title: 'Voucher',
-    href: '/admin/vouchers',
-    icon: Tag,
-  },
-  {
-    title: 'Media',
-    href: '/admin/media',
-    icon: Image,
-  },
-  {
-    title: 'Banner',
-    href: '/admin/banners',
-    icon: Image,
-  },
-  {
-    title: 'Thông báo',
-    href: '/admin/notifications',
-    icon: Bell,
-  },
-  {
-    title: 'Cài đặt',
-    href: '/admin/settings',
-    icon: Settings,
+    group: 'Hệ thống',
+    items: [
+      {
+        title: 'Media',
+        description: 'Hình ảnh, video',
+        href: '/admin/media',
+        icon: Image,
+      },
+      {
+        title: 'Banner quảng cáo',
+        description: 'Banner trên website',
+        href: '/admin/banners',
+        icon: Image,
+      },
+      {
+        title: 'Thông báo',
+        description: 'Hệ thống thông báo',
+        href: '/admin/notifications',
+        icon: Bell,
+      },
+      {
+        title: 'Cổng thanh toán',
+        description: 'Cấu hình thanh toán',
+        href: '/admin/payment-methods',
+        icon: CreditCard,
+      },
+      {
+        title: 'Cài đặt',
+        description: 'Cấu hình chung',
+        href: '/admin/settings',
+        icon: Settings,
+      },
+    ],
   },
 ];
 export default function AdminLayout({
@@ -258,38 +306,61 @@ export default function AdminLayout({
           </div>
 
           <nav className="flex-1 overflow-y-auto px-3 py-4">
-            <ul className="space-y-1">
-              {sidebarItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
-                        isActive
-                          ? 'bg-brand-50 text-brand-600'
-                          : 'text-neutral-600 hover:bg-neutral-100',
-                        !sidebarOpen && 'lg:justify-center lg:px-2'
-                      )}
-                      title={!sidebarOpen ? item.title : undefined}
-                    >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      <span
-                        className={cn(
-                          'text-sm font-medium transition-all duration-300',
-                          !sidebarOpen
-                            ? 'lg:w-0 lg:overflow-hidden lg:opacity-0'
-                            : 'lg:w-auto lg:opacity-100'
-                        )}
-                      >
-                        {item.title}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="space-y-6">
+              {sidebarGroups.map((group, groupIdx) => (
+                <div key={groupIdx}>
+                  <h3
+                    className={cn(
+                      'mb-2 px-3 text-xs font-bold uppercase tracking-wider text-neutral-400 transition-all duration-300',
+                      !sidebarOpen && 'lg:hidden'
+                    )}
+                  >
+                    {group.group}
+                  </h3>
+                  {!sidebarOpen && groupIdx > 0 && (
+                    <div className="mx-4 mb-4 mt-4 hidden h-px bg-neutral-200 lg:block" />
+                  )}
+                  <ul className="space-y-1">
+                    {group.items.map((item) => {
+                      const isActive =
+                        pathname === item.href || pathname.startsWith(item.href + '/');
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            className={cn(
+                              'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                              isActive
+                                ? 'bg-brand-50 text-brand-600'
+                                : 'text-neutral-600 hover:bg-neutral-100',
+                              !sidebarOpen && 'lg:justify-center lg:px-2'
+                            )}
+                            title={!sidebarOpen ? `${item.title} - ${item.description}` : undefined}
+                          >
+                            <item.icon className="h-5 w-5 flex-shrink-0" />
+                            <div
+                              className={cn(
+                                'flex flex-col overflow-hidden transition-all duration-300',
+                                !sidebarOpen ? 'lg:w-0 lg:opacity-0' : 'lg:w-auto lg:opacity-100'
+                              )}
+                            >
+                              <span className="truncate text-sm font-medium leading-none">
+                                {item.title}
+                              </span>
+                              {sidebarOpen && (
+                                <span className="mt-1 truncate text-[11px] leading-none text-neutral-400 group-hover:text-neutral-500">
+                                  {item.description}
+                                </span>
+                              )}
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </nav>
 
           <div className="border-t p-4">
@@ -347,7 +418,8 @@ export default function AdminLayout({
           </Button>
           <div className="flex-1">
             <h2 className="text-lg font-semibold">
-              {sidebarItems.find((item) => item.href === pathname)?.title || 'Admin'}
+              {sidebarGroups.flatMap((group) => group.items).find((item) => item.href === pathname)
+                ?.title || 'Admin'}
             </h2>
           </div>
         </header>

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
   Edit,
@@ -8,14 +8,17 @@ import {
   Smartphone,
   Monitor,
   Link as LinkIcon,
-  AlertCircle,
+  Eye,
+  EyeOff,
+  Calendar,
+  Clock,
 } from 'lucide-react';
 import { Link } from '@/components/common/Link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/common/LoadingSkeleton';
-import { get, del } from '@/lib/api';
+import { get, del, patch } from '@/lib/api';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -43,9 +46,11 @@ interface Banner {
 export default function AdminBannersPage() {
   const queryClient = useQueryClient();
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
   const { data: banners, isLoading } = useQuery({
     queryKey: ['admin-banners'],
     queryFn: () => get<Banner[]>('/banners/admin/all'),
+    refetchInterval: 5000,
   });
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -59,6 +64,30 @@ export default function AdminBannersPage() {
       setDeleteId(null);
     }
   };
+  const toggleMutation = useMutation({
+    mutationFn: async (bannerId: number) => {
+      const banner = banners?.find((b) => b.id === bannerId);
+      if (!banner) throw new Error('Banner not found');
+      const response = await patch(`/banners/admin/${bannerId}`, {
+        isActive: !banner.isActive,
+      });
+      return response;
+    },
+    onSuccess: (_, bannerId) => {
+      const banner = banners?.find((b) => b.id === bannerId);
+      const newStatus = banner?.isActive ? 'tắt' : 'bật';
+      toast.success(`Banner đã ${newStatus} thành công`);
+      queryClient.invalidateQueries({ queryKey: ['admin-banners'] });
+      setTogglingId(null);
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['admin-banners'] });
+      }, 100);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra!');
+      setTogglingId(null);
+    },
+  });
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -72,6 +101,37 @@ export default function AdminBannersPage() {
             Thêm Banner
           </Button>
         </Link>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-brand-600">{banners?.length || 0}</div>
+              <p className="mt-1 text-sm text-neutral-600">Tổng banner</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600">
+                {banners?.filter((b) => b.isActive).length || 0}
+              </div>
+              <p className="mt-1 text-sm text-neutral-600">Đang hoạt động</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-orange-600">
+                {banners?.filter((b) => !b.isActive).length || 0}
+              </div>
+              <p className="mt-1 text-sm text-neutral-600">Tạm ẩn</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
@@ -92,7 +152,7 @@ export default function AdminBannersPage() {
               {banners.map((banner) => (
                 <div
                   key={banner.id}
-                  className="rounded-lg border p-4 transition-colors hover:bg-neutral-50"
+                  className={`rounded-lg border p-4 transition-all ${banner.isActive ? 'bg-white' : 'bg-neutral-50 opacity-60'}`}
                 >
                   <div className="flex flex-col items-start gap-4 md:flex-row">
                     <div className="flex shrink-0 gap-2">
@@ -131,12 +191,12 @@ export default function AdminBannersPage() {
                           {banner.isActive ? 'Hoạt động' : 'Tạm ẩn'}
                         </Badge>
                         <Badge variant="outline">{banner.position}</Badge>
+                        <Badge variant="outline" className="gap-1">
+                          <Clock className="h-3 w-3" />#{banner.displayOrder}
+                        </Badge>
                       </div>
 
                       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-600">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">Thứ tự:</span> {banner.displayOrder}
-                        </div>
                         {banner.actionLink && (
                           <div className="flex max-w-[300px] items-center gap-2">
                             <LinkIcon className="h-3 w-3 flex-shrink-0" />
@@ -152,14 +212,14 @@ export default function AdminBannersPage() {
                         )}
                         {(banner.startTime || banner.endTime) && (
                           <div className="flex items-center gap-2">
-                            <AlertCircle className="h-3 w-3" />
+                            <Calendar className="h-3 w-3" />
                             <span>
                               {banner.startTime
-                                ? new Date(banner.startTime).toLocaleDateString()
+                                ? new Date(banner.startTime).toLocaleDateString('vi-VN')
                                 : '...'}
                               {' - '}
                               {banner.endTime
-                                ? new Date(banner.endTime).toLocaleDateString()
+                                ? new Date(banner.endTime).toLocaleDateString('vi-VN')
                                 : '...'}
                             </span>
                           </div>
@@ -168,11 +228,30 @@ export default function AdminBannersPage() {
                     </div>
 
                     <div className="flex gap-2">
+                      <Button
+                        variant={banner.isActive ? 'outline' : 'default'}
+                        size="icon"
+                        onClick={() => {
+                          setTogglingId(banner.id);
+                          toggleMutation.mutate(banner.id);
+                        }}
+                        disabled={toggleMutation.isPending && togglingId === banner.id}
+                        className="transition-colors"
+                        title={banner.isActive ? 'Ẩn banner' : 'Hiển thị banner'}
+                      >
+                        {banner.isActive ? (
+                          <Eye className="h-4 w-4" />
+                        ) : (
+                          <EyeOff className="h-4 w-4" />
+                        )}
+                      </Button>
+
                       <Link href={`/admin/banners/${banner.id}`}>
                         <Button variant="outline" size="icon">
                           <Edit className="h-4 w-4" />
                         </Button>
                       </Link>
+
                       <Button
                         variant="outline"
                         size="icon"
@@ -200,7 +279,7 @@ export default function AdminBannersPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
               Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
