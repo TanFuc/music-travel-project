@@ -951,25 +951,126 @@ export class AdminService {
       },
     };
   }
-  async getTickets(page: number = 1, limit: number = 20, showId?: number) {
+  async getTickets(
+    page: number = 1,
+    limit: number = 20,
+    filters?: {
+      showId?: number;
+      ticketClassId?: number;
+      ticketTierId?: number;
+      status?: string;
+      checkedIn?: boolean;
+      search?: string;
+      zoneName?: string;
+      fromDate?: string;
+      toDate?: string;
+    },
+  ) {
     const skip = (page - 1) * limit;
-    const where = showId ? { showId } : {};
-    const [items, total] = await Promise.all([
+    const where: any = {};
+    if (filters?.showId) {
+      where.showId = filters.showId;
+    }
+    if (filters?.ticketClassId) {
+      where.ticketClassId = filters.ticketClassId;
+    }
+    if (filters?.ticketTierId) {
+      where.ticketTierId = filters.ticketTierId;
+    }
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+    if (typeof filters?.checkedIn === 'boolean') {
+      where.isCheckedIn = filters.checkedIn;
+    }
+    if (filters?.zoneName) {
+      where.physicalSeat = {
+        zoneName: { contains: filters.zoneName, mode: 'insensitive' },
+      };
+    }
+    if (filters?.search) {
+      where.OR = [
+        { ticketCode: { contains: filters.search, mode: 'insensitive' } },
+        { booking: { bookingCode: { contains: filters.search, mode: 'insensitive' } } },
+        { booking: { user: { fullName: { contains: filters.search, mode: 'insensitive' } } } },
+        { booking: { user: { phoneNumber: { contains: filters.search } } } },
+        { show: { title: { contains: filters.search, mode: 'insensitive' } } },
+      ];
+    }
+    if (filters?.fromDate || filters?.toDate) {
+      where.createdAt = {};
+      if (filters.fromDate) {
+        where.createdAt.gte = new Date(filters.fromDate);
+      }
+      if (filters.toDate) {
+        const endDate = new Date(filters.toDate);
+        endDate.setHours(23, 59, 59, 999);
+        where.createdAt.lte = endDate;
+      }
+    }
+    const [items, total, statusCounts, checkedInCount, zoneRows] = await Promise.all([
       this.prisma.ticket.findMany({
         where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          show: { select: { id: true, title: true } },
+          show: {
+            select: {
+              id: true,
+              title: true,
+              performTime: true,
+              status: true,
+              stage: { select: { id: true, name: true } },
+            },
+          },
           ticketClass: true,
           ticketTier: true,
           physicalSeat: true,
+          booking: {
+            select: {
+              id: true,
+              bookingCode: true,
+              status: true,
+              paymentStatus: true,
+              user: { select: { id: true, fullName: true, phoneNumber: true, email: true } },
+            },
+          },
           redeemedShow: { select: { id: true, title: true } },
         },
       }),
       this.prisma.ticket.count({ where }),
+      this.prisma.ticket.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
+      this.prisma.ticket.count({ where: { ...where, isCheckedIn: true } }),
+      this.prisma.ticket.findMany({
+        where: {
+          ...where,
+          physicalSeat: { zoneName: { not: null } },
+        },
+        distinct: ['physicalSeatId'],
+        select: {
+          physicalSeat: { select: { zoneName: true } },
+        },
+      }),
     ]);
+    const summaryByStatus = statusCounts.reduce(
+      (acc, item) => ({
+        ...acc,
+        [item.status]: item._count._all,
+      }),
+      {} as Record<string, number>,
+    );
+    const zones = Array.from(
+      new Set(
+        zoneRows
+          .map((row) => row.physicalSeat?.zoneName)
+          .filter((zoneName): zoneName is string => Boolean(zoneName)),
+      ),
+    ).sort((a, b) => a.localeCompare(b, 'vi'));
     return {
       items,
       meta: {
@@ -977,6 +1078,13 @@ export class AdminService {
         limit,
         total,
         totalPages: Math.ceil(total / limit),
+        summary: {
+          total,
+          checkedIn: checkedInCount,
+          notCheckedIn: total - checkedInCount,
+          byStatus: summaryByStatus,
+          zones,
+        },
       },
     };
   }

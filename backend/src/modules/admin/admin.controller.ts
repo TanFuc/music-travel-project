@@ -492,10 +492,22 @@ export class AdminController {
     });
   }
   @Get('tickets')
-  @ApiOperation({ summary: 'Get all tickets with pagination' })
+  @ApiOperation({ summary: 'Get all tickets with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'showId', required: false, type: Number })
+  @ApiQuery({ name: 'ticketClassId', required: false, type: Number })
+  @ApiQuery({ name: 'ticketTierId', required: false, type: Number })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['AVAILABLE', 'LOCKED', 'SOLD', 'USED', 'CANCELLED', 'SUSPENDED'],
+  })
+  @ApiQuery({ name: 'checkedIn', required: false, enum: ['true', 'false'] })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'zoneName', required: false, type: String })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
   async getTickets(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe)
     page: number = 1,
@@ -503,9 +515,37 @@ export class AdminController {
     limit: number = 20,
     @Query('showId')
     showId?: string,
+    @Query('ticketClassId')
+    ticketClassId?: string,
+    @Query('ticketTierId')
+    ticketTierId?: string,
+    @Query('status')
+    status?: string,
+    @Query('checkedIn')
+    checkedIn?: string,
+    @Query('search')
+    search?: string,
+    @Query('zoneName')
+    zoneName?: string,
+    @Query('fromDate')
+    fromDate?: string,
+    @Query('toDate')
+    toDate?: string,
   ) {
     const parsedShowId = showId ? parseInt(showId, 10) : undefined;
-    return this.adminService.getTickets(page, limit, parsedShowId);
+    const parsedTicketClassId = ticketClassId ? parseInt(ticketClassId, 10) : undefined;
+    const parsedTicketTierId = ticketTierId ? parseInt(ticketTierId, 10) : undefined;
+    return this.adminService.getTickets(page, limit, {
+      showId: Number.isNaN(parsedShowId) ? undefined : parsedShowId,
+      ticketClassId: Number.isNaN(parsedTicketClassId) ? undefined : parsedTicketClassId,
+      ticketTierId: Number.isNaN(parsedTicketTierId) ? undefined : parsedTicketTierId,
+      status,
+      checkedIn: checkedIn === 'true' ? true : checkedIn === 'false' ? false : undefined,
+      search,
+      zoneName,
+      fromDate,
+      toDate,
+    });
   }
   @Get('payments')
   @ApiOperation({ summary: 'Get all payments/transactions with pagination' })

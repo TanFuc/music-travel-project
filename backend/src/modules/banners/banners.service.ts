@@ -43,6 +43,8 @@ export class BannersService {
         imageUrl: true,
         mobileImageUrl: true,
         actionLink: true,
+        location: true,
+        date: true,
         position: true,
         displayOrder: true,
       },
@@ -65,6 +67,8 @@ export class BannersService {
     imageUrl: string;
     mobileImageUrl?: string;
     actionLink?: string;
+    location?: string;
+    date?: string;
     position: BannerPosition;
     displayOrder?: number;
     isActive?: boolean;
@@ -83,6 +87,8 @@ export class BannersService {
       imageUrl?: string;
       mobileImageUrl?: string;
       actionLink?: string;
+      location?: string;
+      date?: string;
       position?: BannerPosition;
       displayOrder?: number;
       isActive?: boolean;
@@ -95,17 +101,27 @@ export class BannersService {
       where: { id },
       data,
     });
-    await this.invalidateBannerCache();
+    await this.invalidateBannerCacheImmediate();
     return banner;
   }
   async delete(id: number) {
     await this.prisma.banner.delete({ where: { id } });
-    await this.invalidateBannerCache();
+    await this.invalidateBannerCacheImmediate();
   }
   private async invalidateBannerCache() {
     const positions = Object.values(BannerPosition);
     for (const position of positions) {
       await this.cache.del(CacheKeys.bannersByPosition(position));
     }
+  }
+  private async invalidateBannerCacheImmediate() {
+    const positions = Object.values(BannerPosition);
+    for (const position of positions) {
+      const key = CacheKeys.bannersByPosition(position);
+      await this.cache.del(key);
+    }
+    try {
+      await this.cache.flushAll();
+    } catch (error) {}
   }
 }

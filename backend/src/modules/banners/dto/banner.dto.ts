@@ -23,10 +23,15 @@ export class CreateBannerDto {
   @IsOptional()
   @IsUrl()
   mobileImageUrl?: string;
-  @ApiPropertyOptional({ description: 'Action Link (URL)' })
+  actionLink?: string;
+  @ApiPropertyOptional({ description: 'Location display text' })
   @IsOptional()
   @IsString()
-  actionLink?: string;
+  location?: string;
+  @ApiPropertyOptional({ description: 'Date/Time display text' })
+  @IsOptional()
+  @IsString()
+  date?: string;
   @ApiProperty({ enum: BannerPosition, default: BannerPosition.HOME_MAIN_SLIDER })
   @IsNotEmpty()
   @IsEnum(BannerPosition)
@@ -61,10 +66,15 @@ export class UpdateBannerDto {
   @IsOptional()
   @IsUrl()
   mobileImageUrl?: string;
+  actionLink?: string;
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  actionLink?: string;
+  location?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  date?: string;
   @ApiPropertyOptional({ enum: BannerPosition })
   @IsOptional()
   @IsEnum(BannerPosition)
