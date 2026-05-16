@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect, useRef, useTransition } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { MapPin, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, usePathname } from 'next/navigation';
+import { MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 interface Location {
   id: number;
@@ -12,25 +12,51 @@ interface Location {
 interface LocationFilterClientProps {
   locations: Location[];
 }
+export const HOME_LOCATION_CHANGE_EVENT = 'home-location-change';
 export function LocationFilterClient({ locations }: LocationFilterClientProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(
+    searchParams.get('location')
+  );
   const [isSticky, setIsSticky] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const currentLocation = searchParams.get('location');
+  const publishLocationChange = (location: string | null) => {
+    window.dispatchEvent(
+      new CustomEvent(HOME_LOCATION_CHANGE_EVENT, {
+        detail: { location },
+      })
+    );
+  };
   const handleLocationChange = (slug: string | null) => {
+    if (selectedLocation === slug) {
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
     if (slug) {
       params.set('location', slug);
     } else {
       params.delete('location');
     }
-    startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    });
+    setSelectedLocation(slug);
+    const query = params.toString();
+    window.history.pushState(null, '', query ? `${pathname}?${query}` : pathname);
+    publishLocationChange(slug);
   };
+  useEffect(() => {
+    const handlePopState = () => {
+      const location = new URLSearchParams(window.location.search).get('location');
+      setSelectedLocation(location);
+      publishLocationChange(location);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+  useEffect(() => {
+    const location = searchParams.get('location');
+    setSelectedLocation(location);
+    publishLocationChange(location);
+  }, [searchParams]);
   useEffect(() => {
     const handleScroll = () => {
       if (containerRef.current) {
@@ -65,53 +91,41 @@ export function LocationFilterClient({ locations }: LocationFilterClientProps) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleLocationChange(null)}
-              disabled={isPending}
+              aria-pressed={!selectedLocation}
               className={cn(
                 'whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all',
-                !currentLocation
+                !selectedLocation
                   ? 'btn-primary'
-                  : 'border border-gray-100 bg-white text-gray-400 shadow-sm hover:bg-brand-50 hover:text-brand-600',
-                isPending && 'cursor-not-allowed opacity-50'
+                  : 'border border-gray-100 bg-white text-gray-400 shadow-sm hover:bg-brand-50 hover:text-brand-600'
               )}
             >
-              {isPending && !currentLocation ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Tất cả'
-              )}
+              Tất cả
             </button>
 
             {locations.map((location) => (
               <button
                 key={location.id}
                 onClick={() => handleLocationChange(location.slug)}
-                disabled={isPending}
+                aria-pressed={selectedLocation === location.slug}
                 className={cn(
                   'flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all',
-                  currentLocation === location.slug
+                  selectedLocation === location.slug
                     ? 'btn-primary scale-105 shadow-glow-lg'
-                    : 'border border-gray-100 bg-white text-gray-400 shadow-sm hover:bg-brand-50 hover:text-brand-600',
-                  isPending && 'cursor-not-allowed opacity-50'
+                    : 'border border-gray-100 bg-white text-gray-400 shadow-sm hover:bg-brand-50 hover:text-brand-600'
                 )}
               >
-                {isPending && currentLocation === location.slug ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    {location.name}
-                    {location.showCount !== undefined && location.showCount > 0 && (
-                      <span
-                        className={cn(
-                          'flex h-5 min-w-[20px] items-center justify-center rounded-lg px-1.5 text-[10px] font-black',
-                          currentLocation === location.slug
-                            ? 'bg-white/20 text-white'
-                            : 'bg-brand-50 text-brand-600'
-                        )}
-                      >
-                        {location.showCount}
-                      </span>
+                {location.name}
+                {location.showCount !== undefined && location.showCount > 0 && (
+                  <span
+                    className={cn(
+                      'flex h-5 min-w-[20px] items-center justify-center rounded-lg px-1.5 text-[10px] font-black',
+                      selectedLocation === location.slug
+                        ? 'bg-white/20 text-white'
+                        : 'bg-brand-50 text-brand-600'
                     )}
-                  </>
+                  >
+                    {location.showCount}
+                  </span>
                 )}
               </button>
             ))}

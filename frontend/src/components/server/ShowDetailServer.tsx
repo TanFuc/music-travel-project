@@ -88,6 +88,10 @@ export function ShowHero({ show }: ShowDetailServerProps) {
   );
 }
 export function ShowDetailServer({ show }: ShowDetailServerProps) {
+  const cleanDescription = (html: string) => {
+    if (!html) return '';
+    return html.replace(/(_\d+x\d+)(\.(jpe?g|png|webp|gif))/gi, '$2');
+  };
   return (
     <>
       <div className="rounded-3xl border border-neutral-100/50 bg-white p-6 shadow-xl shadow-neutral-100 sm:p-8">
@@ -141,8 +145,8 @@ export function ShowDetailServer({ show }: ShowDetailServerProps) {
             <span className="text-2xl">📝</span> Giới thiệu show
           </h3>
           <div
-            className="prose prose-neutral prose-lg max-w-none leading-relaxed text-neutral-600"
-            dangerouslySetInnerHTML={{ __html: show.description }}
+            className="rich-content max-w-none"
+            dangerouslySetInnerHTML={{ __html: cleanDescription(show.description) }}
           />
         </div>
       )}

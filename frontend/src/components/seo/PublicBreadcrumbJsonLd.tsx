@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { SITE_URL } from '@/lib/seo';
 const SEGMENT_LABELS: Record<string, string> = {
@@ -26,8 +26,12 @@ function toReadableLabel(segment: string): string {
 }
 export function PublicBreadcrumbJsonLd() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const schema = useMemo(() => {
-    if (!pathname) return null;
+    if (!pathname || !mounted) return null;
     const segments = pathname.split('/').filter(Boolean);
     const itemListElement = [
       {
@@ -52,11 +56,12 @@ export function PublicBreadcrumbJsonLd() {
         },
       ],
     };
-  }, [pathname]);
+  }, [pathname, mounted]);
   const hiddenPrefixes = ['/admin', '/checkout', '/cart', '/profile'];
   const hiddenExactPaths = ['/login', '/register', '/payment-demo'];
   if (
     !pathname ||
+    !mounted ||
     hiddenPrefixes.some((prefix) => pathname.startsWith(prefix)) ||
     hiddenExactPaths.includes(pathname)
   ) {

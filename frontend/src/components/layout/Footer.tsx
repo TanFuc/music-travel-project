@@ -174,13 +174,18 @@ export function Footer() {
             <div className="grid grid-cols-2 gap-8">
               <div>
                 <h3 className="mb-6 text-xs font-black uppercase tracking-widest text-brand-500">
-                  {displayAboutTitle}
+                  ĐIỀU KHOẢN VÀ CHÍNH SÁCH
                 </h3>
                 <ul className="space-y-4">
-                  {displayAboutLinks.map((link: any) => (
-                    <li key={link.id}>
+                  {[
+                    { label: 'Điều khoản giao dịch', value: '/p/dieu-khoan-giao-dich' },
+                    { label: 'Chính sách thanh toán', value: '/p/chinh-sach-thanh-toan' },
+                    { label: 'Chính sách bảo mật', value: '/p/chinh-sach-bao-mat' },
+                    { label: 'Chính sách đổi trả', value: '/p/chinh-sach-doi-tra' },
+                  ].map((link, idx) => (
+                    <li key={idx}>
                       <Link
-                        href={link.value || resolveHref(link as any)}
+                        href={link.value}
                         className="text-sm font-medium text-gray-600 transition-colors hover:text-brand-600"
                       >
                         {link.label}
@@ -191,13 +196,18 @@ export function Footer() {
               </div>
               <div>
                 <h3 className="mb-6 text-xs font-black uppercase tracking-widest text-brand-500">
-                  {displayPolicyTitle}
+                  HỖ TRỢ KHÁCH HÀNG
                 </h3>
                 <ul className="space-y-4">
-                  {displayPolicyLinks.map((link: any) => (
-                    <li key={link.id}>
+                  {[
+                    { label: 'Câu hỏi thường gặp', value: '/p/faq' },
+                    { label: 'Hướng dẫn đặt vé', value: '/p/huong-dan-dat-ve' },
+                    { label: 'Liên hệ với chúng tôi', value: '/p/lien-he' },
+                    { label: 'Đăng ký biểu diễn', value: '/p/dang-ky-bieu-dien' },
+                  ].map((link, idx) => (
+                    <li key={idx}>
                       <Link
-                        href={link.value || resolveHref(link as any)}
+                        href={link.value}
                         className="text-sm font-medium text-gray-600 transition-colors hover:text-brand-600"
                       >
                         {link.label}
@@ -211,40 +221,37 @@ export function Footer() {
 
           <div className="lg:col-span-3">
             <h3 className="mb-6 text-xs font-black uppercase tracking-widest text-brand-500">
-              {displayContactTitle}
+              CÔNG TY CỔ PHẦN BIZ MALL VIỆT NAM
             </h3>
             <ul className="space-y-4">
-              {displayPhones.map((channel: any) => (
-                <li key={channel.id}>
-                  <a
-                    href={`tel:${(channel as any).value?.replace(/\s/g, '') || ''}`}
-                    className="flex items-center gap-3 text-sm font-medium text-gray-700 hover:text-brand-600"
-                  >
-                    <Phone className="h-4 w-4 text-brand-400" />
-                    {channel.label || channel.value}
-                  </a>
-                </li>
-              ))}
-              {displayEmails.map((channel: any) => (
-                <li key={channel.id}>
-                  <a
-                    href={`mailto:${channel.value || ''}`}
-                    className="flex items-center gap-3 text-sm font-medium text-gray-700 hover:text-brand-600"
-                  >
-                    <Mail className="h-4 w-4 text-brand-400" />
-                    {channel.label || channel.value}
-                  </a>
-                </li>
-              ))}
-              {displayAddresses.map((channel: any) => (
-                <li
-                  key={channel.id}
-                  className="flex items-start gap-3 text-sm font-medium text-gray-700"
+              <li className="text-sm font-medium text-gray-700">
+                <span className="text-gray-400">MST:</span> 0111282511
+              </li>
+              <li className="text-sm font-medium text-gray-700">
+                <span className="text-gray-400">Đại diện:</span> Lê Ngọc Hiền
+              </li>
+              <li className="flex items-start gap-3 text-sm font-medium text-gray-700">
+                <MapPin className="mt-1 h-4 w-4 flex-shrink-0 text-brand-400" />
+                <span>Tòa nhà IC, Số 82 phố Duy Tân, phường Cầu Giấy, TP. Hà Nội</span>
+              </li>
+              <li>
+                <a
+                  href="tel:0902348452"
+                  className="flex items-center gap-3 text-sm font-medium text-gray-700 hover:text-brand-600"
                 >
-                  <MapPin className="mt-1 h-4 w-4 flex-shrink-0 text-brand-400" />
-                  <span>{channel.label || channel.value}</span>
-                </li>
-              ))}
+                  <Phone className="h-4 w-4 text-brand-400" />
+                  0902 348 452
+                </a>
+              </li>
+              <li>
+                <a
+                  href="mailto:Vietnam.bizmall@gmail.com"
+                  className="flex items-center gap-3 text-sm font-medium text-gray-700 hover:text-brand-600"
+                >
+                  <Mail className="h-4 w-4 text-brand-400" />
+                  Vietnam.bizmall@gmail.com
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -253,7 +260,7 @@ export function Footer() {
           <p className="text-sm font-medium text-gray-500">{copyrightText}</p>
           <div className="flex items-center gap-6">
             <span className="text-sm font-medium text-gray-400">
-              {certificationText || 'Bản quyền thuộc về FSell Technology'}
+              {certificationText || 'Bản quyền thuộc về CÔNG TY CỔ PHẦN BIZ MALL VIỆT NAM'}
             </span>
           </div>
         </div>

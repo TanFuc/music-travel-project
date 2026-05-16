@@ -1,5 +1,6 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Link } from '@/components/common/Link';
 import { Search, ArrowRight, Calendar, Clock, Sparkles } from 'lucide-react';
 import { ShowCard } from '@/components/shows/ShowCard';
@@ -15,26 +16,64 @@ interface Show {
     name: string;
     location?: {
       name: string;
+      slug?: string;
     };
   };
   minPrice: number | null;
   availableTickets?: number;
   badges?: ('HOT' | 'VIP' | 'NEW' | 'SOLD_OUT' | 'SOON')[];
+  linkedTours?: {
+    departureLoc: {
+      name: string;
+      slug?: string;
+    } | null;
+    destinationLoc: {
+      name: string;
+      slug?: string;
+    } | null;
+  }[];
 }
 interface ShowsSectionClientProps {
   initialShows: Show[];
 }
 type TabType = 'ongoing' | 'upcoming' | 'future';
 export function ShowsSectionClient({ initialShows }: ShowsSectionClientProps) {
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('upcoming');
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(
+    searchParams.get('location')
+  );
+  useEffect(() => {
+    const handleLocationChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        location: string | null;
+      }>;
+      setSelectedLocation(customEvent.detail.location);
+    };
+    window.addEventListener('home-location-change', handleLocationChange);
+    return () => window.removeEventListener('home-location-change', handleLocationChange);
+  }, []);
   const categories = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const sevenDaysLater = today + 7 * 24 * 60 * 60 * 1000;
-    const filtered = searchQuery
-      ? initialShows.filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    const locationFiltered = selectedLocation
+      ? initialShows.filter((show) => {
+          if (show.stage.location?.slug === selectedLocation) return true;
+          if (show.linkedTours) {
+            return show.linkedTours.some(
+              (t) =>
+                t.departureLoc?.slug === selectedLocation ||
+                t.destinationLoc?.slug === selectedLocation
+            );
+          }
+          return false;
+        })
       : initialShows;
+    const filtered = searchQuery
+      ? locationFiltered.filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
+      : locationFiltered;
     const ongoing: Show[] = [];
     const upcoming: Show[] = [];
     const future: Show[] = [];
@@ -54,8 +93,9 @@ export function ShowsSectionClient({ initialShows }: ShowsSectionClientProps) {
       }
     });
     return { ongoing, upcoming, future };
-  }, [initialShows, searchQuery]);
+  }, [initialShows, searchQuery, selectedLocation]);
   const activeShows = categories[activeTab];
+  const showsHref = selectedLocation ? `/shows?location=${selectedLocation}` : '/shows';
   return (
     <section className="relative overflow-hidden py-12 md:py-20">
       <div className="absolute right-0 top-0 h-96 w-96 -translate-y-1/2 translate-x-1/4 rounded-full bg-brand-200/20 blur-[100px]" />
@@ -155,7 +195,7 @@ export function ShowsSectionClient({ initialShows }: ShowsSectionClientProps) {
 
         <div className="mt-16 text-center">
           <Link
-            href="/shows"
+            href={showsHref}
             className="group inline-flex items-center gap-2 rounded-xl bg-gray-900 px-8 py-4 text-sm font-bold text-white transition-all hover:-translate-y-1 hover:bg-black hover:shadow-xl"
           >
             KHÁM PHÁ TOÀN BỘ SHOW DIỄN

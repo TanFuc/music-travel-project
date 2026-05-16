@@ -3,13 +3,15 @@ import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { ChevronLeft, ChevronRight, MapPin, Calendar } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cleanImageUrl, cn } from '@/lib/utils';
 interface Banner {
   id: number;
   title: string;
   imageUrl: string;
   mobileImageUrl?: string;
   actionLink: string;
+  location?: string;
+  date?: string;
 }
 interface HeroBannerClientProps {
   banners: Banner[];
@@ -68,7 +70,7 @@ export function HeroBannerClient({ banners }: HeroBannerClientProps) {
           )}
         >
           <Image
-            src={banner.imageUrl}
+            src={cleanImageUrl(banner.imageUrl)}
             alt={banner.title || 'Banner'}
             fill
             className={cn('object-cover', index === currentIndex && 'ken-burns')}
@@ -76,7 +78,7 @@ export function HeroBannerClient({ banners }: HeroBannerClientProps) {
             loading={index === 0 ? 'eager' : 'lazy'}
             decoding="async"
             sizes="100vw"
-            quality={75}
+            quality={90}
           />
         </div>
       ))}
@@ -91,7 +93,9 @@ export function HeroBannerClient({ banners }: HeroBannerClientProps) {
             <div className="animate-fadeIn stagger-1 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1.5 shadow-xl backdrop-blur-md sm:px-4 sm:py-2">
               <span className="text-brand-400">✨</span>
               <span className="text-[10px] font-bold uppercase tracking-widest text-white sm:text-xs">
-                Show Đặc Biệt
+                {currentBanner.actionLink.includes('/shows')
+                  ? 'Sự kiện đặc sắc'
+                  : 'Tour hot trong tháng'}
               </span>
             </div>
 
@@ -103,13 +107,13 @@ export function HeroBannerClient({ banners }: HeroBannerClientProps) {
               <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2 backdrop-blur-md">
                 <MapPin className="h-4 w-4 text-brand-400" />
                 <span className="text-xs font-semibold text-white sm:text-sm">
-                  Thung Lũng Mây - Đà Lạt
+                  {currentBanner.location || 'Nhiều địa điểm'}
                 </span>
               </div>
               <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2 backdrop-blur-md">
                 <Calendar className="h-4 w-4 text-brand-400" />
                 <span className="text-xs font-semibold text-white sm:text-sm">
-                  29/12/2024 | 20:00
+                  {currentBanner.date || 'Sắp diễn ra'}
                 </span>
               </div>
             </div>

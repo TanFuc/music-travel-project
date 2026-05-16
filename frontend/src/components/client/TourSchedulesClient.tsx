@@ -14,10 +14,15 @@ interface TourSchedule {
   bookedCount: number;
   status: string;
 }
+interface TourTicketType {
+  name: string;
+  price: number;
+}
 interface TourSchedulesClientProps {
   tourId: number;
   tourTitle: string;
   schedules: TourSchedule[];
+  ticketTypes?: TourTicketType[];
 }
 const scheduleStatusColors: Record<
   string,
@@ -32,17 +37,26 @@ const scheduleStatusLabels: Record<string, string> = {
   CLOSED: 'Đã đóng',
   CANCELLED: 'Đã hủy',
 };
-export function TourSchedulesClient({ tourId, tourTitle, schedules }: TourSchedulesClientProps) {
+export function TourSchedulesClient({
+  tourId,
+  tourTitle,
+  schedules,
+  ticketTypes = [],
+}: TourSchedulesClientProps) {
   const addTour = useCartStore((state) => state.addTour);
   const [selectedSchedule, setSelectedSchedule] = useState<number | null>(null);
+  const [selectedTicketTypeIndex, setSelectedTicketTypeIndex] = useState(0);
+  const selectedTicketType = ticketTypes[selectedTicketTypeIndex] || null;
   const handleAddToCart = (schedule: TourSchedule) => {
+    const unitPrice = selectedTicketType?.price ?? schedule.price;
     addTour({
       scheduleId: schedule.id,
       tourId,
       tourTitle,
       startDate: schedule.startDate,
-      price: schedule.price,
+      price: unitPrice,
       quantity: 1,
+      ticketTypeName: selectedTicketType?.name,
     });
     toast.success('Đã thêm tour vào giỏ hàng!');
     setSelectedSchedule(schedule.id);
@@ -53,6 +67,23 @@ export function TourSchedulesClient({ tourId, tourTitle, schedules }: TourSchedu
       <h3 className="mb-6 flex items-center gap-2 font-display text-xl font-bold">
         <span className="text-2xl">📅</span> Lịch khởi hành
       </h3>
+
+      {ticketTypes.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <label className="text-sm font-semibold text-neutral-700">Loại vé tour</label>
+          <select
+            value={selectedTicketTypeIndex}
+            onChange={(event) => setSelectedTicketTypeIndex(Number(event.target.value))}
+            className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 outline-none focus:border-brand-400"
+          >
+            {ticketTypes.map((ticketType, index) => (
+              <option key={`${ticketType.name}-${index}`} value={index}>
+                {ticketType.name} - {formatCurrency(ticketType.price)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {schedules.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-neutral-200 bg-neutral-50 py-10 text-center">
@@ -91,7 +122,7 @@ export function TourSchedulesClient({ tourId, tourTitle, schedules }: TourSchedu
                     <span className="flex items-center gap-1.5">
                       <CreditCard className="h-4 w-4" />
                       <span className="font-bold text-brand-600">
-                        {formatCurrency(schedule.price)}
+                        {formatCurrency(selectedTicketType?.price ?? schedule.price)}
                       </span>
                       /khách
                     </span>

@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Upload, X, Loader2, Link as LinkIcon } from 'lucide-react';
 import { upload } from '@/lib/api';
 import { toast } from 'sonner';
@@ -27,6 +27,10 @@ export function ImageUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [mode, setMode] = useState<'upload' | 'url'>('upload');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const openFilePicker = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
   const handleUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -40,8 +44,8 @@ export function ImageUpload({
         return;
       }
       const formData = new FormData();
-      formData.append('file', file);
       formData.append('folder', folder);
+      formData.append('file', file);
       try {
         setIsUploading(true);
         const res = await upload<{
@@ -52,6 +56,7 @@ export function ImageUpload({
       } catch (error: any) {
         toast.error(error.response?.data?.message || 'Không thể tải ảnh lên');
       } finally {
+        e.target.value = '';
         setIsUploading(false);
       }
     },
@@ -119,8 +124,20 @@ export function ImageUpload({
             </div>
 
             {mode === 'upload' ? (
-              <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center p-3 text-center transition-colors hover:bg-neutral-100/50">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={openFilePicker}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openFilePicker();
+                  }
+                }}
+                className="flex h-full w-full cursor-pointer flex-col items-center justify-center p-3 text-center transition-colors hover:bg-neutral-100/50"
+              >
                 <input
+                  ref={fileInputRef}
                   type="file"
                   className="sr-only"
                   accept="image/*"
@@ -157,7 +174,7 @@ export function ImageUpload({
                     )}
                   </>
                 )}
-              </label>
+              </div>
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center bg-white/50 p-4">
                 <div className="w-full max-w-[200px] space-y-2">

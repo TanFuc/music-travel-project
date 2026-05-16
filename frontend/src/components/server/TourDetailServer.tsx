@@ -37,7 +37,12 @@ interface TourDetailServerProps {
   children?: React.ReactNode;
   sidebarChildren?: React.ReactNode;
 }
+import { RelatedProducts } from '@/components/common/RelatedProducts';
 export function TourDetailServer({ tour, children, sidebarChildren }: TourDetailServerProps) {
+  const cleanDescription = (html: string) => {
+    if (!html) return '';
+    return html.replace(/(_\d+x\d+)(\.(jpe?g|png|webp|gif))/gi, '$2');
+  };
   const bannerUrl = (tour.properties?.bannerUrl || tour.properties?.thumbnailUrl) as string;
   return (
     <div className="pb-20">
@@ -134,8 +139,8 @@ export function TourDetailServer({ tour, children, sidebarChildren }: TourDetail
                 <div className="relative pl-12">
                   <div className="absolute bottom-0 left-[23px] top-6 w-0.5 bg-gradient-to-b from-brand-200 via-brand-100 to-transparent" />
                   <div
-                    className="itinerary-rich-content prose prose-neutral prose-lg prose-img:rounded-[40px] prose-img:shadow-2xl max-w-none"
-                    dangerouslySetInnerHTML={{ __html: tour.description }}
+                    className="rich-content max-w-none"
+                    dangerouslySetInnerHTML={{ __html: cleanDescription(tour.description) }}
                   />
                 </div>
               </section>
@@ -192,7 +197,7 @@ export function TourDetailServer({ tour, children, sidebarChildren }: TourDetail
                 )}
 
                 {Object.entries(tour.properties).filter(
-                  ([key]) =>
+                  ([key, value]) =>
                     ![
                       'includes',
                       'excludes',
@@ -200,7 +205,11 @@ export function TourDetailServer({ tour, children, sidebarChildren }: TourDetail
                       'bannerUrl',
                       'image',
                       'images',
-                    ].includes(key)
+                      'ticketTypes',
+                      'locationText',
+                      'slug',
+                    ].includes(key) &&
+                    (typeof value === 'string' || typeof value === 'number')
                 ).length > 0 && (
                   <div className="rounded-[40px] border border-brand-100 bg-white p-10 shadow-xl shadow-brand-900/5 md:col-span-2">
                     <h3 className="mb-10 font-display text-2xl font-black uppercase tracking-tight text-gray-900">
@@ -209,7 +218,7 @@ export function TourDetailServer({ tour, children, sidebarChildren }: TourDetail
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                       {Object.entries(tour.properties)
                         .filter(
-                          ([key]) =>
+                          ([key, value]) =>
                             ![
                               'includes',
                               'excludes',
@@ -217,7 +226,11 @@ export function TourDetailServer({ tour, children, sidebarChildren }: TourDetail
                               'bannerUrl',
                               'image',
                               'images',
-                            ].includes(key)
+                              'ticketTypes',
+                              'locationText',
+                              'slug',
+                            ].includes(key) &&
+                            (typeof value === 'string' || typeof value === 'number')
                         )
                         .map(([key, value]) => (
                           <div
@@ -241,34 +254,41 @@ export function TourDetailServer({ tour, children, sidebarChildren }: TourDetail
 
           <aside className="lg:col-span-4">
             <div className="sticky top-28 space-y-8">
-              {sidebarChildren}
+              <div className="custom-scrollbar max-h-[calc(100vh-140px)] overflow-y-auto pr-4">
+                <div className="space-y-8 pb-8">
+                  {sidebarChildren}
 
-              <div className="rounded-[40px] border border-brand-100 bg-white p-8 shadow-xl shadow-brand-900/5">
-                <h4 className="mb-6 font-display text-lg font-black uppercase tracking-wide text-gray-900">
-                  Tại sao chọn chúng tôi?
-                </h4>
-                <ul className="space-y-5">
-                  {[
-                    'Hỗ trợ khách hàng 24/7 qua Hotline',
-                    'Cam kết giá tốt nhất thị trường',
-                    'Hành trình xanh, bảo vệ môi trường',
-                    'Bảo hiểm du lịch trọn gói cao cấp',
-                  ].map((text, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-center gap-4 text-sm font-semibold text-gray-600"
-                    >
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">
-                        <span className="text-[10px] font-black">✓</span>
-                      </div>
-                      {text}
-                    </li>
-                  ))}
-                </ul>
+                  <div className="rounded-[40px] border border-brand-100 bg-white p-8 shadow-xl shadow-brand-900/5">
+                    <h4 className="mb-6 font-display text-lg font-black uppercase tracking-wide text-gray-900">
+                      Tại sao chọn chúng tôi?
+                    </h4>
+                    <ul className="space-y-5">
+                      {[
+                        'Hỗ trợ khách hàng 24/7 qua Hotline',
+                        'Cam kết giá tốt nhất thị trường',
+                        'Hành trình xanh, bảo vệ môi trường',
+                        'Bảo hiểm du lịch trọn gói cao cấp',
+                      ].map((text, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-center gap-4 text-sm font-semibold text-gray-600"
+                        >
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+                            <span className="text-[10px] font-black">✓</span>
+                          </div>
+                          {text}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           </aside>
         </div>
+      </div>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <RelatedProducts currentId={tour.id} type={tour.isCombo ? 'combo' : 'tour'} />
       </div>
     </div>
   );

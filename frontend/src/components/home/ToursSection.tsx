@@ -30,20 +30,13 @@ export function ToursSection() {
       const response = await get<{
         items: Tour[];
         meta: unknown;
-      }>('/tours?limit=2');
+      }>('/tours/regular?limit=2');
       return response.items || [];
     },
     staleTime: 5 * 60 * 1000,
   });
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price);
-  };
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
   };
   return (
     <section className="py-12 md:py-16">
@@ -53,11 +46,11 @@ export function ToursSection() {
             🌄
           </div>
           <h2 className="mb-4 font-display text-3xl font-black tracking-tight text-gray-900 md:text-4xl">
-            TOUR DU LỊCH <span className="text-orange-500">KẾT HỢP SHOW</span>
+            TOUR DU LỊCH <span className="text-orange-500">SINH THÁI</span>
           </h2>
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-gray-600">
-            Trải nghiệm trọn vẹn: Du lịch khám phá kết hợp thưởng thức show diễn đỉnh cao.
-            <span className="ml-1 font-semibold text-orange-600">Combo tiết kiệm đến 30%</span>
+            Khám phá thiên nhiên xanh qua những hành trình được thiết kế riêng cho trải nghiệm sinh
+            thái.
           </p>
         </div>
 
@@ -89,7 +82,7 @@ export function ToursSection() {
                   />
                   <div className="absolute left-4 top-4">
                     <span className="rounded-lg bg-orange-500/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur-md">
-                      Combo Hot
+                      Tour nổi bật
                     </span>
                   </div>
                   <div className="absolute bottom-4 right-4">
@@ -125,7 +118,7 @@ export function ToursSection() {
                   <div className="mt-auto flex items-center justify-between border-t border-dashed border-gray-200 pt-6">
                     <div>
                       <p className="mb-0.5 text-xs font-medium uppercase tracking-wider text-gray-400">
-                        Giá trọn gói từ
+                        Giá từ
                       </p>
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-black text-orange-600">

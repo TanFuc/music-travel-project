@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link } from '@/components/common/Link';
 import { Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { cn, formatCurrency, formatDate } from '@/lib/utils';
 import { useCartStore } from '@/stores/cart.store';
 import { toast } from 'sonner';
 interface TourSchedule {
@@ -14,23 +14,37 @@ interface TourSchedule {
   bookedCount: number;
   status: string;
 }
+interface TourTicketType {
+  name: string;
+  price: number;
+}
 interface TourBookingClientProps {
   tourId: number;
   tourTitle: string;
   schedules: TourSchedule[];
+  ticketTypes?: TourTicketType[];
 }
-export function TourBookingClient({ tourId, tourTitle, schedules }: TourBookingClientProps) {
+export function TourBookingClient({
+  tourId,
+  tourTitle,
+  schedules,
+  ticketTypes = [],
+}: TourBookingClientProps) {
   const addTour = useCartStore((state) => state.addTour);
   const [quantity, setQuantity] = useState(1);
+  const [selectedTicketTypeIndex, setSelectedTicketTypeIndex] = useState(0);
   const openSchedules = schedules.filter((s) => s.status === 'OPEN');
+  const selectedTicketType = ticketTypes[selectedTicketTypeIndex] || null;
   const handleAddToCart = (schedule: TourSchedule) => {
+    const unitPrice = selectedTicketType?.price ?? schedule.price;
     addTour({
       scheduleId: schedule.id,
       tourId,
       tourTitle,
       startDate: schedule.startDate,
-      price: schedule.price,
+      price: unitPrice,
       quantity,
+      ticketTypeName: selectedTicketType?.name,
     });
     toast.success('Đã thêm tour vào giỏ hàng!');
   };
@@ -51,6 +65,59 @@ export function TourBookingClient({ tourId, tourTitle, schedules }: TourBookingC
         ) : (
           <div className="space-y-6">
             <div className="space-y-3">
+              {ticketTypes.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-bold text-gray-700">Loại vé tour</label>
+                  <div className="grid gap-2">
+                    {ticketTypes.map((ticketType, index) => (
+                      <button
+                        key={`${ticketType.name}-${index}`}
+                        onClick={() => setSelectedTicketTypeIndex(index)}
+                        className={cn(
+                          'relative flex flex-col gap-1 rounded-2xl border-2 p-4 text-left transition-all duration-300',
+                          selectedTicketTypeIndex === index
+                            ? 'border-brand-500 bg-brand-50/50 shadow-md ring-4 ring-brand-500/10'
+                            : 'border-neutral-100 bg-white hover:border-brand-200'
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span
+                            className={cn(
+                              'text-sm font-bold leading-snug',
+                              selectedTicketTypeIndex === index ? 'text-brand-700' : 'text-gray-900'
+                            )}
+                          >
+                            {ticketType.name}
+                          </span>
+                          <div
+                            className={cn(
+                              'h-5 w-5 shrink-0 rounded-full border-2 transition-all',
+                              selectedTicketTypeIndex === index
+                                ? 'border-brand-500 bg-brand-500 shadow-[0_0_0_4px_rgba(16,185,129,0.1)]'
+                                : 'border-neutral-200 bg-white'
+                            )}
+                          >
+                            {selectedTicketTypeIndex === index && (
+                              <div className="m-auto mt-1 h-1.5 w-1.5 rounded-full bg-white" />
+                            )}
+                          </div>
+                        </div>
+                        <span
+                          className={cn(
+                            'text-lg font-black',
+                            selectedTicketTypeIndex === index
+                              ? 'text-brand-600'
+                              : 'text-neutral-500'
+                          )}
+                        >
+                          {formatCurrency(ticketType.price)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <label className="flex justify-between text-sm font-bold text-gray-700">
                 Số lượng khách
                 <span className="font-normal text-brand-600">{quantity} người</span>
@@ -90,17 +157,29 @@ export function TourBookingClient({ tourId, tourTitle, schedules }: TourBookingC
                       onClick={() => handleAddToCart(schedule)}
                       disabled={remaining < quantity}
                     >
-                      <div className="mb-1 flex items-center justify-between">
+                      <div className="mb-2 flex items-center justify-between">
                         <span className="font-bold text-gray-900 group-hover:text-brand-700">
                           {formatDate(schedule.startDate)}
                         </span>
-                        <span className="font-black text-brand-600">
-                          {formatCurrency(schedule.price * quantity)}
-                        </span>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-neutral-500 line-through">
+                            {formatCurrency((selectedTicketType?.price ?? schedule.price) * 1.2)}
+                          </p>
+                          <p className="text-lg font-black text-brand-600">
+                            {formatCurrency(
+                              (selectedTicketType?.price ?? schedule.price) * quantity
+                            )}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-xs text-neutral-500">
-                        <span>Còn {remaining} chỗ</span>
-                        <span>Tổng tiền ({quantity} khách)</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-neutral-400">
+                          Còn {remaining} chỗ
+                        </span>
+                        <div className="flex h-9 items-center gap-2 rounded-lg bg-brand-600 px-4 text-[10px] font-black uppercase tracking-wider text-white shadow-md transition-all group-hover:bg-brand-700 group-hover:shadow-lg group-active:scale-95">
+                          <Ticket className="h-3 w-3" />
+                          Thêm vào giỏ hàng
+                        </div>
                       </div>
                     </button>
                   );

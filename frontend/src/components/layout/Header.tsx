@@ -58,8 +58,12 @@ export function Header() {
     queryKey: ['locations'],
     queryFn: async () => {
       try {
-        const response = await get<Location[]>('/locations');
-        return Array.isArray(response) ? response : [];
+        const response = await get<any>('/locations');
+        if (Array.isArray(response)) return response;
+        if (response && typeof response === 'object' && Array.isArray(response.items)) {
+          return response.items;
+        }
+        return [];
       } catch {
         return [];
       }
@@ -67,7 +71,7 @@ export function Header() {
     staleTime: 10 * 60 * 1000,
   });
   const selectedLocation = useMemo(
-    () => locations.find((loc) => loc.slug === locationSlug),
+    () => locations.find((loc: Location) => loc.slug === locationSlug),
     [locations, locationSlug]
   );
   const filteredLocations = useMemo(() => {
@@ -82,7 +86,7 @@ export function Header() {
         : '';
     const searchNormalized = normalize(locationSearch);
     return locations.filter(
-      (loc) =>
+      (loc: any) =>
         (loc.name && normalize(loc.name).includes(searchNormalized)) ||
         (loc.name && loc.name.toLowerCase().includes(locationSearch.toLowerCase()))
     );
@@ -237,7 +241,7 @@ export function Header() {
                       <span>Tất cả chi nhánh</span>
                     </Link>
                     {filteredLocations.length > 0 ? (
-                      filteredLocations.map((location) => (
+                      filteredLocations.map((location: any) => (
                         <Link
                           key={location.id}
                           href={`${pathname?.startsWith('/tours') ? '/tours' : '/shows'}?location=${location.slug}`}
@@ -426,7 +430,7 @@ export function Header() {
                       <span>Tất cả chi nhánh</span>
                     </div>
                   </Link>
-                  {locations.map((location) => (
+                  {locations.map((location: any) => (
                     <Link
                       key={location.id}
                       href={`${pathname?.startsWith('/tours') ? '/tours' : '/shows'}?location=${location.slug}`}
