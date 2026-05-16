@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2222/api/v1';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1');
 interface FetchOptions {
   revalidate?: number | false;
   tags?: string[];
@@ -93,17 +95,19 @@ export interface Show {
   availableTickets?: number;
   badges?: ('HOT' | 'VIP' | 'NEW' | 'SOLD_OUT' | 'SOON')[];
   ticketClasses?: TicketClass[];
-  ticketTiers?: TicketTier[];
   seatSelectionEnabled?: boolean;
+  linkedTours?: {
+    departureLoc: {
+      name: string;
+      slug?: string;
+    } | null;
+    destinationLoc: {
+      name: string;
+      slug?: string;
+    } | null;
+  }[];
 }
 export interface TicketClass {
-  id: number;
-  name: string;
-  price: number;
-  description?: string;
-  available: number;
-}
-export interface TicketTier {
   id: number;
   name: string;
   price: number;
@@ -119,6 +123,19 @@ export interface Tour {
   duration: string;
   isCombo: boolean;
   linkedShowId?: number | null;
+  linkedShow?: {
+    id: number;
+    title: string;
+    slug: string;
+    thumbnailUrl?: string;
+    performTime?: string;
+    stage?: {
+      name: string;
+      branch?: {
+        name: string;
+      };
+    };
+  } | null;
   departureLoc: {
     name: string;
   } | null;
@@ -274,13 +291,10 @@ export const serverAPI = {
   tours: {
     getAll: (params?: Record<string, string | number>) => {
       const searchParams = new URLSearchParams();
-      searchParams.set('isCombo', 'false');
       if (params) {
         Object.entries(params).forEach(([key, value]) => {
-          if (key !== 'isCombo') {
+          if (key !== 'isCombo' && key !== 'type') {
             searchParams.set(key, String(value));
-          } else {
-            searchParams.set('isCombo', String(value));
           }
         });
       }
@@ -295,7 +309,7 @@ export const serverAPI = {
         tags: [`tour-${slug}`],
       }),
     getHomeTours: () =>
-      fetchServer<PaginatedData<Tour>>('/tours?isCombo=false&limit=4', {
+      fetchServer<PaginatedData<Tour>>('/tours?limit=4', {
         revalidate: 300,
         tags: ['tours', 'home-tours'],
       }),
@@ -303,30 +317,27 @@ export const serverAPI = {
   combos: {
     getAll: (params?: Record<string, string | number>) => {
       const searchParams = new URLSearchParams();
-      searchParams.set('isCombo', 'true');
       if (params) {
         Object.entries(params).forEach(([key, value]) => {
-          if (key !== 'isCombo') {
+          if (key !== 'isCombo' && key !== 'type') {
             searchParams.set(key, String(value));
-          } else {
-            searchParams.set('isCombo', String(value));
           }
         });
       }
-      return fetchServer<PaginatedData<Tour>>(`/tours?${searchParams}`, {
+      return fetchServer<PaginatedData<Tour>>(`/combos?${searchParams}`, {
         revalidate: 180,
         tags: ['combos', 'combos-list'],
       });
     },
     getBySlug: (slug: string) =>
-      fetchServer<Tour>(`/tours/${slug}`, {
+      fetchServer<Tour>(`/combos/${slug}`, {
         revalidate: 300,
-        tags: [`tour-${slug}`],
+        tags: [`combo-${slug}`],
       }),
     getHomeCombos: () =>
-      fetchServer<PaginatedData<Tour>>('/tours?isCombo=true&limit=4', {
+      fetchServer<PaginatedData<Tour>>('/combos?limit=4', {
         revalidate: 300,
-        tags: ['tours', 'home-combos'],
+        tags: ['combos', 'home-combos'],
       }),
   },
   stages: {

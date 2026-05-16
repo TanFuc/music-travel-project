@@ -2,10 +2,10 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://maichohanhtinhxan
   /\/$/,
   ''
 );
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2222/api/v1').replace(
-  /\/$/,
-  ''
-);
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1')
+).replace(/\/$/, '');
 export async function fetchAllEntitySlugs(endpoint: string) {
   const allItems: any[] = [];
   let currentPage = 1;
@@ -27,7 +27,7 @@ export async function fetchAllEntitySlugs(endpoint: string) {
       currentPage++;
     }
     return allItems;
-  } catch (error) {
+  } catch {
     return [];
   }
 }

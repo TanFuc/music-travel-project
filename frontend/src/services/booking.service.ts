@@ -18,13 +18,10 @@ export interface CreateBookingRequest {
     ticketId: number;
     physicalSeatId?: number;
   }>;
-  ticketTiers?: Array<{
-    tierId: number;
-    quantity: number;
-  }>;
   tourItems?: Array<{
     scheduleId: number;
     quantity: number;
+    ticketTypeName?: string;
     passengerInfo?: Record<string, unknown>[];
   }>;
   voucherCode?: string;

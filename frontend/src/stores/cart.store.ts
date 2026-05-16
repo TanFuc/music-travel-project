@@ -16,12 +16,7 @@ interface TourItem {
   startDate: string;
   price: number;
   quantity: number;
-}
-interface TicketTierItem {
-  tierId: number;
-  tierName: string;
-  price: number;
-  quantity: number;
+  ticketTypeName?: string;
 }
 interface SingerPackageItem {
   packageId: string;
@@ -35,7 +30,6 @@ interface CartState {
   userId: number | null;
   tickets: TicketItem[];
   tours: TourItem[];
-  ticketTiers: TicketTierItem[];
   singerPackages: SingerPackageItem[];
   voucherCode: string | null;
   discount: number;
@@ -48,9 +42,7 @@ interface CartState {
   addTour: (tour: TourItem) => void;
   removeTour: (scheduleId: number) => void;
   updateTourQuantity: (scheduleId: number, quantity: number) => void;
-  addTicketTier: (tier: TicketTierItem) => void;
-  removeTicketTier: (tierId: number) => void;
-  updateTicketTierQuantity: (tierId: number, quantity: number) => void;
+  updateTicketQuantity: (showId: number, ticketClassId: number, quantity: number) => void;
   addSingerPackage: (pkg: SingerPackageItem) => void;
   removeSingerPackage: (packageId: string) => void;
   updateSingerPackageQuantity: (packageId: string, quantity: number) => void;
@@ -64,7 +56,6 @@ export const useCartStore = create<CartState>()(
       userId: null,
       tickets: [],
       tours: [],
-      ticketTiers: [],
       singerPackages: [],
       voucherCode: null,
       discount: 0,
@@ -74,15 +65,11 @@ export const useCartStore = create<CartState>()(
           (sum, t) => sum + Number(t.price) * Number(t.quantity),
           0
         );
-        const tierTotal = get().ticketTiers.reduce(
-          (sum, t) => sum + Number(t.price) * Number(t.quantity),
-          0
-        );
         const packageTotal = get().singerPackages.reduce(
           (sum, p) => sum + Number(p.price) * Number(p.quantity),
           0
         );
-        return ticketTotal + tourTotal + tierTotal + packageTotal;
+        return ticketTotal + tourTotal + packageTotal;
       },
       getTotal: () => {
         return get().getSubtotal() - get().discount;
@@ -90,9 +77,8 @@ export const useCartStore = create<CartState>()(
       getItemCount: () => {
         const ticketCount = get().tickets.length;
         const tourCount = get().tours.reduce((sum, t) => sum + t.quantity, 0);
-        const tierCount = get().ticketTiers.reduce((sum, t) => sum + t.quantity, 0);
         const packageCount = get().singerPackages.reduce((sum, p) => sum + p.quantity, 0);
-        return ticketCount + tourCount + tierCount + packageCount;
+        return ticketCount + tourCount + packageCount;
       },
       setUserId: (userId) => {
         const currentUserId = get().userId;
@@ -101,7 +87,6 @@ export const useCartStore = create<CartState>()(
             userId,
             tickets: [],
             tours: [],
-            ticketTiers: [],
             singerPackages: [],
             voucherCode: null,
             discount: 0,
@@ -146,29 +131,38 @@ export const useCartStore = create<CartState>()(
               ? state.tours.map((t) => (t.scheduleId === scheduleId ? { ...t, quantity } : t))
               : state.tours.filter((t) => t.scheduleId !== scheduleId),
         })),
-      addTicketTier: (tier) =>
+      updateTicketQuantity: (showId, ticketClassId, quantity) =>
         set((state) => {
-          const existing = state.ticketTiers.find((t) => t.tierId === tier.tierId);
-          if (existing) {
+          const classTickets = state.tickets.filter(
+            (t) => t.showId === showId && t.ticketClassId === ticketClassId
+          );
+          const currentQty = classTickets.length;
+          if (quantity <= 0) {
             return {
-              ticketTiers: state.ticketTiers.map((t) =>
-                t.tierId === tier.tierId ? { ...t, quantity: t.quantity + tier.quantity } : t
+              tickets: state.tickets.filter(
+                (t) => !(t.showId === showId && t.ticketClassId === ticketClassId)
               ),
             };
           }
-          return { ticketTiers: [...state.ticketTiers, { ...tier, price: Number(tier.price) }] };
+          if (quantity > currentQty) {
+            const baseTicket =
+              classTickets[0] ||
+              state.tickets.find((t) => t.showId === showId && t.ticketClassId === ticketClassId);
+            if (!baseTicket) return state;
+            const newTickets = [...Array(quantity - currentQty)].map((_, i) => ({
+              ...baseTicket,
+              ticketId: Date.now() + Math.random() + i,
+            }));
+            return { tickets: [...state.tickets, ...newTickets] };
+          } else if (quantity < currentQty) {
+            const otherTickets = state.tickets.filter(
+              (t) => !(t.showId === showId && t.ticketClassId === ticketClassId)
+            );
+            const keptTickets = classTickets.slice(0, quantity);
+            return { tickets: [...otherTickets, ...keptTickets] };
+          }
+          return state;
         }),
-      removeTicketTier: (tierId) =>
-        set((state) => ({
-          ticketTiers: state.ticketTiers.filter((t) => t.tierId !== tierId),
-        })),
-      updateTicketTierQuantity: (tierId, quantity) =>
-        set((state) => ({
-          ticketTiers:
-            quantity > 0
-              ? state.ticketTiers.map((t) => (t.tierId === tierId ? { ...t, quantity } : t))
-              : state.ticketTiers.filter((t) => t.tierId !== tierId),
-        })),
       addSingerPackage: (pkg) =>
         set((state) => {
           const existing = state.singerPackages.find((p) => p.packageId === pkg.packageId);
@@ -203,7 +197,6 @@ export const useCartStore = create<CartState>()(
           userId: null,
           tickets: [],
           tours: [],
-          ticketTiers: [],
           singerPackages: [],
           voucherCode: null,
           discount: 0,

@@ -1,5 +1,4 @@
 import { get, post, del } from '@/lib/api';
-import { TicketTier } from '@/types/api.types';
 export interface LockTicketsRequest {
   ticketIds: number[];
 }
@@ -71,7 +70,6 @@ export interface SeatMapTicket {
   } | null;
 }
 export const ticketService = {
-  getTiers: () => get<TicketTier[]>('/tickets/tiers'),
   lockTickets: (ticketIds: number[]) =>
     post<LockTicketsResponse, LockTicketsRequest>('/tickets/lock', { ticketIds }),
   releaseTicket: (ticketId: number) =>

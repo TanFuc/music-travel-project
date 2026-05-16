@@ -42,3 +42,12 @@ export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + '...';
 }
+export function cleanImageUrl(url: string): string {
+  if (!url) return '';
+  let cleaned = url;
+  if (url.startsWith('//')) {
+    cleaned = 'https:' + url;
+  }
+  cleaned = cleaned.replace(/_\d+x\d+\.(jpeg|jpg|png|webp)$/i, '.$1');
+  return cleaned;
+}

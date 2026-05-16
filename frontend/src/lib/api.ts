@@ -2,9 +2,8 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
 const isServer = typeof window === 'undefined';
 const API_URL =
-  !isServer && process.env.NODE_ENV === 'production'
-    ? '/api'
-    : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2222/api/v1';
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1');
 const pendingRequests = new Map<string, Promise<any>>();
 function getRequestKey(config: any): string {
   return `${config.method}-${config.url}-${JSON.stringify(config.params || {})}-${JSON.stringify(config.data || {})}`;
@@ -51,8 +50,12 @@ api.interceptors.response.use(
       const requestKey = getRequestKey(originalRequest);
       pendingRequests.delete(requestKey);
     }
+    const isAuthRequest =
+      originalRequest?.url?.includes('/auth/login') ||
+      originalRequest?.url?.includes('/auth/register') ||
+      originalRequest?.url?.includes('/auth/refresh-token');
     const isSessionExpired =
-      axiosError.response?.status === 401 || responseData?.code === 'AUTH_002';
+      (axiosError.response?.status === 401 || responseData?.code === 'AUTH_002') && !isAuthRequest;
     if (isSessionExpired && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
@@ -185,7 +188,7 @@ export async function del<T>(url: string): Promise<T> {
 export async function upload<T>(url: string, formData: FormData): Promise<T> {
   const response = await api.post<T | ApiResponse<T>>(url, formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      Accept: 'application/json',
     },
   });
   if (
