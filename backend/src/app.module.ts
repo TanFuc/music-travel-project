@@ -47,13 +47,19 @@ import { resolve } from 'path';
 import { StaticPagesModule } from './modules/static-pages/static-pages.module';
 import { CombosModule } from './modules/combos/combos.module';
 const envRoot = resolve(__dirname, '..');
+const cwdRoot = process.cwd();
 @Module({
   imports: [
     CommonModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, databaseConfig, redisConfig, cloudinaryConfig, r2Config],
-      envFilePath: [resolve(envRoot, '.env.local'), resolve(envRoot, '.env')],
+      envFilePath: [
+        resolve(cwdRoot, '.env.local'),
+        resolve(cwdRoot, '.env'),
+        resolve(envRoot, '.env.local'),
+        resolve(envRoot, '.env'),
+      ],
     }),
     ThrottlerModule.forRoot([
       {
