@@ -3,21 +3,28 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const tours = await prisma.tour.findMany({
+  const shows = await prisma.show.findMany({
     select: {
       id: true,
       title: true,
-      isCombo: true,
-      schedules: {
-        where: {
-          status: 'OPEN',
-          startDate: { gte: new Date() },
-          deletedAt: null,
-        }
-      }
+      properties: true,
+    },
+    take: 5
+  });
+  console.log('--- SHOWS ---');
+  console.log(JSON.stringify(shows, null, 2));
+
+  const banners = await prisma.banner.findMany({
+    select: {
+      id: true,
+      title: true,
+      imageUrl: true,
+      isActive: true,
     }
   });
-  console.log(JSON.stringify(tours, null, 2));
+  console.log('--- BANNERS ---');
+  console.log(JSON.stringify(banners, null, 2));
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
+
