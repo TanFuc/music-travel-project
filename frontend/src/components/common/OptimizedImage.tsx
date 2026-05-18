@@ -1,9 +1,8 @@
 'use client';
-
-import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
-
+import { getOptimizedImageUrl, normalizeImageUrl } from '@/lib/image-utils';
+import type { ImageSize } from '@/lib/cloudinary';
 interface OptimizedImageProps {
   src: string;
   alt: string;
@@ -18,8 +17,13 @@ interface OptimizedImageProps {
   objectFit?: 'cover' | 'contain' | 'fill' | 'scale-down';
   objectPosition?: string;
   blurPlaceholder?: string;
+  imageSize?:
+    | ImageSize
+    | {
+        w: number;
+        h?: number;
+      };
 }
-
 export function OptimizedImage({
   src,
   alt,
@@ -27,54 +31,76 @@ export function OptimizedImage({
   height,
   fill = false,
   className,
-  quality = 80,
+  quality: _quality = 80,
   priority = false,
   loading,
   sizes,
   objectFit = 'cover',
   objectPosition = 'center',
   blurPlaceholder,
+  imageSize,
 }: OptimizedImageProps) {
   const [isLoading, setIsLoading] = useState(true);
-
-  const handleLoadingComplete = () => {
+  const imgRef = useRef<HTMLImageElement>(null);
+  const originalSrc = useMemo(() => normalizeImageUrl(src), [src]);
+  const optimizedSrc = useMemo(
+    () => getOptimizedImageUrl(src, imageSize || (priority ? 'hero' : 'large')),
+    [imageSize, priority, src]
+  );
+  const [currentSrc, setCurrentSrc] = useState(optimizedSrc);
+  useEffect(() => {
+    setIsLoading(true);
+    setCurrentSrc(optimizedSrc);
+  }, [optimizedSrc]);
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setIsLoading(false);
+    }
+  }, [currentSrc]);
+  const finishLoading = () => {
     setIsLoading(false);
   };
-
-  // Build responsive sizes if not provided
-  const responsiveSizes = sizes || (
-    fill
-      ? '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 100vw'
-      : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
-  );
-
+  const handleError = () => {
+    if (currentSrc !== originalSrc && originalSrc) {
+      setCurrentSrc(originalSrc);
+      return;
+    }
+    finishLoading();
+  };
+  const responsiveSizes =
+    sizes ||
+    (fill
+      ? '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
+      : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw');
   return (
-    <div className={cn('relative overflow-hidden', !fill && 'w-full h-full', className)}>
-      <Image
-        src={src}
+    <div className={cn('relative h-full w-full overflow-hidden', className)}>
+      <img
+        ref={imgRef}
+        src={currentSrc}
         alt={alt}
         width={width}
         height={height}
-        fill={fill}
-        quality={quality}
-        priority={priority}
-        loading={loading || (priority ? 'eager' : 'lazy')}
+        loading={priority ? undefined : loading || 'lazy'}
         sizes={responsiveSizes}
-        placeholder={blurPlaceholder ? 'blur' : 'empty'}
-        blurDataURL={blurPlaceholder}
-        onLoadingComplete={handleLoadingComplete}
+        onLoad={finishLoading}
+        onError={handleError}
         className={cn(
-          'w-full h-full transition-opacity duration-300',
-          isLoading ? 'opacity-0' : 'opacity-100',
+          fill ? 'absolute inset-0 h-full w-full' : 'h-full w-full',
           `object-${objectFit}`,
           objectPosition !== 'center' && `object-[${objectPosition}]`
         )}
         decoding="async"
+        fetchPriority={priority ? 'high' : 'auto'}
+        style={{
+          objectPosition,
+          backgroundImage: blurPlaceholder ? `url("${blurPlaceholder}")` : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
       />
 
-      {/* Skeleton loader while image loads */}
       {isLoading && (
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+        <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       )}
     </div>
   );

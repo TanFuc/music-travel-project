@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { ArrowLeft, Clock, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { getOptimizedImageUrl, optimizeHtmlImages } from '@/lib/image-utils';
 interface TourSchedule {
   id: number;
   startDate: string;
@@ -39,22 +40,20 @@ interface TourDetailServerProps {
 }
 import { RelatedProducts } from '@/components/common/RelatedProducts';
 export function TourDetailServer({ tour, children, sidebarChildren }: TourDetailServerProps) {
-  const cleanDescription = (html: string) => {
-    if (!html) return '';
-    return html.replace(/(_\d+x\d+)(\.(jpe?g|png|webp|gif))/gi, '$2');
-  };
   const bannerUrl = (tour.properties?.bannerUrl || tour.properties?.thumbnailUrl) as string;
   return (
     <div className="pb-20">
       <section className="relative h-[65vh] min-h-[500px] w-full overflow-hidden">
         {bannerUrl ? (
           <Image
-            src={bannerUrl}
+            src={getOptimizedImageUrl(bannerUrl, 'hero')}
             alt={tour.title}
             fill
             className="object-cover"
             priority
             sizes="100vw"
+            quality={78}
+            unoptimized
           />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-brand-900 to-brand-700" />
@@ -140,7 +139,7 @@ export function TourDetailServer({ tour, children, sidebarChildren }: TourDetail
                   <div className="absolute bottom-0 left-[23px] top-6 w-0.5 bg-gradient-to-b from-brand-200 via-brand-100 to-transparent" />
                   <div
                     className="rich-content max-w-none"
-                    dangerouslySetInnerHTML={{ __html: cleanDescription(tour.description) }}
+                    dangerouslySetInnerHTML={{ __html: optimizeHtmlImages(tour.description) }}
                   />
                 </div>
               </section>

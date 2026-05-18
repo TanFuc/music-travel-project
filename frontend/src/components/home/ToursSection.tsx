@@ -98,7 +98,7 @@ export function ToursSection() {
                 </div>
 
                 <div className="flex flex-1 flex-col p-6 md:p-8">
-                  <h3 className="mb-3 line-clamp-2 font-display text-xl font-bold text-gray-900 transition-colors group-hover:text-orange-600">
+                  <h3 className="mb-3 line-clamp-3 min-h-[5rem] font-display text-xl font-bold text-gray-900 transition-colors group-hover:text-orange-600">
                     {tour.title}
                   </h3>
 

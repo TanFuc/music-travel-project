@@ -32,11 +32,9 @@ interface RelatedProductsProps {
 export function RelatedProducts({ currentId, type, title }: RelatedProductsProps) {
   const [products, setProducts] = useState<RelatedProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   useEffect(() => {
     const fetchRelated = async () => {
       setLoading(true);
-      setError(false);
       try {
         const endpoint =
           type === 'show'
@@ -46,10 +44,16 @@ export function RelatedProducts({ currentId, type, title }: RelatedProductsProps
               : `/combos/${currentId}/related`;
         const data = await get<RelatedProduct[]>(endpoint);
         if (Array.isArray(data)) {
-          setProducts(data);
+          const uniqueProducts = data.filter(
+            (product, index, items) =>
+              product.id !== currentId &&
+              items.findIndex((item) => item.id === product.id && item.slug === product.slug) ===
+                index
+          );
+          setProducts(uniqueProducts);
         }
-      } catch (error) {
-        setError(true);
+      } catch {
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -173,7 +177,7 @@ export function RelatedProducts({ currentId, type, title }: RelatedProductsProps
                 </div>
 
                 <div className="flex flex-grow flex-col p-8">
-                  <h3 className="mb-4 line-clamp-2 min-h-[3.5rem] font-display text-xl font-black leading-tight text-gray-900 group-hover:text-brand-600">
+                  <h3 className="mb-4 line-clamp-3 min-h-[5rem] font-display text-xl font-black leading-tight text-gray-900 group-hover:text-brand-600">
                     {product.title}
                   </h3>
 

@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { MapPin, Clock, ArrowRight, Zap, Music } from 'lucide-react';
+import { getOptimizedImageUrl } from '@/lib/image-utils';
 interface Tour {
   id: number;
   title: string;
@@ -83,15 +84,18 @@ export function CombosSectionServer({
             >
               <div className="relative aspect-[16/9] overflow-hidden">
                 <Image
-                  src={
+                  src={getOptimizedImageUrl(
                     combo.thumbnailUrl ||
-                    combo.linkedShow?.thumbnailUrl ||
-                    'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80'
-                  }
+                      combo.linkedShow?.thumbnailUrl ||
+                      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
+                    { w: 900 }
+                  )}
                   alt={combo.title}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 50vw"
+                  quality={75}
+                  unoptimized
                 />
                 <div className="absolute left-4 top-4">
                   <span className="flex items-center gap-1 rounded-lg bg-brand-600/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur-md">
@@ -110,7 +114,7 @@ export function CombosSectionServer({
               </div>
 
               <div className="flex flex-1 flex-col p-6 md:p-8">
-                <h3 className="mb-3 line-clamp-2 font-display text-xl font-bold text-gray-900 transition-colors group-hover:text-brand-600">
+                <h3 className="mb-3 line-clamp-3 min-h-[5rem] font-display text-xl font-bold text-gray-900 transition-colors group-hover:text-brand-600">
                   {combo.title}
                 </h3>
 

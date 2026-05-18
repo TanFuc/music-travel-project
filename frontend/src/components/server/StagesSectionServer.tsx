@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { MapPin, ArrowRight } from 'lucide-react';
+import { getOptimizedImageUrl } from '@/lib/image-utils';
 interface HomeStage {
   id: number;
   title: string;
@@ -43,11 +44,13 @@ export function StagesSectionServer({ stages }: StagesSectionServerProps) {
             >
               <div className="relative aspect-[4/3] w-full overflow-hidden">
                 <Image
-                  src={stage.imageUrl}
+                  src={getOptimizedImageUrl(stage.imageUrl, { w: 900 })}
                   alt={stage.title}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 50vw"
+                  quality={75}
+                  unoptimized
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />

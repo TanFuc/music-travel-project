@@ -8,7 +8,6 @@ import { TourDetailSkeleton } from '@/components/server/Skeletons';
 import { fetchServer } from '@/lib/api-server';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { stripHtml, toAbsoluteUrl } from '@/lib/seo';
-import { RelatedProducts } from '@/components/common/RelatedProducts';
 import {
   buildLanguageAlternates,
   buildTourOffers,
@@ -173,7 +172,6 @@ export default async function TourDetailPage({
           price: Number(ticketType.price),
         }))
     : [];
-  const hasSlots = nextSchedule ? nextSchedule.capacity - nextSchedule.bookedCount > 0 : false;
   const itineraryItems: Array<{
     '@type': 'ListItem';
     position: number;
@@ -247,10 +245,6 @@ export default async function TourDetailPage({
           />
         </TourDetailServer>
       </Suspense>
-
-      <div className="container mx-auto mt-24 px-4 sm:px-6 lg:px-8">
-        <RelatedProducts currentId={tour.id} type="tour" />
-      </div>
     </div>
   );
 }

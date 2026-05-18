@@ -4,6 +4,7 @@ import { Clock, MapPin, Calendar, ArrowRight, Search } from 'lucide-react';
 import { CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { getOptimizedImageUrl } from '@/lib/image-utils';
 interface Tour {
   id: number;
   title: string;
@@ -63,14 +64,17 @@ export function ToursGridServer({
             <div className="glass-card-premium flex h-full flex-col group-hover:border-brand-500/20">
               <div className="relative h-64 overflow-hidden">
                 <Image
-                  src={
+                  src={getOptimizedImageUrl(
                     tour.thumbnailUrl ||
-                    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'
-                  }
+                      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+                    { w: 700 }
+                  )}
                   alt={tour.title}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  quality={75}
+                  unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -102,7 +106,7 @@ export function ToursGridServer({
 
               <CardContent className="flex flex-1 flex-col bg-white p-6">
                 <div className="flex-1">
-                  <h3 className="mb-3 line-clamp-2 text-xl font-bold text-gray-900 transition-colors group-hover:text-brand-600">
+                  <h3 className="mb-3 line-clamp-3 min-h-[5.25rem] text-xl font-bold text-gray-900 transition-colors group-hover:text-brand-600">
                     {tour.title}
                   </h3>
 

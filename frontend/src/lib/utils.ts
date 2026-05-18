@@ -48,6 +48,5 @@ export function cleanImageUrl(url: string): string {
   if (url.startsWith('//')) {
     cleaned = 'https:' + url;
   }
-  cleaned = cleaned.replace(/_\d+x\d+\.(jpeg|jpg|png|webp)$/i, '.$1');
   return cleaned;
 }

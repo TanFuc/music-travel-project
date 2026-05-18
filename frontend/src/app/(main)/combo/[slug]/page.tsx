@@ -8,7 +8,6 @@ import { TourDetailSkeleton } from '@/components/server/Skeletons';
 import { fetchServer } from '@/lib/api-server';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { stripHtml, toAbsoluteUrl } from '@/lib/seo';
-import { RelatedProducts } from '@/components/common/RelatedProducts';
 import {
   buildLanguageAlternates,
   buildTourOffers,
@@ -223,10 +222,6 @@ export default async function ComboDetailPage({
           />
         </TourDetailServer>
       </Suspense>
-
-      <div className="container mx-auto mt-24 px-4 sm:px-6 lg:px-8">
-        <RelatedProducts currentId={combo.id} type="combo" />
-      </div>
     </div>
   );
 }

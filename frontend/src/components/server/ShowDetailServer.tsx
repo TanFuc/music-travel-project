@@ -3,6 +3,7 @@ import { Calendar, MapPin, Clock, ArrowLeft, Navigation } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatDateTime } from '@/lib/utils';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
+import { optimizeHtmlImages } from '@/lib/image-utils';
 interface Artist {
   id: number;
   name: string;
@@ -70,6 +71,7 @@ export function ShowHero({ show }: ShowDetailServerProps) {
           priority
           sizes="100vw"
           quality={85}
+          imageSize="hero"
           blurPlaceholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%23f3f4f6' width='1920' height='1080'/%3E%3C/svg%3E"
         />
       ) : (
@@ -90,10 +92,6 @@ export function ShowHero({ show }: ShowDetailServerProps) {
   );
 }
 export function ShowDetailServer({ show }: ShowDetailServerProps) {
-  const cleanDescription = (html: string) => {
-    if (!html) return '';
-    return html.replace(/(_\d+x\d+)(\.(jpe?g|png|webp|gif))/gi, '$2');
-  };
   return (
     <>
       <div className="rounded-3xl border border-neutral-100/50 bg-white p-6 shadow-xl shadow-neutral-100 sm:p-8">
@@ -148,7 +146,7 @@ export function ShowDetailServer({ show }: ShowDetailServerProps) {
           </h3>
           <div
             className="rich-content max-w-none"
-            dangerouslySetInnerHTML={{ __html: cleanDescription(show.description) }}
+            dangerouslySetInnerHTML={{ __html: optimizeHtmlImages(show.description) }}
           />
         </div>
       )}

@@ -61,27 +61,19 @@ export function HeroBannerClient({ banners }: HeroBannerClientProps) {
   const currentBanner = banners[currentIndex];
   return (
     <section className="relative h-[85vh] w-full overflow-hidden bg-neutral-900 md:h-screen">
-      {banners.map((banner, index) => (
-        <div
-          key={banner.id}
-          className={cn(
-            'absolute inset-0 transition-opacity duration-1000',
-            index === currentIndex ? 'opacity-100' : 'opacity-0'
-          )}
-        >
-          <OptimizedImage
-            src={cleanImageUrl(banner.imageUrl)}
-            alt={banner.title || 'Banner'}
-            fill
-            className={cn('object-cover', index === currentIndex && 'ken-burns')}
-            priority={index === 0}
-            loading={index === 0 ? 'eager' : 'lazy'}
-            sizes="100vw"
-            quality={85}
-            blurPlaceholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%23111827' width='1920' height='1080'/%3E%3C/svg%3E"
-          />
-        </div>
-      ))}
+      <div key={currentBanner.id} className="absolute inset-0 transition-opacity duration-1000">
+        <OptimizedImage
+          src={cleanImageUrl(currentBanner.imageUrl)}
+          alt={currentBanner.title || 'Banner'}
+          fill
+          className="ken-burns object-cover"
+          priority={currentIndex === 0}
+          sizes="100vw"
+          quality={78}
+          imageSize="hero"
+          blurPlaceholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%23111827' width='1920' height='1080'/%3E%3C/svg%3E"
+        />
+      </div>
 
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80 opacity-90" />
 

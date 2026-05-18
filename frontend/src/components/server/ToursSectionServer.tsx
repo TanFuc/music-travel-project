@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { Link } from '@/components/common/Link';
 import { MapPin, Clock, ArrowRight } from 'lucide-react';
+import { getOptimizedImageUrl } from '@/lib/image-utils';
 interface Tour {
   id: number;
   title: string;
@@ -61,14 +62,17 @@ export function ToursSectionServer({
             >
               <div className="relative aspect-[16/9] overflow-hidden">
                 <Image
-                  src={
+                  src={getOptimizedImageUrl(
                     tour.thumbnailUrl ||
-                    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'
-                  }
+                      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+                    { w: 900 }
+                  )}
                   alt={tour.title}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                   sizes="(max-width: 768px) 100vw, 50vw"
+                  quality={75}
+                  unoptimized
                 />
                 <div className="absolute left-4 top-4">
                   <span className="rounded-lg bg-brand-600/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg ring-1 ring-white/30 backdrop-blur-md">
@@ -84,7 +88,7 @@ export function ToursSectionServer({
               </div>
 
               <div className="flex flex-1 flex-col p-6 md:p-8">
-                <h3 className="mb-3 line-clamp-2 font-display text-2xl font-black text-gray-900 transition-colors group-hover:text-brand-600">
+                <h3 className="mb-3 line-clamp-3 min-h-[5.5rem] font-display text-2xl font-black text-gray-900 transition-colors group-hover:text-brand-600">
                   {tour.title}
                 </h3>
 

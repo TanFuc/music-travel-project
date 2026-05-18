@@ -12,6 +12,9 @@ const nextConfig = {
 
   // Image optimization settings
   images: {
+    // Production server may not be able to proxy every remote source reliably.
+    // Load optimized source URLs directly instead of going through /_next/image.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
