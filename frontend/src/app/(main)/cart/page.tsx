@@ -19,7 +19,6 @@ export default function CartPage() {
     tickets,
     tours,
     singerPackages,
-    removeTicket,
     removeTour,
     removeSingerPackage,
     updateTourQuantity,
@@ -73,12 +72,6 @@ export default function CartPage() {
   const selectedSubtotal = getSelectedSubtotal();
   const selectedTotal = selectedSubtotal - discount;
   const selectedCount = selectedTickets.size + selectedTours.size + selectedPackages.size;
-  const toggleTicket = (id: number) => {
-    const newSet = new Set(selectedTickets);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedTickets(newSet);
-  };
   const toggleTour = (id: number) => {
     const newSet = new Set(selectedTours);
     if (newSet.has(id)) newSet.delete(id);

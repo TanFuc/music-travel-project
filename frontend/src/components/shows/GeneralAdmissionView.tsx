@@ -38,12 +38,6 @@ export function GeneralAdmissionView({
       [classId]: newQuantity,
     }));
   };
-  const handleSelect = (ticketClass: TicketClass) => {
-    const quantity = quantities[ticketClass.id] || 1;
-    if (quantity > 0 && onSelectTicketClass) {
-      onSelectTicketClass(ticketClass, quantity);
-    }
-  };
   const totalTickets = Object.values(quantities).reduce((sum, q) => sum + q, 0);
   const totalPrice = ticketClasses.reduce((sum, tc) => {
     return sum + (quantities[tc.id] || 0) * tc.price;

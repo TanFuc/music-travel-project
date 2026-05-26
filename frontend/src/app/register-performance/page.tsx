@@ -70,7 +70,6 @@ function RegisterPerformanceContent() {
     handleSubmit,
     formState: { errors },
     watch,
-    setValue,
   } = useForm<PerformanceFormData>({
     resolver: zodResolver(performanceSchema),
     defaultValues: {

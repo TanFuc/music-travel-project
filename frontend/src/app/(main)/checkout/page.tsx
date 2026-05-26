@@ -136,7 +136,6 @@ export default function CheckoutPage() {
     clearCart,
     removeTicket,
     removeTour,
-    removeSingerPackage,
   } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
@@ -152,7 +151,9 @@ export default function CheckoutPage() {
       .then((configs) => {
         setPaymentConfigs(configs);
       })
-      .catch(console.error);
+      .catch(() => {
+        setPaymentConfigs([]);
+      });
   }, []);
   const isBuyNowMode = !!bookingCode;
   const isEmpty = !isBuyNowMode && tickets.length === 0 && tours.length === 0;
@@ -900,7 +901,7 @@ export default function CheckoutPage() {
           const code = createdBookingCode || (booking ? booking.bookingCode : '');
           if (code) {
             try {
-              const response = await post(`/bookings/${code}/confirm-payment`, {});
+              await post(`/bookings/${code}/confirm-payment`, {});
               await queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
               await queryClient.invalidateQueries({ queryKey: ['my-show-bookings'] });
               await queryClient.invalidateQueries({ queryKey: ['my-singer-bookings'] });

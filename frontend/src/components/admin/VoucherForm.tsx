@@ -73,7 +73,7 @@ export function VoucherForm({ initialData, onSuccess, onCancel }: VoucherFormPro
       toast.success(isEditing ? 'Cập nhật voucher thành công!' : 'Tạo voucher thành công!');
       if (onSuccess) onSuccess();
     },
-    onError: (error: any) => {
+    onError: () => {
       toast.error('Có lỗi xảy ra, vui lòng thử lại!');
     },
   });

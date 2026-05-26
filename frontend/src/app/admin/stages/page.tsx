@@ -20,11 +20,10 @@ const StageFormModal = dynamic(
 );
 export default function AdminStagesPage() {
   usePageTitle();
-  const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStageId, setSelectedStageId] = useState<number | undefined>();
   const { data: stages, isLoading } = useQuery({
-    queryKey: ['admin-stages', page],
+    queryKey: ['admin-stages'],
     queryFn: () => stageService.getStages(),
   });
   const handleEdit = (stageId: number) => {

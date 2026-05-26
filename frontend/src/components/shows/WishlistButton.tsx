@@ -64,9 +64,6 @@ export function WishlistButton({ showId, showTitle, className }: WishlistButtonP
       }
       toast.error('Có lỗi xảy ra', { description: 'Vui lòng thử lại sau.' });
     },
-    onSuccess: (data) => {
-      const isAdded = data.isWishlisted;
-    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['my-wishlist', user?.id] });
     },

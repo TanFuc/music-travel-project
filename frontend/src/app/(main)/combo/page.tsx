@@ -54,7 +54,7 @@ async function fetchComboData(searchParams: SearchParams) {
       meta: toursData?.meta || { page: 1, limit, total: 0, totalPages: 0 },
       locations: Array.isArray(locations) ? locations : [],
     };
-  } catch (error) {
+  } catch {
     return {
       tours: [],
       meta: { page: 1, limit, total: 0, totalPages: 0 },

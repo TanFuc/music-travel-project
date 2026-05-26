@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,10 +53,7 @@ export default function StageSeatMapPage() {
   const [presets, setPresets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  useEffect(() => {
-    loadData();
-  }, [stageId]);
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [stageData, templatesData, presetsData] = await Promise.all([
@@ -71,7 +68,10 @@ export default function StageSeatMapPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [stageId]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
   const handleSaveConfig = async (config: any) => {
     try {
       setSaving(true);

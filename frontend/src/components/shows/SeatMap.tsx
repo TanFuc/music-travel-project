@@ -27,7 +27,6 @@ export function SeatMap({
   const queryClient = useQueryClient();
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
   const [lockCountdown, setLockCountdown] = useState<number | null>(null);
-  const [lockId, setLockId] = useState<string | null>(null);
   const {
     data: seats,
     isPending,
@@ -43,7 +42,6 @@ export function SeatMap({
   const lockMutation = useMutation({
     mutationFn: (ticketIds: number[]) => ticketService.lockTickets(ticketIds),
     onSuccess: (data) => {
-      setLockId(data.lockId);
       const expiresAt = new Date(data.expiresAt);
       const secondsUntilExpiry = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
       setLockCountdown(secondsUntilExpiry > 0 ? secondsUntilExpiry : 600);
@@ -59,7 +57,6 @@ export function SeatMap({
     onSuccess: () => {
       setSelectedSeats([]);
       setLockCountdown(null);
-      setLockId(null);
       queryClient.invalidateQueries({ queryKey: ['seatMap', showId] });
     },
   });
@@ -70,7 +67,6 @@ export function SeatMap({
         if (prev === null || prev <= 1) {
           clearInterval(timer);
           setSelectedSeats([]);
-          setLockId(null);
           refetch();
           return null;
         }

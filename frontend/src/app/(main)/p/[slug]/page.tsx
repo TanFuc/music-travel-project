@@ -34,7 +34,7 @@ export default async function StaticPageViewPage({
   let page;
   try {
     page = await fetchServer<StaticPage>(`/static-pages/slug/${params.slug}`);
-  } catch (error) {
+  } catch {
     notFound();
   }
   return (

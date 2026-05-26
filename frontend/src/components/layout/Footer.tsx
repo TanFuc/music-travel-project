@@ -23,9 +23,6 @@ function getChannelsByType(channels: ContactChannel[], type: ContactChannelType)
 function getSingleValue(channels: ContactChannel[], type: ContactChannelType): string {
   return getChannelsByType(channels, type)[0]?.value?.trim() || '';
 }
-function getSingleLabel(channels: ContactChannel[], type: ContactChannelType): string {
-  return getChannelsByType(channels, type)[0]?.label?.trim() || '';
-}
 function resolveSocialIcon(channel: ContactChannel) {
   const key = String(channel.icon || channel.label || '').toLowerCase();
   return SOCIAL_ICON_BY_KEY[key as keyof typeof SOCIAL_ICON_BY_KEY] || Facebook;
@@ -60,36 +57,9 @@ export function Footer() {
   const brandDescription =
     safeConfigs['FOOTER_BRAND_DESCRIPTION'] ||
     getSingleValue(channels, ContactChannelType.FOOTER_BRAND_DESCRIPTION);
-  const aboutTitle =
-    safeConfigs['FOOTER_SECTION_ABOUT_TITLE'] ||
-    getSingleValue(channels, ContactChannelType.FOOTER_SECTION_ABOUT_TITLE) ||
-    getSingleLabel(channels, ContactChannelType.FOOTER_SECTION_ABOUT_TITLE);
-  const policyTitle =
-    safeConfigs['FOOTER_SECTION_POLICY_TITLE'] ||
-    getSingleValue(channels, ContactChannelType.FOOTER_SECTION_POLICY_TITLE) ||
-    getSingleLabel(channels, ContactChannelType.FOOTER_SECTION_POLICY_TITLE);
-  const contactTitle =
-    safeConfigs['FOOTER_SECTION_CONTACT_TITLE'] ||
-    getSingleValue(channels, ContactChannelType.FOOTER_SECTION_CONTACT_TITLE) ||
-    getSingleLabel(channels, ContactChannelType.FOOTER_SECTION_CONTACT_TITLE);
-  const aboutLinks =
-    safeConfigs['FOOTER_ABOUT_LINKS'] ||
-    getChannelsByType(channels, ContactChannelType.FOOTER_ABOUT_LINK);
-  const policyLinks =
-    safeConfigs['FOOTER_POLICY_LINKS'] ||
-    getChannelsByType(channels, ContactChannelType.FOOTER_POLICY_LINK);
   const socialLinks =
     safeConfigs['FOOTER_SOCIAL_LINKS'] ||
     getChannelsByType(channels, ContactChannelType.FOOTER_SOCIAL_LINK);
-  const phoneChannels =
-    safeConfigs['FOOTER_CONTACT_PHONES'] ||
-    getChannelsByType(channels, ContactChannelType.FOOTER_CONTACT_PHONE);
-  const emailChannels =
-    safeConfigs['FOOTER_CONTACT_EMAILS'] ||
-    getChannelsByType(channels, ContactChannelType.FOOTER_CONTACT_EMAIL);
-  const addressChannels =
-    safeConfigs['FOOTER_CONTACT_ADDRESSES'] ||
-    getChannelsByType(channels, ContactChannelType.FOOTER_CONTACT_ADDRESS);
   const copyrightText =
     safeConfigs['FOOTER_COPYRIGHT_TEXT'] ||
     getSingleValue(channels, ContactChannelType.FOOTER_COPYRIGHT_TEXT) ||
@@ -97,27 +67,6 @@ export function Footer() {
   const certificationText =
     safeConfigs['FOOTER_CERTIFICATION_TEXT'] ||
     getSingleValue(channels, ContactChannelType.FOOTER_CERTIFICATION_TEXT);
-  const displayAboutTitle = aboutTitle || 'VỀ CHÚNG TÔI';
-  const displayPolicyTitle = policyTitle || 'CHÍNH SÁCH';
-  const displayContactTitle = contactTitle || 'LIÊN HỆ';
-  const defaultAboutLinks = [
-    { id: 1, label: 'Giới thiệu', value: '/about' },
-    { id: 2, label: 'Lịch diễn', value: '/shows' },
-    { id: 3, label: 'Tour khám phá', value: '/tours' },
-  ];
-  const displayAboutLinks = aboutLinks.length > 0 ? aboutLinks : defaultAboutLinks;
-  const defaultPolicyLinks = [
-    { id: 4, label: 'Điều khoản sử dụng', value: '/terms' },
-    { id: 5, label: 'Chính sách bảo mật', value: '/privacy' },
-    { id: 6, label: 'Hướng dẫn mua vé', value: '/guide' },
-  ];
-  const displayPolicyLinks = policyLinks.length > 0 ? policyLinks : defaultPolicyLinks;
-  const defaultPhones = [{ id: 7, label: 'Hotline', value: '1900 1234' }];
-  const displayPhones = phoneChannels.length > 0 ? phoneChannels : defaultPhones;
-  const defaultEmails = [{ id: 8, label: 'Email', value: 'contact@fsell.vn' }];
-  const displayEmails = emailChannels.length > 0 ? emailChannels : defaultEmails;
-  const defaultAddresses = [{ id: 9, label: 'Địa chỉ', value: '123 Đường Sách, Q1, TP.HCM' }];
-  const displayAddresses = addressChannels.length > 0 ? addressChannels : defaultAddresses;
   useEffect(() => {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 500);

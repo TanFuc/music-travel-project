@@ -85,7 +85,7 @@ const getComplaintStatusBadge = (status: string) => {
 };
 export default function AdminSupportPage() {
   const [activeTab, setActiveTab] = useState('faq');
-  const [faqPage, setFaqPage] = useState(1);
+  const [faqPage] = useState(1);
   const [complaintPage, setComplaintPage] = useState(1);
   const [complaintFilter, setComplaintFilter] = useState<'NEW' | 'PROCESSING' | 'RESOLVED' | ''>(
     ''

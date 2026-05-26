@@ -58,13 +58,6 @@ const statusColors: Record<string, 'default' | 'success' | 'warning' | 'destruct
   ENDED: 'default',
   CANCELLED: 'destructive',
 };
-const ticketStatusColors: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
-  AVAILABLE: 'success',
-  LOCKED: 'warning',
-  SOLD: 'default',
-  USED: 'default',
-  CANCELLED: 'destructive',
-};
 export default function ShowDetailPage() {
   const params = useParams();
   const router = useRouter();

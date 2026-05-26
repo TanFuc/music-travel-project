@@ -191,7 +191,7 @@ export function LocationMap({
     if (isLoaded && !mapInstanceRef.current) {
       initMap();
     }
-  }, [isLoaded]);
+  }, [isLoaded, initMap]);
   const prevLatLng = useRef({ lat: latitude, lng: longitude });
   useEffect(() => {
     if (mapInstanceRef.current && markerRef.current) {

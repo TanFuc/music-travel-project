@@ -25,18 +25,6 @@ import {
   Ticket,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-interface SingerPackage {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  description?: string;
-  benefits?: string[];
-  maxRegistrations?: number;
-  _count?: {
-    registrations: number;
-  };
-}
 export default function RegisterSingerPage() {
   usePageTitle();
   const router = useRouter();

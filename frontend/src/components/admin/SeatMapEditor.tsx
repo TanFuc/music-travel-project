@@ -45,11 +45,6 @@ interface SeatMapEditorProps {
   onSave: (config: SeatMapConfig) => void;
   readonly?: boolean;
 }
-const ZONE_COLORS = {
-  VIP: '#FFD700',
-  Standard: '#4CAF50',
-  Standing: '#2196F3',
-};
 export function SeatMapEditor({ initialConfig, onSave, readonly = false }: SeatMapEditorProps) {
   const [config, setConfig] = useState<SeatMapConfig>(
     initialConfig || {
@@ -230,7 +225,6 @@ export function SeatMapEditor({ initialConfig, onSave, readonly = false }: SeatM
                     fontSize={16}
                     fill="#666"
                     fontStyle="bold"
-                    onTap={() => console.log('Row text clicked')}
                   />
 
                   {row.seats.map((seat) => (

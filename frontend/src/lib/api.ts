@@ -1,6 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
-const isServer = typeof window === 'undefined';
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === 'production' ? '/api/v1' : 'http://localhost:3001/api/v1');

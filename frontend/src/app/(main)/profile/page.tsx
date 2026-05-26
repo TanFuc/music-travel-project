@@ -36,7 +36,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/stores/auth.store';
 import { get, patch } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { singerService } from '@/services/singer.service';
 import { ImageUpload } from '@/components/common/ImageUpload';
 import { getCloudinaryUrl } from '@/lib/cloudinary';
 import { Link } from '@/components/common/Link';
@@ -57,11 +56,6 @@ interface UserProfile {
   isCollaborator: boolean;
   referralCode: string | null;
   createdAt: string;
-}
-interface WalletInfo {
-  balance: number;
-  currency: string;
-  status: string;
 }
 interface Booking {
   id: number;
@@ -99,11 +93,6 @@ const STATUS_CONFIG = {
     icon: AlertCircle,
   },
 } as const;
-const PAYMENT_STATUS_CONFIG = {
-  PAID: { label: 'Đã thanh toán', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-  UNPAID: { label: 'Chưa thanh toán', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-  REFUNDED: { label: 'Đã hoàn tiền', color: 'text-sky-600 bg-sky-50 border-sky-200' },
-} as const;
 const ProfileSkeleton = memo(function ProfileSkeleton() {
   return (
     <div className="min-h-screen bg-slate-50">
@@ -123,9 +112,6 @@ interface BookingCardProps {
 }
 const BookingCard = memo(function BookingCard({ booking }: BookingCardProps) {
   const statusConfig = STATUS_CONFIG[booking.status as keyof typeof STATUS_CONFIG];
-  const paymentConfig =
-    PAYMENT_STATUS_CONFIG[booking.paymentStatus as keyof typeof PAYMENT_STATUS_CONFIG];
-  const StatusIcon = statusConfig?.icon || Clock;
   const totalItems = booking.items.reduce((sum, item) => sum + item.quantity, 0);
   const getDisplayStatus = () => {
     if (booking.paymentStatus === 'UNPAID') {
@@ -241,7 +227,7 @@ export default function ProfilePage() {
   usePageTitle();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, user: authUser, setUser, logout, hasHydrated } = useAuthStore();
+  const { isAuthenticated, setUser, logout, hasHydrated } = useAuthStore();
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [bookingStatusFilter, setBookingStatusFilter] = useState<string>('ALL');
@@ -249,12 +235,6 @@ export default function ProfilePage() {
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: () => get<UserProfile>('/users/me'),
-    enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000,
-  });
-  const { data: wallet } = useQuery({
-    queryKey: ['wallet'],
-    queryFn: () => get<WalletInfo>('/users/me/wallet'),
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
   });
@@ -300,12 +280,6 @@ export default function ProfilePage() {
   };
   const filteredShowBookings = filterBookings(showBookings?.items);
   const filteredSingerBookings = filterBookings(singerBookings?.items);
-  const { data: singerRegistrations } = useQuery({
-    queryKey: ['my-singer-registrations'],
-    queryFn: singerService.getMyRegistrations,
-    enabled: isAuthenticated,
-    staleTime: 2 * 60 * 1000,
-  });
   useEffect(() => {
     if (!hasHydrated) {
       return;

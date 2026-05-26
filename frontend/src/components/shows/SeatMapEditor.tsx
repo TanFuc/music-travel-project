@@ -96,7 +96,7 @@ interface SeatMapEditorProps {
   onSave?: () => void;
   className?: string;
 }
-export function SeatMapEditor({ stageId, onSave, className }: SeatMapEditorProps) {
+export function SeatMapEditor({ stageId, className }: SeatMapEditorProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'template' | 'preview' | 'edit'>('template');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('theater_standard');
@@ -122,11 +122,7 @@ export function SeatMapEditor({ stageId, onSave, className }: SeatMapEditorProps
     queryKey: ['seatTemplates'],
     queryFn: seatLayoutApi.getTemplates,
   });
-  const {
-    data: currentLayout,
-    isLoading: layoutLoading,
-    refetch: refetchLayout,
-  } = useQuery({
+  const { data: currentLayout, isLoading: layoutLoading } = useQuery({
     queryKey: ['stageLayout', stageId],
     queryFn: () => seatLayoutApi.getStageSeatLayout(stageId),
     enabled: !!stageId,

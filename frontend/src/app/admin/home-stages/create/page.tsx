@@ -40,7 +40,6 @@ export default function CreateHomeStagePage() {
       displayOrder: 0,
     },
   });
-  const imageUrl = watch('imageUrl');
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {

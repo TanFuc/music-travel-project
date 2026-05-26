@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   ArrowLeft,
   Calendar,
@@ -119,7 +119,6 @@ interface BookingDetail {
 export default function BookingDetailPage() {
   usePageTitle('Chi tiết đơn hàng');
   const params = useParams();
-  const router = useRouter();
   const bookingCode = params?.code as string;
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const { data: booking, isLoading } = useQuery({

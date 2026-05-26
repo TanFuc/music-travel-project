@@ -1,5 +1,4 @@
 'use client';
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -40,7 +39,6 @@ export default function ShowQRCodesPage({
 }) {
   const showId = parseInt(params.id);
   const queryClient = useQueryClient();
-  const [showUrl, setShowUrl] = useState('');
   const { data: show, isLoading: isLoadingShow } = useQuery({
     queryKey: ['admin-show', showId],
     queryFn: () => get<Show>(`/admin/shows/${showId}`),
